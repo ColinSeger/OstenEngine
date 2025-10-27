@@ -1,21 +1,26 @@
 #include "application.h"
 
-namespace application
+
+Application::Application(const int width, const int height, const char* name)
 {
-    void run()
-    {
-        assert(glfwInit() == true && "GLFW Failed to open");
+    assert(glfwInit() == true && "GLFW Failed to open");
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+    main_window = glfwCreateWindow(width, height, name, nullptr, nullptr);
+}
 
-        while(!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-        }
+Application::~Application()
+{
+    glfwDestroyWindow(main_window);
 
-        glfwDestroyWindow(window);
+    glfwTerminate();
+}
 
-        glfwTerminate();
+void Application::main_game_loop()
+{
+    
+    while(!glfwWindowShouldClose(main_window)) {
+        glfwPollEvents();
     }
 }

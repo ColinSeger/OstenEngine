@@ -3,7 +3,15 @@
 #include <vulkan/vulkan.h>
 #include <cassert>
 
-namespace application
+class Application
 {
-    void run();
-}
+
+    GLFWwindow* main_window = nullptr;
+
+public:
+
+    Application(const int width, const int height, const char* name);
+
+    ~Application();
+    void main_game_loop();
+};
