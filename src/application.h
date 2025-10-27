@@ -2,3 +2,8 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <cassert>
+
+namespace application
+{
+    void run();
+}

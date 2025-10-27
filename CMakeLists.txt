@@ -16,6 +16,9 @@ add_subdirectory(external/glfw-3.4)
 
 add_subdirectory(external/glm)
 
+
+# add_subdirectory(external/glm)
+
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan glfw glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan glfw glm::glm)
