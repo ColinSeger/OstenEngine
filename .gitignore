@@ -1,0 +1,15 @@
+
+
+Makefile
+
+.vscode
+
+CMakeFiles
+
+CMakeCache.txt
+
+*/.vcxproj
+
+OstenEngine.dir
+
+Debug
