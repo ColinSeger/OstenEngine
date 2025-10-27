@@ -17,6 +17,8 @@ Debug
 # Visual Studio user specific files
 .vs/
 
+.vs\OstenEngine
+
 # Compiled Static libraries
 *.lai
 *.la
