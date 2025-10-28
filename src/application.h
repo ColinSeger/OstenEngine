@@ -1,12 +1,14 @@
+#pragma once
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
 #include <cassert>
+#include "renderer/instance/vulkan/instance.h"
 
 class Application
 {
-
+    const char* application_name = nullptr;
     GLFWwindow* main_window = nullptr;
+    Instance* instance = nullptr;
 
 public:
 
@@ -14,4 +16,6 @@ public:
 
     ~Application();
     void main_game_loop();
+
+    void cleanup();
 };

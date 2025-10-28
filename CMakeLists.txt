@@ -16,9 +16,15 @@ add_subdirectory(external/glfw-3.4)
 
 add_subdirectory(external/glm)
 
-
+# add_subdirectory(src/render/instance/vulkan)
 # add_subdirectory(external/glm)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} 
+    main.cpp 
+    src/renderer/instance/vulkan/instance.cpp
+    
+    )
+
+# target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan glfw glm::glm)

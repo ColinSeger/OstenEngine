@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 // #include <glm/glm.hpp>
 #include "external/glm/glm.hpp"
