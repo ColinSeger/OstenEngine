@@ -21,6 +21,7 @@ add_subdirectory(external/glm)
 
 add_executable(${PROJECT_NAME} 
     main.cpp 
+    src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     
     )
