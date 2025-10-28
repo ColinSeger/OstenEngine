@@ -18,7 +18,8 @@ Instance::Instance(const char* name)
 
     uint32_t glfw_extention_count = 0;
     const char** glfw_extensions;
-
+    
+    //Gets critical extensions
     glfw_extensions = glfwGetRequiredInstanceExtensions(& glfw_extention_count);
 
     create_info.enabledExtensionCount = glfw_extention_count;
@@ -26,6 +27,17 @@ Instance::Instance(const char* name)
 
     create_info.enabledLayerCount = 0;
     assert(vkCreateInstance(&create_info, nullptr, &instance) == VK_SUCCESS && "Failed to create instance");
+    
+    uint32_t extensions_count = 0;
+    std::vector<VkExtensionProperties> extensions(extensions_count);
+
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensions_count, extensions.data());
+
+    std::cout << "available extensions:\n";
+
+    for (const auto& extension : extensions) {
+        std::cout << '\t' << extension.extensionName << '\n';
+    }
 }
 
 Instance::~Instance()

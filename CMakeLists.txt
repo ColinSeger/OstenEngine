@@ -23,7 +23,7 @@ add_executable(${PROJECT_NAME}
     main.cpp 
     src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
-    
+    src/renderer/device/vulkan/device.cpp
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
