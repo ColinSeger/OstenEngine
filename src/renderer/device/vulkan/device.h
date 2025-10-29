@@ -3,6 +3,7 @@
 #include <cassert>
 #include <vector>
 #include <optional>
+#include <set>
 
 struct QueueFamilyIndicies{
     std::optional<uint32_t> graphics_family;
@@ -17,8 +18,9 @@ private:
     VkDevice virtual_device;
 
     VkQueue graphics_queue;
+    VkQueue present_queue;
 
-    VkSurfaceKHR& surface_pointer;
+    VkSurfaceKHR& surface;
 
     bool is_device_suitable(VkPhysicalDevice device);
 

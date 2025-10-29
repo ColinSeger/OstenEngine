@@ -1,6 +1,6 @@
 #include "device.h"
 
-Device::Device(VkInstance& instance, VkSurfaceKHR& surface) : surface_pointer { surface }
+Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface { surface_reference }
 {
     // surface_pointer = surface;
     uint32_t device_amount = 0;
@@ -57,6 +57,21 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface) : surface_pointer { 
     assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) == VK_SUCCESS);
 
     vkGetDeviceQueue(virtual_device, indices.graphics_family.value(), 0, &graphics_queue);
+
+    QueueFamilyIndicies indices = find_queue_families(physical_device);
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
+
+    float queuePriority = 1.0f;
+    for (uint32_t queue_family : unique_queue_families) {
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queuePriority;
+        queue_create_infos.push_back(queue_create_info);
+    }
 }
 
 Device::~Device()
@@ -100,7 +115,7 @@ QueueFamilyIndicies Device::find_queue_families(VkPhysicalDevice device){
             indices.graphics_family = index;
         }
         VkBool32 present_support = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_pointer, &present_support);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &present_support);
         if (present_support) {
             indices.present_family = index;
         }
