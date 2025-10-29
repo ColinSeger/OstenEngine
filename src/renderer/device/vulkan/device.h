@@ -13,6 +13,10 @@ class Device
 private:
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
+    VkDevice virtual_device;
+
+    VkQueue graphics_queue;
+
     bool is_device_suitable(VkPhysicalDevice device);
 
     QueueFamilyIndicies find_queue_families(VkPhysicalDevice device);
