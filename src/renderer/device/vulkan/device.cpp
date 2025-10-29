@@ -1,12 +1,13 @@
 #include "device.h"
 
-Device::Device(VkInstance& instance)
+Device::Device(VkInstance& instance, VkSurfaceKHR& surface) : surface_pointer { surface }
 {
+    // surface_pointer = surface;
     uint32_t device_amount = 0;
 
     vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
 
-    assert(device_amount <= 0 && "There is no device that supports vulkan on this computer");
+    assert(device_amount > 0 && "There is no device that supports vulkan on this computer");
 
     std::vector<VkPhysicalDevice> devices(device_amount);
     vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
@@ -19,7 +20,7 @@ Device::Device(VkInstance& instance)
         }
     }
 
-    assert(physical_device == VK_NULL_HANDLE && "No vulkan supported graphics found");
+    assert(physical_device != VK_NULL_HANDLE && "No vulkan supported graphics found");
 
     //
     ///Creation of virtual device starts here
@@ -53,7 +54,7 @@ Device::Device(VkInstance& instance)
         create_info.enabledLayerCount = 0;
     // }
 
-    assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) != VK_SUCCESS);
+    assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) == VK_SUCCESS);
 
     vkGetDeviceQueue(virtual_device, indices.graphics_family.value(), 0, &graphics_queue);
 }
@@ -66,7 +67,7 @@ Device::~Device()
 bool Device::is_device_suitable(VkPhysicalDevice device)//Can improve later
 {
     QueueFamilyIndicies indices = find_queue_families(device);
-    return indices.graphics_family.has_value();
+    return indices.graphics_family.has_value() && indices.present_family.has_value();
 
 
     //Supposedly gets vulkan version support, name of device and other things
@@ -91,10 +92,17 @@ QueueFamilyIndicies Device::find_queue_families(VkPhysicalDevice device){
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_amount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families.data());
 
+    
+
     int index = 0;
     for (const auto& queue_family : queue_families) {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics_family = index;
+        }
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface_pointer, &present_support);
+        if (present_support) {
+            indices.present_family = index;
         }
 
         index++;

@@ -3,12 +3,18 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include "renderer/instance/vulkan/instance.h"
+#include "renderer/device/vulkan/device.h"
 
 class Application
 {
     const char* application_name = nullptr;
     GLFWwindow* main_window = nullptr;
     Instance* instance = nullptr;
+    Device* device = nullptr;
+    
+    VkSurfaceKHR surface;
+
+    void create_surface();
 
 public:
 

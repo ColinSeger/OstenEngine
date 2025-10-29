@@ -81,6 +81,7 @@ bool Instance::check_validation_layer_support()
 
     return true;
 }
+
 namespace Debug{
     
     

@@ -19,6 +19,8 @@ class Instance
 public:
     Instance(const char* name, const bool enable_validation);
     ~Instance();
+
+    VkInstance& get_instance() { return instance; }
 };
 
 
