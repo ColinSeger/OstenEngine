@@ -8,7 +8,16 @@ Application::Application(const int width, const int height, const char* name) : 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
-    Instance test = Instance(application_name);
+
+
+    #ifdef NDEBUG
+        const bool enable_validation = false;
+    #else
+        const bool enable_validation = true;
+    #endif
+    
+
+    Instance test = Instance(application_name, false);
     instance = &test;
 }
 

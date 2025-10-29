@@ -1,7 +1,12 @@
 #include "instance.h"
 
-Instance::Instance(const char* name)
+Instance::Instance(const char* name, const bool enable_validation)
 {
+    //DEBUG REASONS
+    if(enable_validation){
+        assert(check_validation_layer_support() == true && "Validation layers requested but could not be found");        
+    }
+
     VkApplicationInfo app_info;
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
@@ -25,9 +30,15 @@ Instance::Instance(const char* name)
     create_info.enabledExtensionCount = glfw_extention_count;
     create_info.ppEnabledExtensionNames = glfw_extensions;
 
-    create_info.enabledLayerCount = 0;
-    assert(vkCreateInstance(&create_info, nullptr, &instance) == VK_SUCCESS && "Failed to create instance");
+    if(enable_validation){
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.ppEnabledLayerNames = validation_layers.data();
+    }else{
+        create_info.enabledLayerCount = 0;
+    }
     
+    assert(vkCreateInstance(&create_info, nullptr, &instance) == VK_SUCCESS && "Failed to create instance");
+    /*
     uint32_t extensions_count = 0;
     std::vector<VkExtensionProperties> extensions(extensions_count);
 
@@ -38,9 +49,40 @@ Instance::Instance(const char* name)
     for (const auto& extension : extensions) {
         std::cout << '\t' << extension.extensionName << '\n';
     }
+    */
 }
 
 Instance::~Instance()
 {
     vkDestroyInstance(instance, nullptr);
 }
+
+bool Instance::check_validation_layer_support()
+{
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    for(const char* layer_name : validation_layers){
+        bool layer_found = false;
+
+        for(const auto& layer_properties : available_layers){
+            if(strcmp(layer_name, layer_properties.layerName) == 0){
+                layer_found = true;
+                break;
+            }
+        }
+        if(!layer_found){
+            return false;
+        }
+    }
+
+    return true;
+}
+namespace Debug{
+    
+    
+}
+

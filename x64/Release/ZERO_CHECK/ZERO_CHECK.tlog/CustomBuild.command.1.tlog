@@ -1,0 +1,10 @@
+^C:\TASKS\ENGINE\ENGINE\CMAKEFILES\3DE9B580A1C4A932909A93417B653DA3\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Tasks/Engine/Engine -BC:/Tasks/Engine/Engine --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Tasks/Engine/Engine/OstenEngine.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -5,12 +5,25 @@
 #include <cassert>
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 class Instance
 {
     VkInstance instance;
 
+    const std::vector<const char*> validation_layers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+    bool check_validation_layer_support(); 
+
 public:
-    Instance(const char* name);
+    Instance(const char* name, const bool enable_validation);
     ~Instance();
 };
+
+
+namespace Debug
+{
+
+     
+}
