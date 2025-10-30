@@ -1,5 +1,8 @@
 #include "device.h"
 
+//
+/// Device is
+//
 Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface { surface_reference }
 {
     // surface_pointer = surface;
@@ -27,16 +30,6 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface 
     //
     create_virtual_device();
 
-    // VkDeviceQueueCreateInfo queue_create_info{};
-    // queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    // queue_create_info.queueFamilyIndex = indices.graphics_family.value();
-    // queue_create_info.queueCount = 1;
-
-
-
-    // vkGetDeviceQueue(virtual_device, indices.present_family.value(), 0, &present_queue);
-
-    
 }
 
 Device::~Device()
