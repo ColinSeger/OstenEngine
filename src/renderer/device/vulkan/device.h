@@ -22,6 +22,8 @@ private:
 
     VkSurfaceKHR& surface;
 
+    void create_virtual_device();
+
     bool is_device_suitable(VkPhysicalDevice device);
 
     QueueFamilyIndicies find_queue_families(VkPhysicalDevice device);

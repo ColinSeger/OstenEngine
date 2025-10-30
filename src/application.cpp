@@ -17,7 +17,7 @@ Application::Application(const int width, const int height, const char* name) : 
     #endif
     
 
-    instance = new Instance(application_name, false);
+    instance = new Instance(application_name, enable_validation);
     // instance = &new_instance;
     create_surface();
     device = new Device(instance->get_instance(), surface);
@@ -44,10 +44,10 @@ void Application::main_game_loop()
 
 void Application::cleanup()
 {
-    if(!main_window) return;
+    // if(!main_window) return;
     glfwDestroyWindow(main_window);
 
-    // vkDestroySurfaceKHR(instance->get_instance(), surface, nullptr);
+    vkDestroySurfaceKHR(instance->get_instance(), surface, nullptr);
     vkDestroyInstance(instance->get_instance(), nullptr);
 
     glfwTerminate();

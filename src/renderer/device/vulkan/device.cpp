@@ -25,53 +25,18 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface 
     //
     ///Creation of virtual device starts here
     //
-    QueueFamilyIndicies indices = find_queue_families(physical_device);
+    create_virtual_device();
 
-    VkDeviceQueueCreateInfo queue_create_info{};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueFamilyIndex = indices.graphics_family.value();
-    queue_create_info.queueCount = 1;
+    // VkDeviceQueueCreateInfo queue_create_info{};
+    // queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    // queue_create_info.queueFamilyIndex = indices.graphics_family.value();
+    // queue_create_info.queueCount = 1;
 
-    float queuePriority = 1.0f;
-    queue_create_info.pQueuePriorities = &queuePriority;
 
-    VkPhysicalDeviceFeatures device_features{};
 
-    VkDeviceCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    // vkGetDeviceQueue(virtual_device, indices.present_family.value(), 0, &present_queue);
 
-    create_info.pQueueCreateInfos = &queue_create_info;
-    create_info.queueCreateInfoCount = 1;
-
-    create_info.pEnabledFeatures = &device_features;
-
-    create_info.enabledExtensionCount = 0;
-
-    // if (enable_validation) {
-    //     create_info.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    //     create_info.ppEnabledLayerNames = validationLayers.data();
-    // } else {
-        create_info.enabledLayerCount = 0;
-    // }
-
-    assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) == VK_SUCCESS);
-
-    vkGetDeviceQueue(virtual_device, indices.graphics_family.value(), 0, &graphics_queue);
-
-    QueueFamilyIndicies indices = find_queue_families(physical_device);
-
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
-
-    float queuePriority = 1.0f;
-    for (uint32_t queue_family : unique_queue_families) {
-        VkDeviceQueueCreateInfo queue_create_info{};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_info.queueCount = 1;
-        queue_create_info.pQueuePriorities = &queuePriority;
-        queue_create_infos.push_back(queue_create_info);
-    }
+    
 }
 
 Device::~Device()
@@ -94,6 +59,53 @@ bool Device::is_device_suitable(VkPhysicalDevice device)//Can improve later
 
     //Makes it so that device has to be discrete gpu and supports geometry shaders
     return device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
+}
+
+void Device::create_virtual_device()
+{
+    QueueFamilyIndicies indices = find_queue_families(physical_device);
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
+    float queuePriority = 1.0f;
+
+
+    for (uint32_t queue_family : unique_queue_families) {
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queuePriority;
+        queue_create_infos.push_back(queue_create_info);
+    }
+
+    
+    // queue_create_info.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures device_features{};
+
+    VkDeviceCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pQueueCreateInfos = queue_create_infos.data();
+
+    create_info.pEnabledFeatures = &device_features;
+
+    create_info.enabledExtensionCount = 0;
+
+    // if (enable_validation) {
+    //     create_info.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    //     create_info.ppEnabledLayerNames = validationLayers.data();
+    // } else {
+        create_info.enabledLayerCount = 0;
+    // }
+
+
+    assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) == VK_SUCCESS);
+
+    vkGetDeviceQueue(virtual_device, indices.graphics_family.value(), 0, &graphics_queue);
+    vkGetDeviceQueue(virtual_device, indices.present_family.value(), 0, &present_queue);
 }
 
 

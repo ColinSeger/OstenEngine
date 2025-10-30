@@ -15,7 +15,6 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw-3.4)
 
 add_subdirectory(external/glm)
-
 # add_subdirectory(src/render/instance/vulkan)
 # add_subdirectory(external/glm)
 
@@ -24,8 +23,14 @@ add_executable(${PROJECT_NAME}
     src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
+    src/renderer/swap_chain/vulkan/swap_chain.cpp
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan glfw glm::glm)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE 
+    Vulkan::Vulkan 
+    glfw 
+    glm::glm
+    )
