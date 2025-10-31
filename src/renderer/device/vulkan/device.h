@@ -5,17 +5,7 @@
 #include <optional>
 #include <set>
 #include <string>
-
-struct QueueFamilyIndicies{
-    std::optional<uint32_t> graphics_family;
-    std::optional<uint32_t> present_family;
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR surface_capabilities;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    std::vector<VkPresentModeKHR> surface_present_modes;
-};
+#include "../../swap_chain/vulkan/swap_chain.h"
 
 class Device
 {
@@ -28,6 +18,8 @@ private:
     VkQueue present_queue;
 
     VkSurfaceKHR& surface;
+
+    // SwapChain* swap_chain = nullptr;
 
     const std::vector<const char*> validation_layers = {
         "VK_LAYER_KHRONOS_validation"
@@ -42,11 +34,6 @@ private:
     bool is_device_suitable(VkPhysicalDevice device);
 
     bool check_device_extension_support(VkPhysicalDevice device);
-
-    QueueFamilyIndicies find_queue_families(VkPhysicalDevice device);
-
-    SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device);
-
 
 public:
     Device(VkInstance& instance, VkSurfaceKHR& surface, bool enable_validation);
