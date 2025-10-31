@@ -1,9 +1,23 @@
 #include "device.h"
 
+
+namespace DeviceHelperFunctions
+{
+    bool is_completed(QueueFamilyIndicies& queue_family)
+    {
+        return queue_family.graphics_family.has_value() && queue_family.present_family.has_value();
+    }
+
+    bool is_completed(SwapChainSupportDetails& swap_chain_support)
+    {
+        return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
+    }
+}
+
 //
 /// Device is
 //
-Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface { surface_reference }
+Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, bool enable_validation) : surface { surface_reference }
 {
     // surface_pointer = surface;
     uint32_t device_amount = 0;
@@ -28,7 +42,7 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference) : surface 
     //
     ///Creation of virtual device starts here
     //
-    create_virtual_device();
+    create_virtual_device(enable_validation);
 
 }
 
@@ -40,21 +54,39 @@ Device::~Device()
 bool Device::is_device_suitable(VkPhysicalDevice device)//Can improve later
 {
     QueueFamilyIndicies indices = find_queue_families(device);
-    return indices.graphics_family.has_value() && indices.present_family.has_value();
 
+    bool has_extention_support = check_device_extension_support(device);
 
-    //Supposedly gets vulkan version support, name of device and other things
-    VkPhysicalDeviceProperties device_properties;
-    vkGetPhysicalDeviceProperties(device, &device_properties);
-    //Gets optional features like texture compression
-    VkPhysicalDeviceFeatures device_features;
-    vkGetPhysicalDeviceFeatures(device, &device_features);
+    bool has_swap_chain_support = false;
 
-    //Makes it so that device has to be discrete gpu and supports geometry shaders
-    return device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
+    if(has_extention_support){
+        SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device);
+        has_swap_chain_support = DeviceHelperFunctions::is_completed(swap_chain_support);
+    }
+    
+    return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-void Device::create_virtual_device()
+bool Device::check_device_extension_support(VkPhysicalDevice device) 
+{
+    uint32_t extension_count;
+
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+
+    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+
+    for (const auto& extension : available_extensions) {
+        required_extensions.erase(extension.extensionName);
+    }
+
+    return required_extensions.empty();
+}
+
+void Device::create_virtual_device(bool enable_validation)
 {
     QueueFamilyIndicies indices = find_queue_families(physical_device);
 
@@ -85,14 +117,15 @@ void Device::create_virtual_device()
 
     create_info.pEnabledFeatures = &device_features;
 
-    create_info.enabledExtensionCount = 0;
+    create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+    create_info.ppEnabledExtensionNames = device_extensions.data();
 
-    // if (enable_validation) {
-    //     create_info.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    //     create_info.ppEnabledLayerNames = validationLayers.data();
-    // } else {
+    if (enable_validation) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.ppEnabledLayerNames = validation_layers.data();
+    } else {
         create_info.enabledLayerCount = 0;
-    // }
+    }
 
 
     assert(vkCreateDevice(physical_device, &create_info, nullptr, &virtual_device) == VK_SUCCESS);
@@ -129,4 +162,28 @@ QueueFamilyIndicies Device::find_queue_families(VkPhysicalDevice device){
     }
 
     return indices;
+}
+
+SwapChainSupportDetails Device::find_swap_chain_support(VkPhysicalDevice device){
+    SwapChainSupportDetails swap_chain_details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
+
+    uint32_t format_amount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, nullptr);
+
+    if (format_amount != 0) {
+        swap_chain_details.surface_formats.resize(format_amount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats.data());
+    }
+
+    uint32_t present_mode_amount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, nullptr);
+
+    if (present_mode_amount != 0) {
+        swap_chain_details.surface_present_modes.resize(present_mode_amount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, swap_chain_details.surface_present_modes.data());
+    }
+
+    return swap_chain_details;
 }

@@ -3,7 +3,7 @@
 
 Application::Application(const int width, const int height, const char* name) : application_name { name }
 {
-    assert(glfwInit() == true && "GLFW Failed to open");
+    assert(glfwInit() == GLFW_TRUE && "GLFW Failed to open");
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -20,7 +20,7 @@ Application::Application(const int width, const int height, const char* name) : 
     instance = new Instance(application_name, enable_validation);
     // instance = &new_instance;
     create_surface();
-    device = new Device(instance->get_instance(), surface);
+    device = new Device(instance->get_instance(), surface, enable_validation);
     // device = &dev;
 
 }
