@@ -7,7 +7,7 @@ Instance::Instance(const char* name, const bool enable_validation)
         assert(check_validation_layer_support() == true && "Validation layers requested but could not be found");        
     }
 
-    VkApplicationInfo app_info;
+    VkApplicationInfo app_info{};
     
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 

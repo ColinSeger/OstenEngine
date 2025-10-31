@@ -6,7 +6,7 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
-    VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities);
+    screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities);
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
@@ -47,6 +47,10 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
     assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain");
+
+    vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, nullptr);
+    swap_chain_images.resize(image_amount);
+    vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, swap_chain_images.data());
 
 }
 SwapChain::~SwapChain()

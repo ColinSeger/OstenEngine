@@ -35,7 +35,13 @@ private:
 
     bool check_device_extension_support(VkPhysicalDevice device);
 
+    
+
 public:
     Device(VkInstance& instance, VkSurfaceKHR& surface, bool enable_validation);
     ~Device();
+    
+    VkDevice get_virtual_device(){ return virtual_device; }
+
+    VkPhysicalDevice get_physical_device(){ return physical_device; }
 };

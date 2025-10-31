@@ -25,11 +25,17 @@ private:
 
     VkSwapchainKHR swap_chain;
 
+    VkExtent2D screen_extent;
+
+    VkFormat swap_chain_image_format;
+
     GLFWwindow* main_window = nullptr;
     
     VkSurfaceKHR& surface;
 
     VkDevice& virtual_device;
+
+    std::vector<VkImage> swap_chain_images;
 
     VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites);
 

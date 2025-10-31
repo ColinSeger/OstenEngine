@@ -22,14 +22,13 @@ Application::Application(const int width, const int height, const char* name) : 
     create_surface();
     device = new Device(instance->get_instance(), surface, enable_validation);
     // device = &dev;
-
+    swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 }
 
 Application::~Application()
 {
     cleanup();
-    delete instance;
-    delete device;
+    
 }
 
 void Application::main_game_loop()
@@ -46,10 +45,10 @@ void Application::cleanup()
 {
     // if(!main_window) return;
     glfwDestroyWindow(main_window);
-
+    delete swap_chain;
     vkDestroySurfaceKHR(instance->get_instance(), surface, nullptr);
-    vkDestroyInstance(instance->get_instance(), nullptr);
-
+    delete instance;
+    delete device;
     glfwTerminate();
 }
 
