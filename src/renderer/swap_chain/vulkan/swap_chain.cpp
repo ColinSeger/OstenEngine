@@ -52,9 +52,13 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     swap_chain_images.resize(image_amount);
     vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, swap_chain_images.data());
 
+    create_image_views();
 }
 SwapChain::~SwapChain()
 {
+    for (auto image_view : swap_chan_image_view) {
+        vkDestroyImageView(virtual_device, image_view, nullptr);
+    }
     vkDestroySwapchainKHR(virtual_device, swap_chain, nullptr);
 }
 
@@ -99,6 +103,35 @@ VkPresentModeKHR SwapChain::select_swap_present_mode(const std::vector<VkPresent
 
     return VK_PRESENT_MODE_FIFO_KHR;
 }
+
+void SwapChain::create_image_views(){
+    swap_chan_image_view.resize(swap_chain_images.size());
+    
+    for (size_t i = 0; i < swap_chain_images.size(); i++)
+    {
+        VkImageViewCreateInfo create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        create_info.image = swap_chain_images[i];
+
+        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        create_info.format = swap_chain_image_format;
+
+        create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        create_info.subresourceRange.baseMipLevel = 0;
+        create_info.subresourceRange.levelCount = 1;
+        create_info.subresourceRange.baseArrayLayer = 0;
+        create_info.subresourceRange.layerCount = 1;
+
+        assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chan_image_view[i]) == VK_SUCCESS);
+    }
+}
+
+
 
 namespace Setup
 {

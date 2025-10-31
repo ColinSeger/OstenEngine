@@ -37,13 +37,15 @@ private:
 
     std::vector<VkImage> swap_chain_images;
 
+    std::vector<VkImageView> swap_chan_image_view;
+
     VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites);
 
     VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
     VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
 
-    
+    void create_image_views();
     
 public:
 
