@@ -29,23 +29,23 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     auto vertex_shader = load_shader("src/renderer/shaders/vert.spv");
     auto fragment_shader = load_shader("src/renderer/shaders/frag.spv");
 
-    VkShaderModule vertShaderModule = create_shader(vertex_shader);
-    VkShaderModule fragShaderModule = create_shader(fragment_shader);
+    VkShaderModule vertex_module = create_shader(vertex_shader);
+    VkShaderModule fragment_module = create_shader(fragment_shader);
 
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    VkPipelineShaderStageCreateInfo vertex_stage_info{};
+    vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertex_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName = "main";
+    vertex_stage_info.module = vertex_module;
+    vertex_stage_info.pName = "main";
 
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
+    VkPipelineShaderStageCreateInfo fragment_state_info{};
+    fragment_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragment_state_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragment_state_info.module = fragment_module;
+    fragment_state_info.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 }
 
 RenderPipeline::~RenderPipeline()
