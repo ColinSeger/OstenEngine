@@ -1,0 +1,6 @@
+glslc.exe src/renderer/shaders/fragment_shader.frag -o src/renderer/shaders/frag.spv
+glslc.exe src/renderer/shaders/vertex_shader.vert -o src/renderer/shaders/vert.spv
+
+
+/home/user/VulkanSDK/x.x.x.x/x86_64/bin/glslc shader.vert -o vert.spv
+/home/user/VulkanSDK/x.x.x.x/x86_64/bin/glslc shader.frag -o frag.spv

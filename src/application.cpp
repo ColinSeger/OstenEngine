@@ -11,7 +11,6 @@ Application::Application(const int width, const int height, const char* name) : 
 Application::~Application()
 {
     cleanup();
-    
 }
 
 void Application::main_game_loop()
