@@ -44,4 +44,8 @@ public:
     VkDevice get_virtual_device(){ return virtual_device; }
 
     VkPhysicalDevice get_physical_device(){ return physical_device; }
+
+    VkQueue& get_graphics_queue() { return graphics_queue; }
+
+    VkQueue& get_present_queue() { return present_queue; }
 };

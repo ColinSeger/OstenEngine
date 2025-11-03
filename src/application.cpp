@@ -18,6 +18,7 @@ void Application::main_game_loop()
     
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
+        render_pipeline->draw_frame();
     }
 
     cleanup();

@@ -35,9 +35,15 @@ private:
 
     VkDevice& virtual_device;
 
+    VkCommandPool command_pool;
+
+    VkCommandBuffer command_buffer;
+
     std::vector<VkImage> swap_chain_images;
 
-    std::vector<VkImageView> swap_chan_image_view;
+    std::vector<VkImageView> swap_chain_image_view;
+
+    std::vector<VkFramebuffer> swap_chain_framebuffers;
 
     VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites);
 
@@ -51,7 +57,29 @@ public:
 
     SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device);
     ~SwapChain();
+
+    void create_frame_buffers(VkRenderPass& render_pass);
+
+    void create_command_pool(VkPhysicalDevice physical_device);
+
+    void create_command_buffer();
+
+    void record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass);
+
+    void start_render_pass(unsigned int image_index, VkRenderPass render_pass);
+
+    void bind_pipeline(VkPipeline pipeline);
+
+    VkExtent2D get_extent() const {  return screen_extent; }
+
+    VkFormat get_image_format() const { return swap_chain_image_format; }
+
+    std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
+
     
+    VkCommandBuffer& get_command_buffer() { return command_buffer; }
+
+    VkSwapchainKHR& get_swap_chain() { return swap_chain; }
 };
 
 namespace Setup

@@ -8,6 +8,8 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
     screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities);
 
+    swap_chain_image_format = surface_format.format;
+
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
     if(swap_chain_support.surface_capabilities.maxImageCount > 0 && image_amount > swap_chain_support.surface_capabilities.maxImageCount){
@@ -53,12 +55,17 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, swap_chain_images.data());
 
     create_image_views();
+    
 }
 SwapChain::~SwapChain()
 {
-    for (auto image_view : swap_chan_image_view) {
+    for (auto image_view : swap_chain_image_view) {
         vkDestroyImageView(virtual_device, image_view, nullptr);
     }
+    for (auto framebuffer : swap_chain_framebuffers) {
+        vkDestroyFramebuffer(virtual_device, framebuffer, nullptr);
+    }
+    vkDestroyCommandPool(virtual_device, command_pool, nullptr);
     vkDestroySwapchainKHR(virtual_device, swap_chain, nullptr);
 }
 
@@ -105,7 +112,7 @@ VkPresentModeKHR SwapChain::select_swap_present_mode(const std::vector<VkPresent
 }
 
 void SwapChain::create_image_views(){
-    swap_chan_image_view.resize(swap_chain_images.size());
+    swap_chain_image_view.resize(swap_chain_images.size());
     
     for (size_t i = 0; i < swap_chain_images.size(); i++)
     {
@@ -127,11 +134,108 @@ void SwapChain::create_image_views(){
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
-        assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chan_image_view[i]) == VK_SUCCESS);
+        assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chain_image_view[i]) == VK_SUCCESS);
     }
 }
 
+void SwapChain::create_command_pool(VkPhysicalDevice physical_device)
+{
+    QueueFamilyIndicies queue_family_indices = Setup::find_queue_families(physical_device, surface);
 
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
+
+    assert(vkCreateCommandPool(virtual_device, &poolInfo, nullptr, &command_pool) == VK_SUCCESS);
+}
+
+void SwapChain::create_command_buffer()
+{
+    VkCommandBufferAllocateInfo allocation_info{};
+    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocation_info.commandPool = command_pool;
+    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocation_info.commandBufferCount = 1;
+
+    assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, &command_buffer) == VK_SUCCESS);
+}
+
+void SwapChain::record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass)
+{
+    vkResetCommandBuffer(command_buffer, 0);
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = 0; // Optional
+    begin_info.pInheritanceInfo = nullptr; // Optional
+
+    assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS && "Failed at recording command buffer");
+    start_render_pass(image_index, render_pass);
+    bind_pipeline(pipeline);
+}
+
+void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
+{
+    swap_chain_framebuffers.resize(swap_chain_image_view.size());
+
+    for (size_t i = 0; i < swap_chain_image_view.size(); i++) {
+        VkImageView attachments[] = {
+            swap_chain_image_view[i]
+        };
+
+        VkFramebufferCreateInfo framebuffer_info{};
+        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_info.renderPass = render_pass;
+        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.pAttachments = attachments;
+        framebuffer_info.width = screen_extent.width;
+        framebuffer_info.height = screen_extent.height;
+        framebuffer_info.layers = 1;
+
+        assert(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) == VK_SUCCESS);
+    }
+}
+
+void SwapChain::start_render_pass(unsigned int image_index, VkRenderPass render_pass)
+{
+    //Begining of render pass
+    VkRenderPassBeginInfo render_pass_info{};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = render_pass;
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent = screen_extent;
+
+    VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    render_pass_info.clearValueCount = 1;
+    render_pass_info.pClearValues = &clear_color;
+    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void SwapChain::bind_pipeline(VkPipeline pipeline)
+{
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(screen_extent.width);
+    viewport.height = static_cast<float>(screen_extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = screen_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(command_buffer);
+
+    assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
+}
 
 namespace Setup
 {

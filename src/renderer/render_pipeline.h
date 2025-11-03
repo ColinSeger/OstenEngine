@@ -18,16 +18,34 @@ private:
     Device* device = nullptr;
 
     SwapChain* swap_chain = nullptr;
+
+    VkRenderPass render_pass;
+
+    VkPipelineLayout pipeline_layout;
+
+    VkPipeline graphics_pipeline;
     
     VkSurfaceKHR surface;
+
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
 
     std::vector<char> load_shader(const std::string& file_name);
 
     VkShaderModule create_shader(const std::vector<char>& code);
 
+    void shader();
+
+    void create_render_pass();
+
+    void create_sync();
+
 public:
     RenderPipeline(const int width, const int height, const char* application_name);
     ~RenderPipeline();
+
+    void draw_frame();
 
     void cleanup();
 
