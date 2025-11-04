@@ -31,9 +31,10 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
-
     create_render_pass();
+
+    assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
+    
     shader();
 
     swap_chain->create_frame_buffers(render_pass);
@@ -73,7 +74,8 @@ void RenderPipeline::draw_frame()
     uint32_t image_index;
     vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
 
-    swap_chain->record_command_buffer(graphics_pipeline ,image_index, render_pass);
+    vkResetCommandBuffer(swap_chain->get_command_buffer(), 0);
+    swap_chain->record_command_buffer(graphics_pipeline, image_index, render_pass);
     
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -103,7 +105,7 @@ void RenderPipeline::draw_frame()
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
-    // present_info.pResults = nullptr; // Optional
+    present_info.pResults = nullptr; // Optional
     
     vkQueuePresentKHR(device->get_present_queue(), &present_info);
 }
@@ -151,7 +153,6 @@ void RenderPipeline::shader()
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertex_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-
     vertex_stage_info.module = vertex_module;
     vertex_stage_info.pName = "main";
 
@@ -162,16 +163,6 @@ void RenderPipeline::shader()
     fragment_state_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
-
-    std::vector<VkDynamicState> dynamic_states = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamic_state{};
-    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-    dynamic_state.pDynamicStates = dynamic_states.data();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -241,6 +232,16 @@ void RenderPipeline::shader()
     color_blending.attachmentCount = 1;
     color_blending.pAttachments = &color_blend_attachment;
 
+    const std::vector<VkDynamicState> dynamic_states = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamic_state{};
+    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+    dynamic_state.pDynamicStates = dynamic_states.data();
+
     VkGraphicsPipelineCreateInfo pipeline_info{};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = 2;
@@ -262,6 +263,9 @@ void RenderPipeline::shader()
     pipeline_info.basePipelineIndex = -1; // Optional
 
     assert(vkCreateGraphicsPipelines(device->get_virtual_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) == VK_SUCCESS);
+
+    vkDestroyShaderModule(device->get_virtual_device(), fragment_module, nullptr);
+    vkDestroyShaderModule(device->get_virtual_device(), vertex_module, nullptr);
 }
 
 void RenderPipeline::create_render_pass()

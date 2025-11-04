@@ -163,13 +163,13 @@ void SwapChain::create_command_buffer()
 
 void SwapChain::record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass)
 {
-    vkResetCommandBuffer(command_buffer, 0);
     VkCommandBufferBeginInfo begin_info{};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0; // Optional
     begin_info.pInheritanceInfo = nullptr; // Optional
 
     assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS && "Failed at recording command buffer");
+
     start_render_pass(image_index, render_pass);
     bind_pipeline(pipeline);
 }
@@ -196,7 +196,7 @@ void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
     }
 }
 
-void SwapChain::start_render_pass(unsigned int image_index, VkRenderPass render_pass)
+void SwapChain::start_render_pass(uint32_t image_index, VkRenderPass render_pass)
 {
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};

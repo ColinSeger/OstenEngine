@@ -66,7 +66,7 @@ public:
 
     void record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass);
 
-    void start_render_pass(unsigned int image_index, VkRenderPass render_pass);
+    void start_render_pass(uint32_t image_index, VkRenderPass render_pass);
 
     void bind_pipeline(VkPipeline pipeline);
 
