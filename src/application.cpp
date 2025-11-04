@@ -21,7 +21,7 @@ void Application::main_game_loop()
         render_pipeline->draw_frame();
     }
 
-    cleanup();
+    // cleanup();
 }
 
 void Application::cleanup()

@@ -22,7 +22,9 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     assert(glfwCreateWindowSurface(instance->get_instance(), main_window, nullptr, &surface) == VK_SUCCESS);
 
     device = new Device(instance->get_instance(), surface, enable_validation);
-    swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+    // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+
+    restart_swap_chain();
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -31,16 +33,16 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    create_render_pass();
+    
 
     assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
     
     shader();
 
-    swap_chain->create_frame_buffers(render_pass);
-    swap_chain->create_command_pool(device->get_physical_device());
-    swap_chain->create_command_buffer();
-    create_sync();
+    // swap_chain->create_frame_buffers(render_pass);
+    // swap_chain->create_command_pool(device->get_physical_device());
+    // swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
+    create_sync_objects();
 }
 
 RenderPipeline::~RenderPipeline()
@@ -51,48 +53,67 @@ RenderPipeline::~RenderPipeline()
 void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device->get_virtual_device());
+    delete swap_chain;
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device->get_virtual_device(), image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(device->get_virtual_device(), render_finished_semaphores[i], nullptr);
+        vkDestroyFence(device->get_virtual_device(), in_flight_fences[i], nullptr);
+    }
     glfwDestroyWindow(main_window);
+    
     vkDestroyPipeline(device->get_virtual_device(), graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device->get_virtual_device(), pipeline_layout, nullptr);
     vkDestroyRenderPass(device->get_virtual_device(), render_pass, nullptr);
-    delete swap_chain;
     vkDestroySurfaceKHR(instance->get_instance(), surface, nullptr);
-    delete instance;
+    
     delete device;
+    delete instance;
+    
     glfwTerminate();
-
-    vkDestroySemaphore(device->get_virtual_device(), image_available_semaphore, nullptr);
-    vkDestroySemaphore(device->get_virtual_device(), render_finished_semaphore, nullptr);
-    vkDestroyFence(device->get_virtual_device(), in_flight_fence, nullptr);
 }
 
 void RenderPipeline::draw_frame()
 {
-    vkWaitForFences(device->get_virtual_device(), 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device->get_virtual_device(), 1, &in_flight_fence);
+    vkWaitForFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+    
 
-    uint32_t image_index;
-    vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
+    static uint32_t image_index;
+    VkResult result = vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
-    vkResetCommandBuffer(swap_chain->get_command_buffer(), 0);
-    swap_chain->record_command_buffer(graphics_pipeline, image_index, render_pass);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        restart_swap_chain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+    vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
+    
+    vkResetCommandBuffer(swap_chain->get_command_buffer(current_frame), 0);
+
+    VkCommandBuffer command_buffer = swap_chain->get_command_buffer(current_frame);
+    swap_chain->record_command_buffer(command_buffer);
+
+    swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
+
+    swap_chain->bind_pipeline(command_buffer, graphics_pipeline);
     
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore wait_semaphores[] = {image_available_semaphore};
+    VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = wait_semaphores;
     submit_info.pWaitDstStageMask = wait_stages;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &swap_chain->get_command_buffer();
+    submit_info.pCommandBuffers = &swap_chain->get_command_buffer(current_frame);
 
-    VkSemaphore signal_semaphores[] = {render_finished_semaphore};
+    VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame]};
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    assert(vkQueueSubmit(device->get_graphics_queue(), 1, &submit_info, in_flight_fence) == VK_SUCCESS);
+    assert(vkQueueSubmit(device->get_graphics_queue(), 1, &submit_info, in_flight_fences[current_frame]) == VK_SUCCESS);
 
 
     VkPresentInfoKHR present_info{};
@@ -107,7 +128,32 @@ void RenderPipeline::draw_frame()
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
     
-    vkQueuePresentKHR(device->get_present_queue(), &present_info);
+    result = vkQueuePresentKHR(device->get_present_queue(), &present_info);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        restart_swap_chain();
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
+
+    current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void RenderPipeline::restart_swap_chain()
+{
+    vkDeviceWaitIdle(device->get_virtual_device());
+    if(swap_chain){
+        delete swap_chain;
+        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+
+    }else{
+        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+        create_render_pass();
+    }
+
+    swap_chain->create_frame_buffers(render_pass);
+    swap_chain->create_command_pool(device->get_physical_device());
+    swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
 std::vector<char> RenderPipeline::load_shader(const std::string& file_name)
@@ -309,8 +355,12 @@ void RenderPipeline::create_render_pass()
     assert(vkCreateRenderPass(device->get_virtual_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS); 
 }
 
-void RenderPipeline::create_sync()
+void RenderPipeline::create_sync_objects()
 {
+    image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkSemaphoreCreateInfo semaphore_info{};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -318,7 +368,13 @@ void RenderPipeline::create_sync()
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &image_available_semaphore) == VK_SUCCESS);
-    assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &render_finished_semaphore) == VK_SUCCESS);
-    assert(vkCreateFence(device->get_virtual_device(), &fence_info, nullptr, &in_flight_fence) == VK_SUCCESS);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &image_available_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateFence(device->get_virtual_device(), &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
+    }
+    
+
+    
 }

@@ -33,11 +33,11 @@ private:
     
     VkSurfaceKHR& surface;
 
-    VkDevice& virtual_device;
+    VkDevice virtual_device;
 
     VkCommandPool command_pool;
 
-    VkCommandBuffer command_buffer;
+    std::vector<VkCommandBuffer> command_buffers;
 
     std::vector<VkImage> swap_chain_images;
 
@@ -62,13 +62,13 @@ public:
 
     void create_command_pool(VkPhysicalDevice physical_device);
 
-    void create_command_buffer();
+    void create_command_buffer(const uint8_t MAX_FRAMES_IN_FLIGHT);
 
-    void record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass);
+    void record_command_buffer(VkCommandBuffer& command_buffer);
 
-    void start_render_pass(uint32_t image_index, VkRenderPass render_pass);
+    void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
 
-    void bind_pipeline(VkPipeline pipeline);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 
@@ -77,7 +77,7 @@ public:
     std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
 
     
-    VkCommandBuffer& get_command_buffer() { return command_buffer; }
+    VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }
 
     VkSwapchainKHR& get_swap_chain() { return swap_chain; }
 };

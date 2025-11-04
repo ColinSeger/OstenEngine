@@ -150,18 +150,20 @@ void SwapChain::create_command_pool(VkPhysicalDevice physical_device)
     assert(vkCreateCommandPool(virtual_device, &poolInfo, nullptr, &command_pool) == VK_SUCCESS);
 }
 
-void SwapChain::create_command_buffer()
+void SwapChain::create_command_buffer(const uint8_t MAX_FRAMES_IN_FLIGHT)
 {
+    command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkCommandBufferAllocateInfo allocation_info{};
     allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocation_info.commandPool = command_pool;
     allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocation_info.commandBufferCount = 1;
+    allocation_info.commandBufferCount = command_buffers.size();
 
-    assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, &command_buffer) == VK_SUCCESS);
+    assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data()) == VK_SUCCESS);
 }
 
-void SwapChain::record_command_buffer(VkPipeline pipeline, uint32_t image_index, VkRenderPass render_pass)
+void SwapChain::record_command_buffer(VkCommandBuffer& command_buffer)
 {
     VkCommandBufferBeginInfo begin_info{};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -170,8 +172,7 @@ void SwapChain::record_command_buffer(VkPipeline pipeline, uint32_t image_index,
 
     assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS && "Failed at recording command buffer");
 
-    start_render_pass(image_index, render_pass);
-    bind_pipeline(pipeline);
+    
 }
 
 void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
@@ -196,7 +197,7 @@ void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
     }
 }
 
-void SwapChain::start_render_pass(uint32_t image_index, VkRenderPass render_pass)
+void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass)
 {
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
@@ -212,7 +213,7 @@ void SwapChain::start_render_pass(uint32_t image_index, VkRenderPass render_pass
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkPipeline pipeline)
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
