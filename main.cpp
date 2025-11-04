@@ -12,9 +12,9 @@ int main()
 
     app.main_game_loop();
 
-    std::string result;
+    // std::string result;
     std::cout << "Hello World \n" << vector2.x;
-    std::cin >> result;
+    // std::cin >> result;
     
     return 0;
 }

@@ -88,7 +88,7 @@ void RenderPipeline::draw_frame()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
     vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
-    
+
     vkResetCommandBuffer(swap_chain->get_command_buffer(current_frame), 0);
 
     VkCommandBuffer command_buffer = swap_chain->get_command_buffer(current_frame);
@@ -141,6 +141,12 @@ void RenderPipeline::draw_frame()
 
 void RenderPipeline::restart_swap_chain()
 {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(main_window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(main_window, &width, &height);
+        glfwWaitEvents();
+    }
     vkDeviceWaitIdle(device->get_virtual_device());
     if(swap_chain){
         delete swap_chain;
