@@ -25,7 +25,6 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 
     restart_swap_chain();
-
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 0; // Optional
@@ -38,6 +37,8 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
     
     shader();
+
+   
 
     // swap_chain->create_frame_buffers(render_pass);
     // swap_chain->create_command_pool(device->get_physical_device());
@@ -54,6 +55,10 @@ void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device->get_virtual_device());
     delete swap_chain;
+
+    vkDestroyBuffer(device->get_virtual_device(), vertex_buffer, nullptr);
+    vkFreeMemory(device->get_virtual_device(), vertex_buffer_memory, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(device->get_virtual_device(), image_available_semaphores[i], nullptr);
@@ -96,7 +101,7 @@ void RenderPipeline::draw_frame()
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
 
-    swap_chain->bind_pipeline(command_buffer, graphics_pipeline);
+    swap_chain->bind_pipeline(command_buffer, graphics_pipeline, vertex_buffer, static_cast<uint32_t>(vertices.size()));
     
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -159,6 +164,7 @@ void RenderPipeline::restart_swap_chain()
 
     swap_chain->create_frame_buffers(render_pass);
     swap_chain->create_command_pool(device->get_physical_device());
+    VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory);
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
@@ -216,12 +222,15 @@ void RenderPipeline::shader()
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
+    auto binding_description = Vertex::get_binding_description();
+    auto attribute_descriptions = Vertex::get_attribute_descriptions();
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = 0;
-    vertex_input_info.pVertexBindingDescriptions = nullptr; // Optional
-    vertex_input_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_info.pVertexAttributeDescriptions = nullptr; // Optional
+    vertex_input_info.vertexBindingDescriptionCount = 1;
+    vertex_input_info.pVertexBindingDescriptions = &binding_description;
+    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());;
+    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -314,7 +323,8 @@ void RenderPipeline::shader()
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipeline_info.basePipelineIndex = -1; // Optional
 
-    assert(vkCreateGraphicsPipelines(device->get_virtual_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) == VK_SUCCESS);
+    VkResult result = vkCreateGraphicsPipelines(device->get_virtual_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+    assert(result == VK_SUCCESS);
 
     vkDestroyShaderModule(device->get_virtual_device(), fragment_module, nullptr);
     vkDestroyShaderModule(device->get_virtual_device(), vertex_module, nullptr);

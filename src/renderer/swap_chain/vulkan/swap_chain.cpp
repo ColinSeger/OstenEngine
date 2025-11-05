@@ -213,7 +213,7 @@ void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t imag
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline)
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkBuffer& vertex_buffer, uint32_t vertex_count)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -231,7 +231,12 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
     scissor.extent = screen_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+    
+    VkBuffer vertex_buffers[] = {vertex_buffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+
+    vkCmdDraw(command_buffer, vertex_count, 1, 0, 0);
 
     vkCmdEndRenderPass(command_buffer);
 

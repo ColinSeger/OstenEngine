@@ -68,7 +68,7 @@ public:
 
     void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
 
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkBuffer& vertex_buffer, uint32_t vertex_count);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 

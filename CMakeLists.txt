@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
     src/renderer/swap_chain/vulkan/swap_chain.cpp
+    src/renderer/render_data/vulkan/render_data.cpp
     src/renderer/render_pipeline.cpp
     )
 
