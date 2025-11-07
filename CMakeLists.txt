@@ -18,6 +18,7 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw-3.4)
 
 add_subdirectory(external/glm)
+# add_subdirectory(external/vulkan/vulkan.h)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build) 
 

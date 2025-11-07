@@ -288,7 +288,13 @@ std::vector<char> RenderPipeline::load_shader(const std::string& file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
-    assert(file.is_open() == true && "Failed to load shaders");
+    if(file.is_open()){
+        std::cout << "Failed to load shared in\n";
+            std::vector<char> buffer(0);
+        return buffer;
+    }
+    
+    //assert(file.is_open() == true && "Failed to load shaders");
 
     size_t file_size = (size_t) file.tellg();
     std::vector<char> buffer(file_size);

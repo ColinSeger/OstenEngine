@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cassert>
+#include <cstring>
 #include "vulkan/vulkan.h"
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"

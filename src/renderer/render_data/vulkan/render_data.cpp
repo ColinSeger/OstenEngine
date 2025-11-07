@@ -101,7 +101,7 @@ namespace VertexFunctions{
 
         void* data;
         vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
-        memcpy(data, vertices.data(), (size_t) buffer_size);
+        std::memcpy(data, vertices.data(), (size_t) buffer_size);
         vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
 
         create_buffer(
@@ -137,7 +137,7 @@ namespace VertexFunctions{
 
         void* data;
         vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
-        memcpy(data, indices.data(), (size_t) buffer_size);
+        std::memcpy(data, indices.data(), (size_t) buffer_size);
         vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
 
         create_buffer(
