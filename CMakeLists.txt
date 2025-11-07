@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Vulkan REQUIRED)
+# find_package(imgui)
 
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -37,4 +38,5 @@ target_link_libraries(${PROJECT_NAME}
     Vulkan::Vulkan 
     glfw 
     glm::glm
+    # imgui::imgui
     )

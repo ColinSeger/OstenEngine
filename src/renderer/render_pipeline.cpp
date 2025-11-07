@@ -164,7 +164,7 @@ void RenderPipeline::restart_swap_chain()
 
     swap_chain->create_frame_buffers(render_pass);
     swap_chain->create_command_pool(device->get_physical_device());
-    VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory);
+    VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
