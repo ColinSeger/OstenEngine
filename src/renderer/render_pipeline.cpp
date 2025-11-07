@@ -1,6 +1,23 @@
 #include "render_pipeline.h"
 
 
+void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
+{
+    // VkDescriptorPool result;
+    VkDescriptorPoolSize pool_size{};
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo pool_info{};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.poolSizeCount = 1;
+    pool_info.pPoolSizes = &pool_size;
+    pool_info.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    assert(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) == VK_SUCCESS);
+    // return result;
+}
+
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
 {
     assert(glfwInit() == GLFW_TRUE && "GLFW Failed to open");
@@ -25,10 +42,18 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 
     restart_swap_chain();
+
+    create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
+
+    create_uniform_buffers();
+    create_descriptor_pool(descriptor_pool, device->get_virtual_device());
+    create_descriptor_sets(descriptor_sets, descriptor_pool, device->get_virtual_device(), descriptor_set_layout);
+
+
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 0; // Optional
-    pipeline_layout_info.pSetLayouts = nullptr; // Optional
+    pipeline_layout_info.setLayoutCount = 1;
+    pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
@@ -56,8 +81,20 @@ void RenderPipeline::cleanup()
     vkDeviceWaitIdle(device->get_virtual_device());
     delete swap_chain;
 
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(device->get_virtual_device(), uniform_buffers[i], nullptr);
+        vkFreeMemory(device->get_virtual_device(), uniform_buffers_memory[i], nullptr);
+    }
+    vkDestroyDescriptorPool(device->get_virtual_device(), descriptor_pool, nullptr);
+
+    vkDestroyDescriptorSetLayout(device->get_virtual_device(), descriptor_set_layout, nullptr);
+
+    vkDestroyDescriptorSetLayout(device->get_virtual_device(), descriptor_set_layout, nullptr);
+
     vkDestroyBuffer(device->get_virtual_device(), vertex_buffer, nullptr);
     vkFreeMemory(device->get_virtual_device(), vertex_buffer_memory, nullptr);
+    vkDestroyBuffer(device->get_virtual_device(), index_buffer, nullptr);
+    vkFreeMemory(device->get_virtual_device(), index_buffer_memory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -92,6 +129,8 @@ void RenderPipeline::draw_frame()
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+    update_uniform_buffer(current_frame);
+    
     vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
 
     vkResetCommandBuffer(swap_chain->get_command_buffer(current_frame), 0);
@@ -100,9 +139,12 @@ void RenderPipeline::draw_frame()
     swap_chain->record_command_buffer(command_buffer);
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
+    RenderBuffer render_buffer = {
+        vertex_buffer,
+        index_buffer
+    };
+    swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets, render_buffer, static_cast<uint32_t>(vertices.size()), static_cast<uint32_t>(indices.size()), current_frame);
 
-    swap_chain->bind_pipeline(command_buffer, graphics_pipeline, vertex_buffer, static_cast<uint32_t>(vertices.size()));
-    
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -144,6 +186,79 @@ void RenderPipeline::draw_frame()
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
+    static auto start_time = std::chrono::high_resolution_clock::now();
+
+    auto current_time = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 10.0f);
+
+    ubo.proj[1][1] *= -1;
+
+    memcpy(uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
+}
+
+void RenderPipeline::create_uniform_buffers() {
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+    uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+    uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VertexFunctions::create_buffer(
+            device,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            bufferSize,  
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            uniform_buffers[i], 
+            uniform_buffers_memory[i]
+        );
+
+        vkMapMemory(device->get_virtual_device(), uniform_buffers_memory[i], 0, bufferSize, 0, &uniform_buffers_mapped[i]);
+    }
+}
+
+void RenderPipeline::create_descriptor_sets(std::vector<VkDescriptorSet>& result, VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout)
+{
+    result.resize(MAX_FRAMES_IN_FLIGHT);
+
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptor_pool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+
+    assert(vkAllocateDescriptorSets(virtual_device, &allocInfo, result.data()) == VK_SUCCESS);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = uniform_buffers[i];
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(UniformBufferObject);
+
+        VkWriteDescriptorSet descriptor_write{};
+        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_write.dstSet = descriptor_sets[i];
+        descriptor_write.dstBinding = 0;
+        descriptor_write.dstArrayElement = 0;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.descriptorCount = 1;
+
+        descriptor_write.pBufferInfo = &buffer_info;
+        descriptor_write.pImageInfo = nullptr; // Optional
+        descriptor_write.pTexelBufferView = nullptr; // Optional
+
+        vkUpdateDescriptorSets(virtual_device, 1, &descriptor_write, 0, nullptr);
+    }
+}
+
 void RenderPipeline::restart_swap_chain()
 {
     int width = 0, height = 0;
@@ -165,6 +280,7 @@ void RenderPipeline::restart_swap_chain()
     swap_chain->create_frame_buffers(render_pass);
     swap_chain->create_command_pool(device->get_physical_device());
     VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+    VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
@@ -263,7 +379,7 @@ void RenderPipeline::shader()
     rasterizer.lineWidth = 1.0f;
 
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     rasterizer.depthBiasEnable = VK_FALSE;
     //Things that might be good for shadow mapping

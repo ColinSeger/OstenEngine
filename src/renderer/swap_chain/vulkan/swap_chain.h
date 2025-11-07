@@ -19,6 +19,12 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> surface_present_modes;
 };
 
+struct RenderBuffer
+{
+    VkBuffer& vertex_buffer;
+    VkBuffer& index_buffer;
+};
+
 class SwapChain
 {
 private:
@@ -68,7 +74,7 @@ public:
 
     void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
 
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkBuffer& vertex_buffer, uint32_t vertex_count);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, uint32_t index_amount, uint8_t frame);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 

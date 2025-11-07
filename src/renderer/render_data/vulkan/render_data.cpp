@@ -1,5 +1,26 @@
 #include "render_data.h"
 
+
+
+void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout)
+{
+    VkDescriptorSetLayoutBinding ubo_layout_binding{};
+    ubo_layout_binding.binding = 0;
+    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorCount = 1;
+    ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout_binding.pImmutableSamplers = nullptr; // Optional
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &ubo_layout_binding;
+
+    assert(vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout) == VK_SUCCESS);
+}
+
+
+
 namespace VertexFunctions{
 
     void copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
@@ -71,7 +92,7 @@ namespace VertexFunctions{
 
         create_buffer(
             device,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             buffer_size,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             staging_buffer, 
@@ -85,9 +106,9 @@ namespace VertexFunctions{
 
         create_buffer(
             device,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             buffer_size,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             vertex_buffer, 
             vertex_buffer_memory
         );
@@ -95,6 +116,42 @@ namespace VertexFunctions{
         copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
 
         vkDestroyBuffer(device->get_virtual_device(),staging_buffer, nullptr);
+        vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
+    }
+
+    void create_index_buffer(Device* device, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+    {
+        VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            staging_buffer, 
+            staging_buffer_memory
+        );
+
+        void* data;
+        vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, indices.data(), (size_t) buffer_size);
+        vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            index_buffer, 
+            index_buffer_memory
+        );
+
+        copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
+
+        vkDestroyBuffer(device->get_virtual_device(), staging_buffer, nullptr);
         vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
     }
 
