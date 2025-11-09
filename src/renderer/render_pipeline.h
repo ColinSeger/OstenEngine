@@ -53,7 +53,7 @@ private:
 
     uint8_t current_frame = 0;
 
-    std::vector<char> load_shader(const std::string& file_name);
+    //std::vector<char> load_shader(const std::string& file_name);
 
     VkShaderModule create_shader(const std::vector<char>& code);
 

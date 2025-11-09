@@ -89,8 +89,6 @@ void RenderPipeline::cleanup()
 
     vkDestroyDescriptorSetLayout(device->get_virtual_device(), descriptor_set_layout, nullptr);
 
-    vkDestroyDescriptorSetLayout(device->get_virtual_device(), descriptor_set_layout, nullptr);
-
     vkDestroyBuffer(device->get_virtual_device(), vertex_buffer, nullptr);
     vkFreeMemory(device->get_virtual_device(), vertex_buffer_memory, nullptr);
     vkDestroyBuffer(device->get_virtual_device(), index_buffer, nullptr);
@@ -284,17 +282,17 @@ void RenderPipeline::restart_swap_chain()
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
-std::vector<char> RenderPipeline::load_shader(const std::string& file_name)
+std::vector<char> load_shader(const std::string& file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
-
+/*
     if(file.is_open()){
         std::cout << "Failed to load shared in\n";
             std::vector<char> buffer(0);
         return buffer;
     }
-    
-    //assert(file.is_open() == true && "Failed to load shaders");
+*/    
+    assert(file.is_open() == true && "Failed to load shaders");
 
     size_t file_size = (size_t) file.tellg();
     std::vector<char> buffer(file_size);
