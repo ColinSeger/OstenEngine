@@ -1,4 +1,5 @@
 #include <iostream>
+#define STB_IMAGE_IMPLEMENTATION
 #include "external/glm/glm.hpp"
 #include "src/application.h"
 

@@ -7,25 +7,12 @@
 #include <iostream>
 #include <cstring>
 
-class Instance
-{
-    VkInstance instance;
-
-    const std::vector<const char*> validation_layers = {
-        "VK_LAYER_KHRONOS_validation"
-    };
-    bool check_validation_layer_support(); 
-
-public:
-    Instance(const char* name, const bool enable_validation);
-    ~Instance();
-
-    VkInstance& get_instance() { return instance; }
+const std::vector<const char*> validation_layers = {
+    "VK_LAYER_KHRONOS_validation"
 };
-
-
-namespace Debug
+namespace Instance
 {
+    VkInstance create_instance(const char* name, const bool enable_validation);
 
-     
-}
+    bool check_validation_layer_support(); 
+};

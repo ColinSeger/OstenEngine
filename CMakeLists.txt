@@ -23,13 +23,14 @@ add_subdirectory(external/glm)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build) 
 
 add_executable(${PROJECT_NAME} 
-    main.cpp 
+    main.cpp
     src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
     src/renderer/swap_chain/vulkan/swap_chain.cpp
     src/renderer/render_data/vulkan/render_data.cpp
     src/renderer/render_pipeline.cpp
+    src/renderer/texture/vulkan/texture.cpp
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})

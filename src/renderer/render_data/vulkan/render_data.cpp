@@ -23,43 +23,6 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
 
 namespace VertexFunctions{
 
-    void copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
-    {
-        VkCommandBufferAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandPool = command_pool;//Should have a separate command pool
-        alloc_info.commandBufferCount = 1;
-
-        VkCommandBuffer command_buffer{};
-        vkAllocateCommandBuffers(device->get_virtual_device(), &alloc_info, &command_buffer);
-
-        VkCommandBufferBeginInfo begin_info{};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(command_buffer, &begin_info);
-
-        VkBufferCopy copy_region{};
-        //Look into merging copied buffers into this using a offset
-        copy_region.srcOffset = 0; // Optional
-        copy_region.dstOffset = 0; // Optional
-        copy_region.size = size;
-
-        vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
-
-        vkEndCommandBuffer(command_buffer);
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &command_buffer;
-
-        vkQueueSubmit(device->get_graphics_queue(), 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(device->get_graphics_queue());//Swap for Fence later
-
-        vkFreeCommandBuffers(device->get_virtual_device(), command_pool, 1, &command_buffer);
-    }
-
     void create_buffer(Device* device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
     {
         VkBufferCreateInfo buffer_info{};
@@ -113,7 +76,7 @@ namespace VertexFunctions{
             vertex_buffer_memory
         );
 
-        copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
+        CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
 
         vkDestroyBuffer(device->get_virtual_device(),staging_buffer, nullptr);
         vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
@@ -149,7 +112,7 @@ namespace VertexFunctions{
             index_buffer_memory
         );
 
-        copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
+        CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
 
         vkDestroyBuffer(device->get_virtual_device(), staging_buffer, nullptr);
         vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
@@ -195,4 +158,55 @@ namespace VertexFunctions{
 
         return attribute_descriptions;
     }    
+}
+
+
+VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool)
+{
+    VkCommandBufferAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(virtual_device, &alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &beginInfo);
+
+    return command_buffer;
+}
+
+void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool, VkQueue graphics_queue, VkCommandBuffer command_buffer)
+{
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphics_queue);
+
+    vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
+}
+
+void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
+{
+    VkCommandBuffer command_buffer = begin_single_time_commands(device->get_virtual_device(), command_pool);
+
+    VkBufferCopy copy_region{};
+    //Look into merging copied buffers into this using a offset
+    copy_region.srcOffset = 0; // Optional
+    copy_region.dstOffset = 0; // Optional
+    copy_region.size = size;
+
+    vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+    end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
 }

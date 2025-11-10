@@ -10,6 +10,7 @@
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"
 #include "render_data/vulkan/render_data.h"
+#include "texture/vulkan/texture.h"
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -19,7 +20,7 @@ private:
     //Window to render to
     GLFWwindow* main_window = nullptr;
     //The Vulkan instance
-    Instance* instance = nullptr;
+    VkInstance instance = nullptr;
     //Device manager
     Device* device = nullptr;
 

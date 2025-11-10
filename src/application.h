@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include "renderer/render_pipeline.h"
+#include "../external/imgui/imgui.h"
 
 class Application
 {

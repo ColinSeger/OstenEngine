@@ -1,7 +1,8 @@
 #include "instance.h"
 
-Instance::Instance(const char* name, const bool enable_validation)
+VkInstance Instance::create_instance(const char* name, const bool enable_validation)
 {
+    VkInstance instance;
     //DEBUG REASONS
     if(enable_validation){
         assert(check_validation_layer_support() == true && "Validation layers requested but could not be found");        
@@ -41,24 +42,16 @@ Instance::Instance(const char* name, const bool enable_validation)
     }
     
     assert(vkCreateInstance(&create_info, nullptr, &instance) == VK_SUCCESS && "Failed to create instance");
-    /*
-    uint32_t extensions_count = 0;
-    std::vector<VkExtensionProperties> extensions(extensions_count);
 
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensions_count, extensions.data());
-
-    std::cout << "available extensions:\n";
-
-    for (const auto& extension : extensions) {
-        std::cout << '\t' << extension.extensionName << '\n';
-    }
-    */
+    return instance;
 }
 
-Instance::~Instance()
-{
-    vkDestroyInstance(instance, nullptr);
-}
+
+
+// Instance::~Instance()
+// {
+//     vkDestroyInstance(instance, nullptr);
+// }
 
 bool Instance::check_validation_layer_support()
 {
@@ -84,9 +77,3 @@ bool Instance::check_validation_layer_support()
 
     return true;
 }
-
-namespace Debug{
-    
-    
-}
-

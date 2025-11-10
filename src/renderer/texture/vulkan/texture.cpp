@@ -1,0 +1,164 @@
+#include "texture.h"
+
+
+void Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool command_pool)
+{
+    int texture_width;
+    int texture_height;
+    int texture_channels;
+
+    stbi_uc* image_pixels = stbi_load(texture_location, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+
+    VkDeviceSize image_size = texture_width * texture_height * 4;
+    
+    assert(image_pixels != nullptr && "Failed To Load Texture");
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+
+    VertexFunctions::create_buffer(
+        device, 
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        image_size,
+        staging_buffer,
+        staging_buffer_memory
+    );
+
+    void* data;
+    vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, image_size, 0, &data);
+        memcpy(data, image_pixels, static_cast<size_t>(image_size));
+    vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
+
+    stbi_image_free(image_pixels);
+
+    VkImage texture_image;
+    VkDeviceMemory texture_image_memory;
+
+    ImageSize image_sizing;
+    image_sizing.width = texture_width; 
+    image_sizing.height = texture_height;
+
+    create_image
+    (
+        device, 
+        image_sizing, 
+        VK_FORMAT_R8G8B8A8_SRGB, 
+        VK_IMAGE_TILING_OPTIMAL, 
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        texture_image, 
+        texture_image_memory
+    );
+
+    transition_image_layout(texture_image,  VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, command_pool);
+
+    copy_buffer_to_image(staging_buffer, texture_image, image_sizing, device, command_pool);
+
+    transition_image_layout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, command_pool);
+}
+
+void Texture::create_image( Device* device, 
+                            ImageSize image_size, 
+                            VkFormat format, 
+                            VkImageTiling image_tiling, 
+                            VkImageUsageFlags usage_flags, 
+                            VkMemoryPropertyFlags property_flags, 
+                            VkImage& image, 
+                            VkDeviceMemory image_memory
+                          )
+{
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = image_size.width;
+    image_info.extent.height = image_size.height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.format = format;
+    image_info.tiling = image_tiling;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.usage = usage_flags;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    assert(vkCreateImage(device->get_virtual_device(), &image_info, nullptr, &image) == VK_SUCCESS);
+
+    VkMemoryRequirements memory_requirements;
+    vkGetImageMemoryRequirements(device->get_virtual_device(), image, &memory_requirements);
+
+    VkMemoryAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = memory_requirements.size;
+    alloc_info.memoryTypeIndex = VertexFunctions::find_memory_type(device->get_physical_device() ,memory_requirements.memoryTypeBits, property_flags);
+
+    assert(vkAllocateMemory(device->get_virtual_device(), &alloc_info, nullptr, &image_memory) == VK_SUCCESS);
+
+    vkBindImageMemory(device->get_virtual_device(), image, image_memory, 0);
+}
+
+void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool command_pool)
+{
+    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->get_virtual_device(), command_pool);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = old_image_layout;
+    barrier.newLayout = new_image_layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = 0; // TODO
+    barrier.dstAccessMask = 0; // TODO
+
+    vkCmdPipelineBarrier(
+        command_buffer,
+        0 /* TODO */, 0 /* TODO */,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
+}
+
+void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize image_size, Device* device, VkCommandPool command_pool)
+{
+    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->get_virtual_device(), command_pool);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {
+        image_size.width,
+        image_size.height,
+        1
+    };
+
+    vkCmdCopyBufferToImage(
+        command_buffer,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
+
+    CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
+}

@@ -34,11 +34,11 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     #endif
     
 
-    instance = new Instance(application_name, enable_validation);
+    instance = Instance::create_instance(application_name, enable_validation);
 
-    assert(glfwCreateWindowSurface(instance->get_instance(), main_window, nullptr, &surface) == VK_SUCCESS);
+    assert(glfwCreateWindowSurface(instance, main_window, nullptr, &surface) == VK_SUCCESS);
 
-    device = new Device(instance->get_instance(), surface, enable_validation);
+    device = new Device(instance, surface, enable_validation);
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 
     restart_swap_chain();
@@ -105,10 +105,10 @@ void RenderPipeline::cleanup()
     vkDestroyPipeline(device->get_virtual_device(), graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device->get_virtual_device(), pipeline_layout, nullptr);
     vkDestroyRenderPass(device->get_virtual_device(), render_pass, nullptr);
-    vkDestroySurfaceKHR(instance->get_instance(), surface, nullptr);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     
     delete device;
-    delete instance;
+    vkDestroyInstance(instance, nullptr);
     
     glfwTerminate();
 }
@@ -277,8 +277,10 @@ void RenderPipeline::restart_swap_chain()
 
     swap_chain->create_frame_buffers(render_pass);
     swap_chain->create_command_pool(device->get_physical_device());
+    
     VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
