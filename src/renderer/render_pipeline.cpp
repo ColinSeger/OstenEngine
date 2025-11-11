@@ -240,7 +240,7 @@ void RenderPipeline::create_descriptor_sets(std::vector<VkDescriptorSet>& result
 {
     result.resize(MAX_FRAMES_IN_FLIGHT);
 
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptor_pool;
@@ -255,19 +255,32 @@ void RenderPipeline::create_descriptor_sets(std::vector<VkDescriptorSet>& result
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
 
-        VkWriteDescriptorSet descriptor_write{};
-        descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write.dstSet = descriptor_sets[i];
-        descriptor_write.dstBinding = 0;
-        descriptor_write.dstArrayElement = 0;
-        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_write.descriptorCount = 1;
+        VkDescriptorImageInfo image_info{};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView = image_view;
+        image_info.sampler = texture_sampler;
 
-        descriptor_write.pBufferInfo = &buffer_info;
-        descriptor_write.pImageInfo = nullptr; // Optional
-        descriptor_write.pTexelBufferView = nullptr; // Optional
+        const uint8_t descriptor_size = 2;
+        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = descriptor_sets[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &buffer_info;
+        descriptor_writes[0].pImageInfo = nullptr; // Optional
+        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
 
-        vkUpdateDescriptorSets(virtual_device, 1, &descriptor_write, 0, nullptr);
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo = &image_info;
+
+        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
 }
 
@@ -296,8 +309,8 @@ void RenderPipeline::restart_swap_chain()
     VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
     VkImage image_test = Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
     
-    Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB);
-    Texture::create_texture_sampler(device);
+    image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB);
+    texture_sampler = Texture::create_texture_sampler(device);
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 
@@ -368,8 +381,8 @@ void RenderPipeline::shader()
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());;
-    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
+    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(sizeof(attribute_descriptions.array) / sizeof(attribute_descriptions.array[0]));
+    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.array;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

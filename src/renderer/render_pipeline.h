@@ -55,6 +55,9 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
+    VkImageView image_view;//Temporary way to access image
+    VkSampler texture_sampler;//Temporary way to access sampler
+
     uint8_t current_frame = 0;
 
     //std::vector<char> load_shader(const std::string& file_name);

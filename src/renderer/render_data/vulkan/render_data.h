@@ -14,9 +14,14 @@ struct UniformBufferObject {
 
 void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
+typedef struct{
+    VkVertexInputAttributeDescription array[3];
+}VertexAtributes;
+
 struct Vertex {
     glm::vec2 position;
     glm::vec3 color;
+    glm::vec2 texture_cord;
 
     static VkVertexInputBindingDescription get_binding_description() {
         VkVertexInputBindingDescription binding_description{};
@@ -28,27 +33,32 @@ struct Vertex {
     }
 
 
-    static std::array<VkVertexInputAttributeDescription, 2> get_attribute_descriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions{};
-        attribute_descriptions[0].binding = 0;
-        attribute_descriptions[0].location = 0;
-        attribute_descriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attribute_descriptions[0].offset = offsetof(Vertex, position);
+    static VertexAtributes get_attribute_descriptions() {
+        VertexAtributes attribute_descriptions{};
+        attribute_descriptions.array[0].binding = 0;
+        attribute_descriptions.array[0].location = 0;
+        attribute_descriptions.array[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attribute_descriptions.array[0].offset = offsetof(Vertex, position);
 
-        attribute_descriptions[1].binding = 0;
-        attribute_descriptions[1].location = 1;
-        attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute_descriptions[1].offset = offsetof(Vertex, color);
+        attribute_descriptions.array[1].binding = 0;
+        attribute_descriptions.array[1].location = 1;
+        attribute_descriptions.array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute_descriptions.array[1].offset = offsetof(Vertex, color);
+
+        attribute_descriptions.array[2].binding = 0;
+        attribute_descriptions.array[2].location = 2;
+        attribute_descriptions.array[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attribute_descriptions.array[2].offset = offsetof(Vertex, texture_cord);
 
         return attribute_descriptions;
     }  
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 const std::vector<uint32_t> indices = {
     0, 1, 2, 2, 3, 0
