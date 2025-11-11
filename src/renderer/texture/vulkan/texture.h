@@ -20,7 +20,7 @@ struct ImageSize
 
 namespace Texture
 {
-    void create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool);
+    VkImage create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool);
 
     void create_image
     (
@@ -37,4 +37,8 @@ namespace Texture
     void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool& command_pool);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool);
+
+    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format);
+
+    VkSampler create_texture_sampler(Device* device);
 }

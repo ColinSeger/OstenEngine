@@ -1,7 +1,7 @@
 #include "texture.h"
 
 
-void Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool)
+VkImage Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool)
 {
     int texture_width;
     int texture_height;
@@ -56,6 +56,8 @@ void Texture::create_texture_image(Device* device ,const char* texture_location,
     copy_buffer_to_image(staging_buffer, texture_image, image_sizing, device, command_pool);
 
     transition_image_layout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, command_pool);
+
+    return texture_image;
 }
 
 void Texture::create_image( Device* device, 
@@ -161,4 +163,53 @@ void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& im
     );
 
     CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
+}
+
+VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format)
+{
+    VkImageView result{};
+    VkImageViewCreateInfo view_info{};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = texture_image;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = texture_format;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = 1;
+
+    assert(vkCreateImageView(virtual_device, &view_info, nullptr, &result) == VK_SUCCESS);
+
+    return result;
+}
+
+VkSampler Texture::create_texture_sampler(Device* device)
+{
+    VkSampler textureSampler{};
+
+    VkPhysicalDeviceProperties properties{};//Move this out later
+    vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
+
+    VkSamplerCreateInfo sampler_info{};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+
+    assert(vkCreateSampler(device->get_virtual_device(), &sampler_info, nullptr, &textureSampler) == VK_SUCCESS);
+
+    return textureSampler;
 }

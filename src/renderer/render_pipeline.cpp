@@ -294,7 +294,10 @@ void RenderPipeline::restart_swap_chain()
     
     VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
+    
+    Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB);
+    Texture::create_texture_sampler(device);
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
 

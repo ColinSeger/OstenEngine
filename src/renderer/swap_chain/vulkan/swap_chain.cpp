@@ -134,6 +134,8 @@ void SwapChain::create_image_views(){
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
+        // swap_chain_image_view[i] = Texture::create_image_view(virtual_device, swap_chain_images[i], swap_chain_image_format);
+
         assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chain_image_view[i]) == VK_SUCCESS);
     }
 }

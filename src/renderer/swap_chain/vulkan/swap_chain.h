@@ -1,12 +1,12 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <stdint.h>
 #include <optional>
-#include "../../device/vulkan/device.h"
 #include "../../../../external/glm/glm.hpp"
+#include "../../device/vulkan/device.h"
+// #include "../../texture/vulkan/texture.h"
 
 struct QueueFamilyIndicies{
     std::optional<uint32_t> graphics_family;

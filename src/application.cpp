@@ -115,5 +115,8 @@ void Application::main_game_loop()
 
 void Application::cleanup()
 {
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     render_pipeline->cleanup();
 }
