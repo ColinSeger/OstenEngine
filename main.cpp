@@ -1,5 +1,7 @@
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
+#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 #include "external/glm/glm.hpp"
 #include "src/application.h"
 

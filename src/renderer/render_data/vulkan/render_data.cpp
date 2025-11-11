@@ -161,7 +161,7 @@ namespace VertexFunctions{
 }
 
 
-VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool)
+VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
 {
     VkCommandBufferAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -181,7 +181,7 @@ VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_devic
     return command_buffer;
 }
 
-void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool, VkQueue graphics_queue, VkCommandBuffer command_buffer)
+void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer)
 {
     vkEndCommandBuffer(command_buffer);
 

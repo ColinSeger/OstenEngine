@@ -6,11 +6,14 @@
 #include <chrono>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
+#include "../../../external/imgui/backends/imgui_impl_glfw.h"
+#include "../../../external/imgui/backends/imgui_impl_vulkan.h"
 #include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"
 #include "render_data/vulkan/render_data.h"
 #include "texture/vulkan/texture.h"
+
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -81,4 +84,14 @@ public:
     void cleanup();
 
     GLFWwindow* get_main_window(){ return main_window; }
+
+    VkInstance& get_instance() { return instance; }
+
+    Device* get_device() { return device; }
+
+    VkDescriptorPool& get_descriptor_pool() { return descriptor_pool; }
+
+    VkSurfaceKHR& get_surface() { return surface; }
+
+    SwapChain* get_swap_chain() { return swap_chain; }
 };

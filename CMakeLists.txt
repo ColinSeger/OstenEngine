@@ -18,12 +18,22 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw-3.4)
 
 add_subdirectory(external/glm)
-# add_subdirectory(external/vulkan/vulkan.h)
+# target_include_directories(external/imgui)
+
+# Set where the ImGui files are stored
+set(IMGUI_PATH  "external/imgui")
+    
+# Compile as static library 
+file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp) 
+add_library("imgui" STATIC ${IMGUI_SOURCES})
+target_include_directories("imgui" PUBLIC ${IMGUI_PATH})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build) 
 
 add_executable(${PROJECT_NAME} 
     main.cpp
+    external/imgui/backends/imgui_impl_glfw.cpp
+    external/imgui/backends/imgui_impl_vulkan.cpp
     src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
@@ -40,5 +50,6 @@ target_link_libraries(${PROJECT_NAME}
     Vulkan::Vulkan 
     glfw 
     glm::glm
-    # imgui::imgui
+    PUBLIC
+    imgui
     )

@@ -3,16 +3,30 @@
 
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
+    VkDescriptorPoolSize pool_sizes[] = {
+    {VK_DESCRIPTOR_TYPE_SAMPLER,                1000},
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+    {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000},
+    {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000},
+    {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000},
+    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000}
+};
     // VkDescriptorPool result;
-    VkDescriptorPoolSize pool_size{};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    // VkDescriptorPoolSize pool_size{};
+    // pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    // pool_size.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = 1;
-    pool_info.pPoolSizes = &pool_size;
-    pool_info.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.poolSizeCount = (uint32_t) IM_ARRAYSIZE(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 
     assert(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) == VK_SUCCESS);
     // return result;
@@ -142,7 +156,7 @@ void RenderPipeline::draw_frame()
         index_buffer
     };
     swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets, render_buffer, static_cast<uint32_t>(vertices.size()), static_cast<uint32_t>(indices.size()), current_frame);
-
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 

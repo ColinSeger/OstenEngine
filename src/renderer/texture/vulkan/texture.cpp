@@ -1,7 +1,7 @@
 #include "texture.h"
 
 
-void Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool command_pool)
+void Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool)
 {
     int texture_width;
     int texture_height;
@@ -19,8 +19,8 @@ void Texture::create_texture_image(Device* device ,const char* texture_location,
     VertexFunctions::create_buffer(
         device, 
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         image_size,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         staging_buffer,
         staging_buffer_memory
     );
@@ -65,7 +65,7 @@ void Texture::create_image( Device* device,
                             VkImageUsageFlags usage_flags, 
                             VkMemoryPropertyFlags property_flags, 
                             VkImage& image, 
-                            VkDeviceMemory image_memory
+                            VkDeviceMemory& image_memory
                           )
 {
 
@@ -99,7 +99,7 @@ void Texture::create_image( Device* device,
     vkBindImageMemory(device->get_virtual_device(), image, image_memory, 0);
 }
 
-void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool command_pool)
+void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->get_virtual_device(), command_pool);
 
@@ -130,7 +130,7 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
     CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
 }
 
-void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize image_size, Device* device, VkCommandPool command_pool)
+void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->get_virtual_device(), command_pool);
 

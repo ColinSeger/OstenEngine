@@ -1,9 +1,22 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include "renderer/render_pipeline.h"
 #include "../external/imgui/imgui.h"
+#include "../external/imgui/backends/imgui_impl_glfw.h"
+#include "../external/imgui/backends/imgui_impl_vulkan.h"
+
+// #include <imgui/backends/imgui_impl_glfw.h>
+// #include <imgui/backends/imgui_impl_vulkan.h>
+
+static void check_vk_result(VkResult err)
+{
+    if (err == 0)
+        return;
+    fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+    if (err < 0)
+        abort();
+}
 
 class Application
 {

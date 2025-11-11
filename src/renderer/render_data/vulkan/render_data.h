@@ -71,9 +71,9 @@ namespace VertexFunctions{
 
 namespace CommandBuffer
 {
-    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool);
+    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool);
 
-    void end_single_time_commands(VkDevice virtual_device, VkCommandPool command_pool, VkQueue graphics_queue, VkCommandBuffer command_buffer);
+    void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer);
 
     void copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool);
 }
