@@ -5,6 +5,8 @@
 #include "../../render_data/vulkan/render_data.h"
 #include "../../../../external/image_loader/stb_image.h"
 
+#include <iostream>//Remove
+
 struct TextureImage
 {
     VkImage texture_image;

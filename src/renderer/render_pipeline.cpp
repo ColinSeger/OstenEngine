@@ -313,7 +313,7 @@ void RenderPipeline::restart_swap_chain()
 
     VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    VkImage image_test = Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/debug_texture.jpg", swap_chain->get_command_pool());
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
@@ -323,13 +323,7 @@ void RenderPipeline::restart_swap_chain()
 std::vector<char> load_shader(const std::string& file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
-/*
-    if(file.is_open()){
-        std::cout << "Failed to load shared in\n";
-            std::vector<char> buffer(0);
-        return buffer;
-    }
-*/    
+
     assert(file.is_open() == true && "Failed to load shaders");
 
     size_t file_size = (size_t) file.tellg();

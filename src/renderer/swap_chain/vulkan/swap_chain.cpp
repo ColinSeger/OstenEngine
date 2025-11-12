@@ -48,7 +48,7 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
 
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain");
+    assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain2");
 
     vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, nullptr);
     swap_chain_images.resize(image_amount);

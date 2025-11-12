@@ -10,7 +10,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     stbi_uc* image_pixels = stbi_load(texture_location, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
 
     VkDeviceSize image_size = texture_width * texture_height * 4;
-    
+    std::cout << texture_location << "\n";//TODO REMOVE
     assert(image_pixels != nullptr && "Failed To Load Texture");
 
     VkBuffer staging_buffer;
