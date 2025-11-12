@@ -123,6 +123,16 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
     VkPipelineStageFlags source_stage;
     VkPipelineStageFlags destination_stage;
 
+    if(new_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL){
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        
+        if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
+            barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }else{
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
     if(old_image_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_image_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL){
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -136,7 +146,15 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
 
         source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }else{
+    }
+    else if(old_image_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    }
+    else{
         assert(false && "INVALID LAYOUT TRANSITION");
     }
 
@@ -185,7 +203,7 @@ void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& im
     CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
 }
 
-VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format)
+VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlagBits image_aspect_mask)
 {
     VkImageView result{};
     VkImageViewCreateInfo view_info{};

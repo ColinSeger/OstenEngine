@@ -41,7 +41,7 @@ private:
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
 
-    VkBuffer index_buffer;//Look into how to merge into vertex buffer
+    VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
 
     std::vector<VkBuffer> uniform_buffers;
@@ -51,12 +51,19 @@ private:
     VkDescriptorPool descriptor_pool;
     std::vector<VkDescriptorSet> descriptor_sets;
 
+    //TODO check if these even need to be vector
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    VkImageView image_view;//Temporary way to access image
-    VkSampler texture_sampler;//Temporary way to access sampler
+    VkImageView image_view;//TODO Temporary way to access image
+    VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+    //TODO move out of class
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView depth_image_view;
+    //
 
     uint8_t current_frame = 0;
 
@@ -77,6 +84,8 @@ private:
     void update_uniform_buffer(uint8_t current_image);
 
     void create_descriptor_sets(std::vector<VkDescriptorSet>& result, VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
+
+    void create_depth_resources();
 
 public:
     RenderPipeline(const int width, const int height, const char* application_name);

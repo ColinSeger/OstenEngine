@@ -305,15 +305,17 @@ void RenderPipeline::restart_swap_chain()
         swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
         create_render_pass();
     }
-
-    swap_chain->create_frame_buffers(render_pass);
-    swap_chain->create_command_pool(device->get_physical_device());
     
+    swap_chain->create_command_pool(device->get_physical_device());
+
+    create_depth_resources();
+    swap_chain->create_frame_buffers(render_pass, depth_image_view);
+
     VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
     VkImage image_test = Texture::create_texture_image(device, "src/renderer/texture/debug_texture.jpg", swap_chain->get_command_pool());
     
-    image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB);
+    image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
     swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
 }
@@ -427,7 +429,18 @@ void RenderPipeline::shader()
     rasterizer.depthBiasClamp = 0.0f; // Optional
     rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
-    //Currently disabled
+    VkPipelineDepthStencilStateCreateInfo depth_stencil{};
+    depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil.depthTestEnable = VK_TRUE;
+    depth_stencil.depthWriteEnable = VK_TRUE;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil.minDepthBounds = 0.0f; // Optional
+    depth_stencil.maxDepthBounds = 1.0f; // Optional
+    depth_stencil.stencilTestEnable = VK_FALSE;
+    depth_stencil.front = {}; // Optional
+    depth_stencil.back = {}; // Optional
+
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
@@ -468,7 +481,7 @@ void RenderPipeline::shader()
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisampling;
-    pipeline_info.pDepthStencilState = nullptr; // Optional
+    pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = &dynamic_state;
     pipeline_info.layout = pipeline_layout;
@@ -491,10 +504,10 @@ void RenderPipeline::create_render_pass()
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     VkAttachmentDescription color_attachment{};
     color_attachment.format = swap_chain->get_image_format();
@@ -510,15 +523,33 @@ void RenderPipeline::create_render_pass()
     color_attachment_ref.attachment = 0;
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+
+    VkAttachmentDescription depth_attachment{};
+    depth_attachment.format = VK_FORMAT_D32_SFLOAT;//TODO MAKE find depth format
+    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depth_attachment_ref{};
+    depth_attachment_ref.attachment = 1;
+    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_ref;
+    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
 
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = 1;
-    render_pass_info.pAttachments = &color_attachment;
+    render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
+    render_pass_info.pAttachments = description_attachments;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
     render_pass_info.dependencyCount = 1;
@@ -546,7 +577,21 @@ void RenderPipeline::create_sync_objects()
         assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
         assert(vkCreateFence(device->get_virtual_device(), &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
     }
-    
+}
 
-    
+void RenderPipeline::create_depth_resources()
+{
+    VkFormat depth_formating = VK_FORMAT_D32_SFLOAT;//TODO make a thing that searches for format
+    ImageSize image_size{
+        swap_chain->get_extent().width,
+        swap_chain->get_extent().height
+    };
+    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
+
+
+
+    depth_image_view = Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+
+    Texture::transition_image_layout(depth_image, depth_formating, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, device, swap_chain->get_command_pool());
 }

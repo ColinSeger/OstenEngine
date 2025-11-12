@@ -177,19 +177,20 @@ void SwapChain::record_command_buffer(VkCommandBuffer& command_buffer)
     
 }
 
-void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
+void SwapChain::create_frame_buffers(VkRenderPass& render_pass, VkImageView depth_image_view)
 {
     swap_chain_framebuffers.resize(swap_chain_image_view.size());
 
     for (size_t i = 0; i < swap_chain_image_view.size(); i++) {
-        VkImageView attachments[] = {
-            swap_chain_image_view[i]
+        VkImageView attachments[2] = {
+            swap_chain_image_view[i],
+            depth_image_view
         };
 
         VkFramebufferCreateInfo framebuffer_info{};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_info.renderPass = render_pass;
-        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.attachmentCount = sizeof(attachments) / sizeof(attachments[1]);
         framebuffer_info.pAttachments = attachments;
         framebuffer_info.width = screen_extent.width;
         framebuffer_info.height = screen_extent.height;
@@ -201,6 +202,7 @@ void SwapChain::create_frame_buffers(VkRenderPass& render_pass)
 
 void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass)
 {
+    
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -209,9 +211,12 @@ void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t imag
     render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent = screen_extent;
 
-    VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    render_pass_info.clearValueCount = 1;
-    render_pass_info.pClearValues = &clear_color;
+    VkClearValue clear_values[2]{};
+    clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
+
+    render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
+    render_pass_info.pClearValues = clear_values;
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 

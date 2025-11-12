@@ -11,6 +11,7 @@ struct TextureImage
     VkDeviceMemory texture_image_memory;
 };
 
+/// @brief Width Height
 struct ImageSize
 {
     uint32_t width;
@@ -38,7 +39,7 @@ namespace Texture
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool);
 
-    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format);
+    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlagBits image_aspect_mask);
 
     VkSampler create_texture_sampler(Device* device);
 }
