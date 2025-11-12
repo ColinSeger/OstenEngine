@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Vulkan REQUIRED)
+find_package(X11 REQUIRED)
 # find_package(imgui)
 
 
@@ -15,7 +16,7 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(external/glfw-3.4)
+add_subdirectory(external/glfw)
 
 add_subdirectory(external/glm)
 # target_include_directories(external/imgui)
@@ -53,4 +54,5 @@ target_link_libraries(${PROJECT_NAME}
     glm::glm
     PUBLIC
     imgui
+    X11
     )

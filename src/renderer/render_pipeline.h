@@ -6,8 +6,8 @@
 #include <chrono>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
-#include "../../../external/imgui/backends/imgui_impl_glfw.h"
-#include "../../../external/imgui/backends/imgui_impl_vulkan.h"
+#include "../../external/imgui/backends/imgui_impl_glfw.h"
+#include "../../external/imgui/backends/imgui_impl_vulkan.h"
 #include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"

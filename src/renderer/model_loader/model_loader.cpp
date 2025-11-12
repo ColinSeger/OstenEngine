@@ -1,6 +1,6 @@
 #include "model_loader.h"
 
-
+/*
 std::vector<Vertex> model_loader::load_model(const char* model_path)
 {
     tinyobj::attrib_t attrib;
@@ -9,4 +9,4 @@ std::vector<Vertex> model_loader::load_model(const char* model_path)
     std::string err;
 
     assert(tinyobj::LoadObj(&attrib, &shapes, &materials, &err, model_path) == true);
-}
+}*/
