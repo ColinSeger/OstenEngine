@@ -74,13 +74,13 @@ public:
 
     void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
 
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, uint32_t index_amount, uint8_t frame);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 
     VkFormat get_image_format() const { return swap_chain_image_format; }
 
-    std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
+    // std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
 
     
     VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }

@@ -215,7 +215,7 @@ void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t imag
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, uint32_t index_amount, uint8_t frame)
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 

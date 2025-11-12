@@ -97,4 +97,6 @@ public:
     VkSurfaceKHR& get_surface() { return surface; }
 
     SwapChain* get_swap_chain() { return swap_chain; }
+
+    bool spin_direction;
 };

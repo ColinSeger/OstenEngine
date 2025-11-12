@@ -101,7 +101,18 @@ void Application::main_game_loop()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::ShowDemoWindow(&test);
+        ImGuiWindowFlags window_flags = 0;
+        ImGui::Begin("My Thing", &test, window_flags);
+        ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
+        ImGui::Spacing();
+        if(ImGui::Button("Swap Spin"))
+        {
+            render_pipeline->spin_direction = !render_pipeline->spin_direction;
+        }
+
+        ImGui::End();
+
+        // ImGui::ShowDemoWindow(&test);
 
         ImGui::Render();
         // ImDrawData* main_draw_data = ImGui::GetDrawData();

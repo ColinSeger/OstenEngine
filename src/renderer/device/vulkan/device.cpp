@@ -63,6 +63,9 @@ bool Device::is_device_suitable(VkPhysicalDevice device)//Can improve later
         SwapChainSupportDetails swap_chain_support = Setup::find_swap_chain_support(device, surface);
         has_swap_chain_support = DeviceHelperFunctions::is_completed(swap_chain_support);
     }
+
+    // VkPhysicalDeviceFeatures supported_features;
+    // vkGetPhysicalDeviceFeatures(physical_device, &supported_features);
     
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
@@ -108,6 +111,7 @@ void Device::create_virtual_device(bool enable_validation)
     // queue_create_info.pQueuePriorities = &queuePriority;
 
     VkPhysicalDeviceFeatures device_features{};
+    device_features.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

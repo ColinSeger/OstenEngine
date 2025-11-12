@@ -71,17 +71,10 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    
-
     assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
     
     shader();
 
-   
-
-    // swap_chain->create_frame_buffers(render_pass);
-    // swap_chain->create_command_pool(device->get_physical_device());
-    // swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
     create_sync_objects();
 }
 
@@ -151,12 +144,17 @@ void RenderPipeline::draw_frame()
     swap_chain->record_command_buffer(command_buffer);
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
+
     RenderBuffer render_buffer = {
         vertex_buffer,
         index_buffer
     };
+
     swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets, render_buffer, static_cast<uint32_t>(vertices.size()), static_cast<uint32_t>(indices.size()), current_frame);
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
+
+    
     VkSubmitInfo submit_info{};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -199,13 +197,19 @@ void RenderPipeline::draw_frame()
 }
 
 void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
+    float direction = 90.f;
+
+    if(spin_direction){
+        direction = -90;
+    }
+
     static auto start_time = std::chrono::high_resolution_clock::now();
 
     auto current_time = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(direction), glm::vec3(0.0f, 0.0f, 1.0f));
 
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 10.0f);
