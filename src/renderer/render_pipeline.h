@@ -13,6 +13,7 @@
 #include "swap_chain/vulkan/swap_chain.h"
 #include "render_data/vulkan/render_data.h"
 #include "texture/vulkan/texture.h"
+#include "model_loader/model_loader.h"
 
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -65,6 +66,9 @@ private:
     VkImageView depth_image_view;
     //
 
+    std::vector<Vertex> vertices;//TODO make better
+    std::vector<uint32_t> indices;
+
     uint8_t current_frame = 0;
 
     //std::vector<char> load_shader(const std::string& file_name);
@@ -108,4 +112,11 @@ public:
     SwapChain* get_swap_chain() { return swap_chain; }
 
     bool spin_direction;
+
+    float spin_x = 1;
+    float spin_y = 0;
+    float spin_z = 0;
+    float scale = 1;
+
+    float camera_thing[3] = {2.0f, 500.0f, 120.0f};
 };

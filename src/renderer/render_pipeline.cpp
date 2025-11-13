@@ -54,7 +54,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, enable_validation);
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
-
+    model_loader::load_model("assets/debug_assets/napoleon.obj", vertices, indices);
     restart_swap_chain();
 
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
@@ -207,12 +207,14 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
     auto current_time = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-
+    // time = 1;
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(direction), glm::vec3(0.0f, 0.0f, 1.0f));
+    // ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(direction), glm::vec3(-1.0f, 0.0f, 0.0f));
+    ubo.model = glm::rotate(glm::mat4(scale), time * glm::radians(direction), glm::vec3(spin_x, spin_y, spin_z));
+    // ubo.model = glm::translate(glm::mat4(scale), glm::vec3(spin_x, spin_y, spin_z));
 
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 10.0f);
+    ubo.view = glm::lookAt(glm::vec3(camera_thing[0], camera_thing[1], camera_thing[2]), glm::vec3(0.0f, 0.0f, 50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 2000.0f);
 
     ubo.proj[1][1] *= -1;
 
@@ -311,9 +313,9 @@ void RenderPipeline::restart_swap_chain()
     create_depth_resources();
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    VertexFunctions::create_vertex_buffer(device, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-    VertexFunctions::create_index_buffer(device, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/debug_texture.jpg", swap_chain->get_command_pool());
+    VertexFunctions::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+    VertexFunctions::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);

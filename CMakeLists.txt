@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Vulkan REQUIRED)
-find_package(X11 REQUIRED)
+#find_package(X11 REQUIRED)
 # find_package(imgui)
 
 
@@ -33,6 +33,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
 add_executable(${PROJECT_NAME} 
     main.cpp
+    src/renderer/model_loader/model_loader.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_vulkan.cpp
     src/application.cpp
@@ -42,7 +43,6 @@ add_executable(${PROJECT_NAME}
     src/renderer/render_data/vulkan/render_data.cpp
     src/renderer/render_pipeline.cpp
     src/renderer/texture/vulkan/texture.cpp
-    src/renderer/model_loader/model_loader.cpp
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
@@ -54,5 +54,5 @@ target_link_libraries(${PROJECT_NAME}
     glm::glm
     PUBLIC
     imgui
-    X11
+    #X11
     )

@@ -55,7 +55,7 @@ namespace VertexFunctions{
         vkBindBufferMemory(device->get_virtual_device(), buffer, buffer_memory, 0);
     }
 
-    void create_vertex_buffer(Device* device, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+    void create_vertex_buffer(Device* device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
     {
         VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
@@ -91,9 +91,9 @@ namespace VertexFunctions{
         vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
     }
 
-    void create_index_buffer(Device* device, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+    void create_index_buffer(Device* device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
     {
-        VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+        VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
 
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
@@ -109,7 +109,7 @@ namespace VertexFunctions{
 
         void* data;
         vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
-        std::memcpy(data, indices.data(), (size_t) buffer_size);
+        std::memcpy(data, indicies.data(), (size_t) buffer_size);
         vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
 
         create_buffer(
