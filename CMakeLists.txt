@@ -8,7 +8,9 @@ set(CMAKE_CXX_STANDARD 20)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Vulkan REQUIRED)
-#find_package(X11 REQUIRED)
+if (${UNIX})
+    find_package(X11 REQUIRED)
+endif (${UNIX})
 # find_package(imgui)
 
 
@@ -46,13 +48,23 @@ add_executable(${PROJECT_NAME}
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
+if (${UNIX})
+    target_link_libraries(${PROJECT_NAME} 
+        PRIVATE 
+        Vulkan::Vulkan 
+        glfw 
+        glm::glm
+        PUBLIC
+        imgui
+        X11
+        )    
+endif (${UNIX})
 
 target_link_libraries(${PROJECT_NAME} 
-    PRIVATE 
-    Vulkan::Vulkan 
-    glfw 
-    glm::glm
-    PUBLIC
-    imgui
-    #X11
-    )
+        PRIVATE 
+        Vulkan::Vulkan 
+        glfw 
+        glm::glm
+        PUBLIC
+        imgui
+        )  

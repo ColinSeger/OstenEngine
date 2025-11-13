@@ -60,3 +60,5 @@ Debug
 cmake_install.cmake
 
 OstenEngine
+
+assets/debug_asstes/napoleon.OBJ

@@ -1,7 +1,8 @@
 #pragma once
 #include <vector>
 #include <vulkan/vulkan.h>
-#include <cassert>
+#include <stdexcept>
+#include <unistd.h>
 #include "../render_data/vulkan/render_data.h"
 #include "../../../external/obj_loader/tiny_obj_loader.h"
 

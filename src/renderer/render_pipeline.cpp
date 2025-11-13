@@ -54,7 +54,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, enable_validation);
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
-    model_loader::load_model("assets/debug_assets/napoleon.obj", vertices, indices);
+    model_loader::load_model("/home/osten/Documents/SchoolProjects/GameEngine/assets/debug_assets/viking.obj", vertices, indices);
     restart_swap_chain();
 
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
@@ -229,7 +229,7 @@ void RenderPipeline::create_uniform_buffers() {
     uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VertexFunctions::create_buffer(
+        CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             bufferSize,  
@@ -313,9 +313,9 @@ void RenderPipeline::restart_swap_chain()
     create_depth_resources();
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    VertexFunctions::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-    VertexFunctions::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
+    CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+    CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "/home/osten/Documents/SchoolProjects/GameEngineassets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);

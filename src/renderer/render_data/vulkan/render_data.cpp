@@ -32,115 +32,6 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
 
 namespace VertexFunctions{
 
-    void create_buffer(Device* device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
-    {
-        VkBufferCreateInfo buffer_info{};
-        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_info.size = size;
-        buffer_info.usage = usage;
-        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        assert(vkCreateBuffer(device->get_virtual_device(), &buffer_info, nullptr, &buffer) == VK_SUCCESS && "Buffer Creation Failed");
-
-        VkMemoryRequirements memory_requirements;
-        vkGetBufferMemoryRequirements(device->get_virtual_device(), buffer, &memory_requirements);
-
-        VkMemoryAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = memory_requirements.size;
-        alloc_info.memoryTypeIndex = find_memory_type(device->get_physical_device(), memory_requirements.memoryTypeBits, properties);
-
-        assert(vkAllocateMemory(device->get_virtual_device(), &alloc_info, nullptr, &buffer_memory) == VK_SUCCESS && "Buffer Memory Allocation Failed");
-
-        vkBindBufferMemory(device->get_virtual_device(), buffer, buffer_memory, 0);
-    }
-
-    void create_vertex_buffer(Device* device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
-    {
-        VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
-
-        VkBuffer staging_buffer;
-        VkDeviceMemory staging_buffer_memory;
-
-        create_buffer(
-            device,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            buffer_size,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            staging_buffer, 
-            staging_buffer_memory
-        );
-
-        void* data;
-        vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
-        std::memcpy(data, vertices.data(), (size_t) buffer_size);
-        vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
-
-        create_buffer(
-            device,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            buffer_size,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            vertex_buffer, 
-            vertex_buffer_memory
-        );
-
-        CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
-
-        vkDestroyBuffer(device->get_virtual_device(),staging_buffer, nullptr);
-        vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
-    }
-
-    void create_index_buffer(Device* device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
-    {
-        VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
-
-        VkBuffer staging_buffer;
-        VkDeviceMemory staging_buffer_memory;
-
-        create_buffer(
-            device,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            buffer_size,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            staging_buffer, 
-            staging_buffer_memory
-        );
-
-        void* data;
-        vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
-        std::memcpy(data, indicies.data(), (size_t) buffer_size);
-        vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
-
-        create_buffer(
-            device,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            buffer_size,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            index_buffer, 
-            index_buffer_memory
-        );
-
-        CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
-
-        vkDestroyBuffer(device->get_virtual_device(), staging_buffer, nullptr);
-        vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
-    }
-
-    uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties) 
-    {
-        VkPhysicalDeviceMemoryProperties mem_properties;
-        vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
-
-        for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
-            if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-        assert(false && "failed to find suitable memory type!");
-    }
-
     inline VkVertexInputBindingDescription get_binding_description()
     {
         VkVertexInputBindingDescription binding_description{};
@@ -205,6 +96,20 @@ void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandP
     vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
 }
 
+uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties) 
+{
+    VkPhysicalDeviceMemoryProperties mem_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
+
+    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+        if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    assert(false && "failed to find suitable memory type!");
+}
+
 void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = begin_single_time_commands(device->get_virtual_device(), command_pool);
@@ -218,4 +123,99 @@ void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& 
     vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
     end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
+}
+
+void CommandBuffer::create_buffer(Device* device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
+{
+    VkBufferCreateInfo buffer_info{};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = size;
+    buffer_info.usage = usage;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    assert(vkCreateBuffer(device->get_virtual_device(), &buffer_info, nullptr, &buffer) == VK_SUCCESS && "Buffer Creation Failed");
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device->get_virtual_device(), buffer, &memory_requirements);
+
+    VkMemoryAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = memory_requirements.size;
+    alloc_info.memoryTypeIndex = find_memory_type(device->get_physical_device(), memory_requirements.memoryTypeBits, properties);
+
+    assert(vkAllocateMemory(device->get_virtual_device(), &alloc_info, nullptr, &buffer_memory) == VK_SUCCESS && "Buffer Memory Allocation Failed");
+
+    vkBindBufferMemory(device->get_virtual_device(), buffer, buffer_memory, 0);
+}
+
+void CommandBuffer::create_vertex_buffer(Device* device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+{
+    VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+
+    create_buffer(
+        device,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        buffer_size,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        staging_buffer, 
+        staging_buffer_memory
+    );
+
+    void* data;
+    vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
+    std::memcpy(data, vertices.data(), (size_t) buffer_size);
+    vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
+
+    create_buffer(
+        device,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        buffer_size,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        vertex_buffer, 
+        vertex_buffer_memory
+    );
+
+    CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
+
+    vkDestroyBuffer(device->get_virtual_device(),staging_buffer, nullptr);
+    vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
+}
+
+void CommandBuffer::create_index_buffer(Device* device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+{
+    VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+
+    create_buffer(
+        device,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        buffer_size,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        staging_buffer, 
+        staging_buffer_memory
+    );
+
+    void* data;
+    vkMapMemory(device->get_virtual_device(), staging_buffer_memory, 0, buffer_size, 0, &data);
+    std::memcpy(data, indicies.data(), (size_t) buffer_size);
+    vkUnmapMemory(device->get_virtual_device(), staging_buffer_memory);
+
+    create_buffer(
+        device,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        buffer_size,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        index_buffer, 
+        index_buffer_memory
+    );
+
+    CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
+
+    vkDestroyBuffer(device->get_virtual_device(), staging_buffer, nullptr);
+    vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
 }

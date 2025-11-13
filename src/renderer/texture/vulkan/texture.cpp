@@ -16,7 +16,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
 
-    VertexFunctions::create_buffer(
+    CommandBuffer::create_buffer(
         device, 
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         image_size,
@@ -94,7 +94,7 @@ void Texture::create_image( Device* device,
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = memory_requirements.size;
-    alloc_info.memoryTypeIndex = VertexFunctions::find_memory_type(device->get_physical_device() ,memory_requirements.memoryTypeBits, property_flags);
+    alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device->get_physical_device() ,memory_requirements.memoryTypeBits, property_flags);
 
     assert(vkAllocateMemory(device->get_virtual_device(), &alloc_info, nullptr, &image_memory) == VK_SUCCESS);
 
