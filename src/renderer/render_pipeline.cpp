@@ -315,7 +315,7 @@ void RenderPipeline::restart_swap_chain()
 
     CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    VkImage image_test = Texture::create_texture_image(device, "/home/osten/Documents/SchoolProjects/GameEngineassets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "/home/osten/Documents/SchoolProjects/GameEngine/assets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
@@ -577,17 +577,15 @@ void RenderPipeline::create_sync_objects()
 
 void RenderPipeline::create_depth_resources()
 {
-    VkFormat depth_formating = VK_FORMAT_D32_SFLOAT;//TODO make a thing that searches for format
+    VkFormat depth_formating = Texture::find_depth_formats(device->get_physical_device());//TODO make a thing that searches for format
     ImageSize image_size{
         swap_chain->get_extent().width,
         swap_chain->get_extent().height
     };
     Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
 
-
-
     depth_image_view = Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 
-    Texture::transition_image_layout(depth_image, depth_formating, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, device, swap_chain->get_command_pool());
+    //Texture::transition_image_layout(depth_image, depth_formating, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, device, swap_chain->get_command_pool());
 }

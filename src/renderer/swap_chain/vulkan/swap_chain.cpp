@@ -40,15 +40,13 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     }
 
     create_info.preTransform = swap_chain_support.surface_capabilities.currentTransform;
-
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-
     create_info.presentMode = present_mode;
     create_info.clipped = VK_TRUE;
 
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain2");
+    assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain");
 
     vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, nullptr);
     swap_chain_images.resize(image_amount);
@@ -265,7 +263,6 @@ namespace Setup
 
         std::vector<VkQueueFamilyProperties> queue_families(queue_family_amount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families.data());
-
         
 
         int index = 0;

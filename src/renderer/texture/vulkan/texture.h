@@ -1,5 +1,6 @@
 #pragma once
-#include <cassert>
+#include <filesystem>
+#include <stdexcept>
 #include <vulkan/vulkan.h>
 #include "../../device/vulkan/device.h"
 #include "../../render_data/vulkan/render_data.h"
@@ -41,7 +42,10 @@ namespace Texture
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool);
 
-    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlagBits image_aspect_mask);
+    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag);
 
     VkSampler create_texture_sampler(Device* device);
+    VkFormat find_depth_formats(VkPhysicalDevice physical_device);
+
+    VkFormat find_supported_texture_formats(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device);
 }

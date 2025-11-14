@@ -118,5 +118,5 @@ public:
     float spin_z = 0;
     float scale = 1;
 
-    float camera_thing[3] = {2.0f, 500.0f, 120.0f};
+    float camera_thing[3] = {2.0f, 100.0f, 20.0f};
 };
