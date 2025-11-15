@@ -144,8 +144,8 @@ void RenderPipeline::draw_frame()
     swap_chain->record_command_buffer(command_buffer);
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
-
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, graphics_pipeline);
 
     RenderBuffer render_buffer = {
         vertex_buffer,

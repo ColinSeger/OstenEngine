@@ -22,11 +22,12 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
 
-    ImGui_ImplVulkanH_Window g_MainWindowData;
+    ImGui_ImplVulkanH_Window g_MainWindowData {};
     VkPhysicalDevice physical_device = render_pipeline->get_device()->get_physical_device();
     VkDevice virtual_device = render_pipeline->get_device()->get_virtual_device();
-    VkQueue g_Queue = VK_NULL_HANDLE;
-    uint32_t g_QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(physical_device);
+    //VkQueue g_Queue = VK_NULL_HANDLE;
+    uint32_t g_QueueFamily = Setup::find_queue_families(render_pipeline->get_device()->get_physical_device(), render_pipeline->get_surface()).present_family.value();
+    //Setup::find_queue_families(render_pipeline->get_device()->get_physical_device(), render_pipeline->get_surface());
     int w, h;
     glfwGetFramebufferSize(main_window, &w, &h);
     ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
@@ -42,7 +43,7 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     int width, height;
     glfwGetFramebufferSize(main_window, &width, &height);
 
-    ImGui_ImplVulkanH_CreateOrResizeWindow(render_pipeline->get_instance(), physical_device, virtual_device, wd, g_QueueFamily, nullptr, width, height, MAX_FRAMES_IN_FLIGHT, 0);
+    //ImGui_ImplVulkanH_CreateOrResizeWindow(render_pipeline->get_instance(), physical_device, virtual_device, wd, g_QueueFamily, nullptr, width, height, MAX_FRAMES_IN_FLIGHT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     
 
@@ -55,12 +56,12 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     
     init_info.QueueFamily = g_QueueFamily;
 
-    vkGetDeviceQueue(virtual_device, g_QueueFamily, 0, &g_Queue);
-    init_info.Queue = g_Queue;
+    //vkGetDeviceQueue(virtual_device, g_QueueFamily, 0, &g_Queue);
+    init_info.Queue = render_pipeline->get_device()->get_present_queue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = render_pipeline->get_descriptor_pool();
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = wd->ImageCount;
+    init_info.ImageCount = 2;
     init_info.Allocator = nullptr;
     init_info.PipelineInfoMain.RenderPass = wd->RenderPass;
     init_info.PipelineInfoMain.Subpass = 0;
@@ -127,7 +128,6 @@ void Application::main_game_loop()
 
         // ImGui::ShowDemoWindow(&test);
 
-        ImGui::Render();
         // ImDrawData* main_draw_data = ImGui::GetDrawData();
         
         render_pipeline->draw_frame();
