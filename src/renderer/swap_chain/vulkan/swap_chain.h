@@ -45,7 +45,7 @@ private:
 
     VkCommandPool command_pool;
 
-    std::vector<VkCommandBuffer> command_buffers;
+    // std::vector<VkCommandBuffer> command_buffers;
 
     std::vector<VkImage> swap_chain_images;
 
@@ -72,8 +72,6 @@ public:
 
     void create_command_buffer(const uint8_t MAX_FRAMES_IN_FLIGHT);
 
-    void record_command_buffer(VkCommandBuffer& command_buffer);
-
     void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
 
     void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame);
@@ -85,7 +83,7 @@ public:
     // std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
 
     
-    VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }
+    // VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }
 
     VkSwapchainKHR& get_swap_chain() { return swap_chain; }
 

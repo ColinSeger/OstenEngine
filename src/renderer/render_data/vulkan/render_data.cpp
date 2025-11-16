@@ -219,3 +219,28 @@ void CommandBuffer::create_index_buffer(Device* device, std::vector<uint32_t>& i
     vkDestroyBuffer(device->get_virtual_device(), staging_buffer, nullptr);
     vkFreeMemory(device->get_virtual_device(), staging_buffer_memory, nullptr);
 }
+
+
+void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
+{
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = 0; // Optional
+    begin_info.pInheritanceInfo = nullptr; // Optional
+
+    assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS && "Failed at recording command buffer");
+}
+
+//Can probably make this a array
+void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT)
+{
+    command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+    VkCommandBufferAllocateInfo allocation_info{};
+    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocation_info.commandPool = command_pool;
+    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocation_info.commandBufferCount = command_buffers.size();
+
+    assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data()) == VK_SUCCESS);
+}

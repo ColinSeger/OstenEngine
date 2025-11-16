@@ -60,6 +60,7 @@ private:
     VkImage depth_image;
     VkDeviceMemory depth_image_memory;
     VkImageView depth_image_view;
+    std::vector<VkCommandBuffer> command_buffers;
     //
 
     std::vector<Vertex> vertices;//TODO make better

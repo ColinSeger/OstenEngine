@@ -76,4 +76,8 @@ namespace CommandBuffer
     void create_vertex_buffer(Device* device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool);
 
     void create_index_buffer(Device* device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool);
+
+    void record_command_buffer(VkCommandBuffer& command_buffer);
+
+    void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT);
 }

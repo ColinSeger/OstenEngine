@@ -1,8 +1,8 @@
-﻿  Building Custom Rule C:/Tasks/Engine/Engine/CMakeLists.txt
+﻿  Building Custom Rule C:/Users/colin/Documents/Project/OstenEngine/GameEngine/CMakeLists.txt
   imgui.cpp
   imgui_demo.cpp
   imgui_draw.cpp
   imgui_tables.cpp
   imgui_widgets.cpp
   Generating Code...
-  imgui.vcxproj -> C:\Tasks\Engine\Engine\Release\imgui.lib
+  imgui.vcxproj -> C:\Users\colin\Documents\Project\OstenEngine\GameEngine\Release\imgui.lib

@@ -137,10 +137,10 @@ void RenderPipeline::draw_frame()
     
     vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
 
-    vkResetCommandBuffer(swap_chain->get_command_buffer(current_frame), 0);
+    vkResetCommandBuffer(command_buffers[current_frame], 0);
 
-    VkCommandBuffer command_buffer = swap_chain->get_command_buffer(current_frame);
-    swap_chain->record_command_buffer(command_buffer);
+    VkCommandBuffer command_buffer = command_buffers[current_frame];
+    CommandBuffer::record_command_buffer(command_buffer);
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
 
@@ -161,7 +161,7 @@ void RenderPipeline::draw_frame()
     submit_info.pWaitSemaphores = wait_semaphores;
     submit_info.pWaitDstStageMask = wait_stages;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &swap_chain->get_command_buffer(current_frame);
+    submit_info.pCommandBuffers = &command_buffers[current_frame];
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
@@ -190,7 +190,6 @@ void RenderPipeline::draw_frame()
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-    vkQueueWaitIdle(device->get_graphics_queue());
 }
 
 void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
@@ -316,7 +315,9 @@ void RenderPipeline::restart_swap_chain()
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
-    swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
+    //swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
+
+    CommandBuffer::create_command_buffers(command_buffers, device->get_virtual_device(), swap_chain->get_command_pool(), MAX_FRAMES_IN_FLIGHT);
 }
 
 std::vector<char> load_shader(const std::string& file_name)
