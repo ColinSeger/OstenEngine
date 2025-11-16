@@ -63,7 +63,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
         CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
         CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
     }
-    
+
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
 
     create_uniform_buffers();
@@ -320,12 +320,15 @@ void RenderPipeline::restart_swap_chain()
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(device->get_virtual_device());
+    auto swap_chain_support = Setup::find_swap_chain_support(device->get_physical_device(), surface);
+        VkExtent2D screen_extent = Setup::select_swap_chain_extent(swap_chain_support.surface_capabilities, main_window);
     if(swap_chain){
         delete swap_chain;
-        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+        
+        swap_chain = new SwapChain(device->get_physical_device(), surface, device->get_virtual_device(), screen_extent);
 
     }else{
-        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+        swap_chain = new SwapChain(device->get_physical_device(), surface, device->get_virtual_device(), screen_extent);
         create_render_pass();
     }
     

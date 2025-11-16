@@ -1,12 +1,11 @@
 #include "swap_chain.h"
 
-SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device) : main_window { window }, surface { surface_reference }, virtual_device { virtual_device }
+SwapChain::SwapChain(VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device, VkExtent2D extent) : surface { surface_reference }, virtual_device { virtual_device }
 {
     SwapChainSupportDetails swap_chain_support = Setup::find_swap_chain_support(physical_device, surface);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
-    screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities);
 
     swap_chain_image_format = surface_format.format;
 
@@ -22,7 +21,7 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
     create_info.minImageCount = image_amount;
     create_info.imageFormat = surface_format.format;
     create_info.imageColorSpace = surface_format.colorSpace;
-    create_info.imageExtent = screen_extent;
+    create_info.imageExtent = extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -79,13 +78,13 @@ VkSurfaceFormatKHR SwapChain::select_swap_surface_format(const std::vector<VkSur
     return available_formats[0];
 }
 
-VkExtent2D SwapChain::select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities) {
+VkExtent2D Setup::select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities, GLFWwindow* window) {
     
     if (surface_capabilities.currentExtent.width != UINT32_MAX) {
         return surface_capabilities.currentExtent;
     } else {
         int width, height;
-        glfwGetFramebufferSize(main_window, &width, &height);
+        glfwGetFramebufferSize(window, &width, &height);
 
         VkExtent2D actual_extent = {
             static_cast<uint32_t>(width),

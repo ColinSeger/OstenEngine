@@ -101,6 +101,7 @@ void Application::main_game_loop()
 
     //render_pipeline->draw_model(render_this);
 
+    
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
@@ -116,6 +117,16 @@ void Application::main_game_loop()
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGui::DockSpaceOverViewport();
+
+        ImGui::Begin("GameViewPort");
+            ImGui::BeginChild("GameRender");
+
+            ImVec2 wsize = ImGui::GetWindowSize();
+
+            //ImGui::Image((ImTextureID)tex, wsize, ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::EndChild();
+        ImGui::End();
 
         ImGuiWindowFlags window_flags = 0;
         ImGui::Begin("My Thing", &test, window_flags);

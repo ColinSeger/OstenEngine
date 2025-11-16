@@ -36,8 +36,6 @@ private:
     VkExtent2D screen_extent;
 
     VkFormat swap_chain_image_format;
-
-    GLFWwindow* main_window = nullptr;
     
     VkSurfaceKHR& surface;
 
@@ -45,15 +43,13 @@ private:
 
     VkCommandPool command_pool;
 
-    // std::vector<VkCommandBuffer> command_buffers;
-
     std::vector<VkImage> swap_chain_images;
 
     std::vector<VkImageView> swap_chain_image_view;
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
 
-    VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites);
+    //VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 
     VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
@@ -63,7 +59,7 @@ private:
     
 public:
 
-    SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device);
+    SwapChain(VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device, VkExtent2D extent);
     ~SwapChain();
 
     void create_frame_buffers(VkRenderPass& render_pass, VkImageView depth_image_view);
@@ -95,4 +91,6 @@ namespace Setup
     SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface);
 
     QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface);
+
+    VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 };
