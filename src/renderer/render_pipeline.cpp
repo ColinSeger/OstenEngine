@@ -46,17 +46,24 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     #else
         const bool enable_validation = true;
     #endif
-    
 
     instance = Instance::create_instance(application_name, enable_validation);
 
     assert(glfwCreateWindowSurface(instance, main_window, nullptr, &surface) == VK_SUCCESS);
 
     device = new Device(instance, surface, enable_validation);
-    // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+
     model_loader::load_model("C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking.obj", vertices, indices);
+
+    
+
     restart_swap_chain();
 
+    if(indices.size() > 0){
+        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    }
+    
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
 
     create_uniform_buffers();
@@ -120,10 +127,27 @@ void RenderPipeline::cleanup()
     glfwTerminate();
 }
 
+void RenderPipeline::draw_model(Renderable to_draw)
+{
+    
+    model_loader::load_model(to_draw.mesh_location, vertices, indices);
+    
+    if(indices.size() > 0){
+        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    }
+/**/
+    VkImage image_test = Texture::create_texture_image(device, to_draw.texture_location, swap_chain->get_command_pool());
+    
+    image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    texture_sampler = Texture::create_texture_sampler(device);
+    create_descriptor_sets(descriptor_sets, descriptor_pool, device->get_virtual_device(), descriptor_set_layout);
+}
+
 void RenderPipeline::draw_frame()
 {
     vkWaitForFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
-
+    
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
@@ -133,6 +157,7 @@ void RenderPipeline::draw_frame()
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+
     update_uniform_buffer(current_frame);
     
     vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
@@ -309,13 +334,20 @@ void RenderPipeline::restart_swap_chain()
     create_depth_resources();
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-    CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    //if(indices.size() > 0){
+    //    CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
+    //    CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+    //}
+
     VkImage image_test = Texture::create_texture_image(device, "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
-    
+
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
-    //swap_chain->create_command_buffer(MAX_FRAMES_IN_FLIGHT);
+/**/
+    //VkImage image_test = Texture::create_texture_image(device, "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
+    
+    //image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    //texture_sampler = Texture::create_texture_sampler(device);
 
     CommandBuffer::create_command_buffers(command_buffers, device->get_virtual_device(), swap_chain->get_command_pool(), MAX_FRAMES_IN_FLIGHT);
 }
@@ -456,15 +488,15 @@ void RenderPipeline::shader()
     color_blending.attachmentCount = 1;
     color_blending.pAttachments = &color_blend_attachment;
 
-    const std::vector<VkDynamicState> dynamic_states = {
+    const VkDynamicState dynamic_states[] = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
 
     VkPipelineDynamicStateCreateInfo dynamic_state{};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-    dynamic_state.pDynamicStates = dynamic_states.data();
+    dynamic_state.dynamicStateCount = sizeof(dynamic_states) / sizeof(dynamic_states[0]);
+    dynamic_state.pDynamicStates = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipeline_info{};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -575,6 +607,7 @@ void RenderPipeline::create_sync_objects()
 
 void RenderPipeline::create_depth_resources()
 {
+    VkImage depth_image;
     VkFormat depth_formating = Texture::find_depth_formats(device->get_physical_device());//TODO make a thing that searches for format
     ImageSize image_size{
         swap_chain->get_extent().width,
@@ -583,7 +616,4 @@ void RenderPipeline::create_depth_resources()
     Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
 
     depth_image_view = Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-
-    //Texture::transition_image_layout(depth_image, depth_formating, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, device, swap_chain->get_command_pool());
 }

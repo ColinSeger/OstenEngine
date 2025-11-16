@@ -206,7 +206,7 @@ void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t imag
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame)
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer& render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -227,13 +227,16 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
     
     VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+    if(index_amount > 0){
+       vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-    vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set[frame], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set[frame], 0, nullptr);
 
-    vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0); 
+    }
+    
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);

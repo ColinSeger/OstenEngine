@@ -12,6 +12,7 @@
 #include "render_data/vulkan/render_data.h"
 #include "texture/vulkan/texture.h"
 #include "model_loader/model_loader.h"
+#include "renderable.h"
 
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -57,18 +58,16 @@ private:
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
     //TODO move out of class
-    VkImage depth_image;
-    VkDeviceMemory depth_image_memory;
-    VkImageView depth_image_view;
+    VkDeviceMemory  depth_image_memory;
+    VkImageView     depth_image_view;
     std::vector<VkCommandBuffer> command_buffers;
     //
 
-    std::vector<Vertex> vertices;//TODO make better
-    std::vector<uint32_t> indices;
+    std::vector<Vertex>     vertices;//TODO make better
+    std::vector<uint32_t>   indices;
+    std::vector<Renderable> to_render;
 
     uint8_t current_frame = 0;
-
-    //std::vector<char> load_shader(const std::string& file_name);
 
     VkShaderModule create_shader(const std::vector<char>& code);
 
@@ -118,4 +117,6 @@ public:
     float camera_thing[3] = {2, 2, 2};
 
     VkRenderPass render_pass;
+
+    void draw_model(Renderable to_render);
 };

@@ -93,6 +93,15 @@ void Application::main_game_loop()
     bool test = true;
     static auto start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
+
+
+    Renderable render_this;
+    render_this.mesh_location = "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking.obj";
+    render_this.texture_location = "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png";
+
+    //render_pipeline->draw_model(render_this);
+
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
         // render_pipeline->draw_frame();
