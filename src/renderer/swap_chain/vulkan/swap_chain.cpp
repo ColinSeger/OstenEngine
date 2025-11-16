@@ -247,6 +247,9 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
 
     vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0);
 
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, pipeline);
+
     vkCmdEndRenderPass(command_buffer);
 
     assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);

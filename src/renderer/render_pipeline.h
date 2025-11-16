@@ -6,8 +6,6 @@
 #include <chrono>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
-#include "../../external/imgui/backends/imgui_impl_glfw.h"
-#include "../../external/imgui/backends/imgui_impl_vulkan.h"
 #include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"
@@ -29,8 +27,6 @@ private:
     Device* device = nullptr;
 
     SwapChain* swap_chain = nullptr;
-
-    VkRenderPass render_pass;
 
     VkDescriptorSetLayout descriptor_set_layout;
     VkPipelineLayout pipeline_layout;
@@ -113,10 +109,12 @@ public:
 
     bool spin_direction;
 
-    float spin_x = 1;
+    float spin_x = 0;
     float spin_y = 0;
-    float spin_z = 0;
+    float spin_z = 1;
     float scale = 1;
 
-    float camera_thing[3] = {2.0f, 100.0f, 20.0f};
+    float camera_thing[3] = {2, 2, 2};
+
+    VkRenderPass render_pass;
 };

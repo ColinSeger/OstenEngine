@@ -5,7 +5,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
     VkDescriptorPoolSize pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_SAMPLER,                1000},
-    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE},
     {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000},
     {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000},
     {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000},
@@ -14,7 +14,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000},
     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
     {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000}
+    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000},
 };
     // VkDescriptorPool result;
     // VkDescriptorPoolSize pool_size{};
@@ -54,7 +54,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, enable_validation);
     // swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
-    model_loader::load_model("/home/osten/Documents/SchoolProjects/GameEngine/assets/debug_assets/viking.obj", vertices, indices);
+    model_loader::load_model("C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking.obj", vertices, indices);
     restart_swap_chain();
 
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
@@ -123,7 +123,6 @@ void RenderPipeline::cleanup()
 void RenderPipeline::draw_frame()
 {
     vkWaitForFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
-    
 
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
@@ -144,8 +143,6 @@ void RenderPipeline::draw_frame()
     swap_chain->record_command_buffer(command_buffer);
 
     swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, graphics_pipeline);
 
     RenderBuffer render_buffer = {
         vertex_buffer,
@@ -154,36 +151,35 @@ void RenderPipeline::draw_frame()
 
     swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets, render_buffer, static_cast<uint32_t>(vertices.size()), static_cast<uint32_t>(indices.size()), current_frame);
 
-    
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
     VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame]};
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = wait_semaphores;
     submit_info.pWaitDstStageMask = wait_stages;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &swap_chain->get_command_buffer(current_frame);
-
-    VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame]};
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    assert(vkQueueSubmit(device->get_graphics_queue(), 1, &submit_info, in_flight_fences[current_frame]) == VK_SUCCESS);
+    VkResult queue_result = vkQueueSubmit(device->get_graphics_queue(), 1, &submit_info, in_flight_fences[current_frame]);
 
+    assert(queue_result == VK_SUCCESS);
+
+    VkSwapchainKHR swap_chains[] = {swap_chain->get_swap_chain()};
 
     VkPresentInfoKHR present_info{};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = signal_semaphores;
-
-    VkSwapchainKHR swap_chains[] = {swap_chain->get_swap_chain()};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
+
     
     result = vkQueuePresentKHR(device->get_present_queue(), &present_info);
 
@@ -194,6 +190,7 @@ void RenderPipeline::draw_frame()
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    vkQueueWaitIdle(device->get_graphics_queue());
 }
 
 void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
@@ -213,7 +210,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     ubo.model = glm::rotate(glm::mat4(scale), time * glm::radians(direction), glm::vec3(spin_x, spin_y, spin_z));
     // ubo.model = glm::translate(glm::mat4(scale), glm::vec3(spin_x, spin_y, spin_z));
 
-    ubo.view = glm::lookAt(glm::vec3(camera_thing[0], camera_thing[1], camera_thing[2]), glm::vec3(0.0f, 0.0f, 50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(camera_thing[0], camera_thing[1], camera_thing[2]), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 2000.0f);
 
     ubo.proj[1][1] *= -1;
@@ -315,7 +312,7 @@ void RenderPipeline::restart_swap_chain()
 
     CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
     CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    VkImage image_test = Texture::create_texture_image(device, "/home/osten/Documents/SchoolProjects/GameEngine/assets/debug_assets/napoleon_texture.png", swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
     
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
@@ -521,7 +518,7 @@ void RenderPipeline::create_render_pass()
 
 
     VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = VK_FORMAT_D32_SFLOAT;//TODO MAKE find depth format
+    depth_attachment.format = Texture::find_depth_formats(device->get_physical_device());
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

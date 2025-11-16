@@ -9,10 +9,13 @@ void model_loader::load_model(const char* model_path, std::vector<Vertex>& verti
     std::string err;
     std::string warning;
 
-    if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &warning, &err, model_path) == true) {
-        char *buf;
-        char* file = getcwd(buf, 1024);
-        throw std::runtime_error(err + file);
+    if(tinyobj::LoadObj(&attrib, &shapes, &materials, &warning, &err, model_path) != true) {
+        //char *buf;
+        //char* file = getcwd(buf, 1024);
+
+        auto test = std::filesystem::current_path();
+        auto bro = test.filename().string();
+        throw std::runtime_error(bro);
     }
 
     for (const auto& shape : shapes) {

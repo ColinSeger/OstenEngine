@@ -1,72 +1,74 @@
 #include "application.h"
 
 
+VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
+{
+    VkDescriptorPool imgui_pool;
+
+    VkDescriptorPoolSize pool_sizes[] = {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
+    };
+
+    VkDescriptorPoolCreateInfo pool_info{};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000;
+    pool_info.poolSizeCount = std::size(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+
+    vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &imgui_pool);
+    return imgui_pool;
+}
+
 void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 {
-// Setup Dear ImGui context
+    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->get_device()->get_virtual_device());
+    VkPhysicalDevice physical_device = render_pipeline->get_device()->get_physical_device();
+    VkDevice virtual_device = render_pipeline->get_device()->get_virtual_device();
+
+    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+
+    float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+    
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(main_scale);
+    style.FontScaleDpi = main_scale;
+
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    
-    ImGui::StyleColorsDark();
-    float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-    // Setup scaling
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(main_scale);
-    style.FontScaleDpi = main_scale;
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
-
-    ImGui_ImplVulkanH_Window g_MainWindowData {};
-    VkPhysicalDevice physical_device = render_pipeline->get_device()->get_physical_device();
-    VkDevice virtual_device = render_pipeline->get_device()->get_virtual_device();
-    //VkQueue g_Queue = VK_NULL_HANDLE;
-    uint32_t g_QueueFamily = Setup::find_queue_families(render_pipeline->get_device()->get_physical_device(), render_pipeline->get_surface()).present_family.value();
-    //Setup::find_queue_families(render_pipeline->get_device()->get_physical_device(), render_pipeline->get_surface());
-    int w, h;
-    glfwGetFramebufferSize(main_window, &w, &h);
-    ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
-    wd->Surface = render_pipeline->get_surface();
-    // SetupVulkanWindow(wd, render_pipeline->get_surface(), w, h);
-     // Select Surface Format
-    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
-    const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(physical_device, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
     
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
-    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(physical_device, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
-    int width, height;
-    glfwGetFramebufferSize(main_window, &width, &height);
-
-    //ImGui_ImplVulkanH_CreateOrResizeWindow(render_pipeline->get_instance(), physical_device, virtual_device, wd, g_QueueFamily, nullptr, width, height, MAX_FRAMES_IN_FLIGHT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    
-
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
+    
     ImGui_ImplVulkan_InitInfo init_info = {};
-    //init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
     init_info.Instance = render_pipeline->get_instance();
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    
-    init_info.QueueFamily = g_QueueFamily;
+    init_info.QueueFamily = Setup::find_queue_families(physical_device, render_pipeline->get_surface()).graphics_family.value();
 
-    //vkGetDeviceQueue(virtual_device, g_QueueFamily, 0, &g_Queue);
-    init_info.Queue = render_pipeline->get_device()->get_present_queue();
+    init_info.Queue = render_pipeline->get_device()->get_graphics_queue();
     init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = render_pipeline->get_descriptor_pool();
+    init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = 2;
+    init_info.ImageCount = Setup::find_swap_chain_support(physical_device, render_pipeline->get_surface()).surface_capabilities.minImageCount + 1;
     init_info.Allocator = nullptr;
-    init_info.PipelineInfoMain.RenderPass = wd->RenderPass;
+    init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.CheckVkResultFn = check_vk_result;
+
     ImGui_ImplVulkan_Init(&init_info);
 }
 
@@ -93,13 +95,14 @@ void Application::main_game_loop()
     double frames = 0;
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
-
+        // render_pipeline->draw_frame();
+        // continue;
         if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
         {
             ImGui_ImplGlfw_Sleep(10);
             continue;
         }
-
+        /**/
         // Start the Dear ImGui frame
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();

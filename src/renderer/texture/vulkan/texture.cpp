@@ -14,7 +14,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     if(!image_pixels){
         std::cout << texture_location << "\n";//TODO REMOVE
         
-        throw std::runtime_error(std::filesystem::current_path());
+        throw std::runtime_error("std::filesystem::current_path()");
     }
 
     VkBuffer staging_buffer;

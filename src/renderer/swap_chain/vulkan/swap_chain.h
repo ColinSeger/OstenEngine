@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdint.h>
 #include <optional>
+#include "../../../external/imgui/backends/imgui_impl_glfw.h"
+#include "../../../external/imgui/backends/imgui_impl_vulkan.h"
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 // #include "../../texture/vulkan/texture.h"
