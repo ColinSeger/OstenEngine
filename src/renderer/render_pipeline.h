@@ -54,9 +54,6 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    VkImageView image_view;//TODO Temporary way to access image
-    VkSampler texture_sampler;//TODO Temporary way to access sampler
-
     //TODO move out of class
     VkDeviceMemory  depth_image_memory;
     VkImageView     depth_image_view;
@@ -117,6 +114,9 @@ public:
     float camera_thing[3] = {2, 2, 2};
 
     VkRenderPass render_pass;
+
+    VkImageView image_view;//TODO Temporary way to access image
+    VkSampler texture_sampler;//TODO Temporary way to access sampler
 
     void draw_model(Renderable to_render);
 };

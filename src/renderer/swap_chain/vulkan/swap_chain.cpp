@@ -1,11 +1,13 @@
 #include "swap_chain.h"
 
-SwapChain::SwapChain(VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device, VkExtent2D extent) : surface { surface_reference }, virtual_device { virtual_device }
+SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device) : surface { surface_reference }, virtual_device { virtual_device }
 {
     SwapChainSupportDetails swap_chain_support = Setup::find_swap_chain_support(physical_device, surface);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
+
+    screen_extent = Setup::select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
 
     swap_chain_image_format = surface_format.format;
 
@@ -21,7 +23,7 @@ SwapChain::SwapChain(VkPhysicalDevice physical_device, VkSurfaceKHR& surface_ref
     create_info.minImageCount = image_amount;
     create_info.imageFormat = surface_format.format;
     create_info.imageColorSpace = surface_format.colorSpace;
-    create_info.imageExtent = extent;
+    create_info.imageExtent = screen_extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 

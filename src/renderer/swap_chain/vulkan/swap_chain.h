@@ -59,7 +59,7 @@ private:
     
 public:
 
-    SwapChain(VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device, VkExtent2D extent);
+    SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device);
     ~SwapChain();
 
     void create_frame_buffers(VkRenderPass& render_pass, VkImageView depth_image_view);

@@ -2,10 +2,14 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <chrono>
+#include <vulkan/vulkan.h>
+#include <string>
+#include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
 #include "../external/imgui/imgui.h"
 #include "../external/imgui/backends/imgui_impl_glfw.h"
 #include "../external/imgui/backends/imgui_impl_vulkan.h"
+#include "engine/entity_manager/entity_manager.h"
 
 // #include <imgui/backends/imgui_impl_glfw.h>
 // #include <imgui/backends/imgui_impl_vulkan.h>
@@ -24,6 +28,8 @@ class Application
     const char* application_name = nullptr;
     GLFWwindow* main_window = nullptr;
     RenderPipeline* render_pipeline = nullptr;
+
+    std::vector<std::string> logs;
 
 public:
 

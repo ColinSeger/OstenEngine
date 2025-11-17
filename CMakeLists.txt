@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/render_data/vulkan/render_data.cpp
     src/renderer/render_pipeline.cpp
     src/renderer/texture/vulkan/texture.cpp
+    src/engine/entity_manager/entity_manager.cpp
     )
 
 # target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})

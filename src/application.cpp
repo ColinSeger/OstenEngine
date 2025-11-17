@@ -101,7 +101,9 @@ void Application::main_game_loop()
 
     //render_pipeline->draw_model(render_this);
 
-    
+    VkDescriptorSet image = ImGui_ImplVulkan_AddTexture(render_pipeline->texture_sampler, render_pipeline->image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    int entity_to_delete = 0;
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
@@ -124,29 +126,58 @@ void Application::main_game_loop()
 
             ImVec2 wsize = ImGui::GetWindowSize();
 
-            //ImGui::Image((ImTextureID)tex, wsize, ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image((ImTextureID)image, wsize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::EndChild();
         ImGui::End();
 
-        ImGuiWindowFlags window_flags = 0;
-        ImGui::Begin("My Thing", &test, window_flags);
-        ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
-        ImGui::Spacing();
-        auto current_time = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-        ImGui::Text("(%f)", ((float)frames / time));
-        if(ImGui::Button("Swap Spin"))
-        {
-            render_pipeline->spin_direction = !render_pipeline->spin_direction;
-        }
-        ImGui::SliderFloat("XDir", &render_pipeline->spin_x, 0, 1);
-        ImGui::SliderFloat("YDir", &render_pipeline->spin_y, 0, 1);
-        ImGui::SliderFloat("ZDir", &render_pipeline->spin_z, 0, 1);
+        ImGui::Begin("My Thing", &test);
+            ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
+            ImGui::Spacing();
+            auto current_time = std::chrono::high_resolution_clock::now();
+            float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+            ImGui::Text("(%f)", ((float)frames / time));
 
-        ImGui::SliderFloat3("Camera_thing", render_pipeline->camera_thing, 0, 2000);
 
-        ImGui::SliderFloat("Scale", &render_pipeline->scale, 0, 1);
 
+            if(ImGui::Button("Add entity"))
+            {
+                Entity_Manager::add_entity(Entity{});
+            }
+            ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));
+
+            if(ImGui::Button("Remove Entity"))
+            {
+                Entity_Manager::remove_entity(entity_to_delete);
+            }
+
+
+            ImGui::SliderFloat("XDir", &render_pipeline->spin_x, 0, 1);
+            ImGui::SliderFloat("YDir", &render_pipeline->spin_y, 0, 1);
+            ImGui::SliderFloat("ZDir", &render_pipeline->spin_z, 0, 1);
+
+            ImGui::SliderFloat3("Camera_thing", render_pipeline->camera_thing, 0, 2000);
+
+            ImGui::SliderFloat("Scale", &render_pipeline->scale, 0, 1);
+        ImGui::End();
+
+
+        ImGui::Begin("Console");
+            if(ImGui::Button("Add Log"))
+            {
+                std::string log = "Test";
+                logs.emplace_back(log);
+            }
+            ImGui::BeginChild("Logs");
+                for (size_t i = 0; i < logs.size(); i++)
+                {
+                    ImGui::Text("(%s)", logs[i].c_str());
+                }
+                for (size_t i = 0; i < Entity_Manager::get_entity_amount(); i++)
+                {
+                    ImGui::Text("(%i)", i);
+                }
+                
+            ImGui::EndChild();
         ImGui::End();
 
         // ImGui::ShowDemoWindow(&test);

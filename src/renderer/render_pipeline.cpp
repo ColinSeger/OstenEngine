@@ -53,7 +53,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, enable_validation);
 
-    model_loader::load_model("C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking.obj", vertices, indices);
+    model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
 
     
 
@@ -320,15 +320,14 @@ void RenderPipeline::restart_swap_chain()
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(device->get_virtual_device());
-    auto swap_chain_support = Setup::find_swap_chain_support(device->get_physical_device(), surface);
-        VkExtent2D screen_extent = Setup::select_swap_chain_extent(swap_chain_support.surface_capabilities, main_window);
+
     if(swap_chain){
         delete swap_chain;
         
-        swap_chain = new SwapChain(device->get_physical_device(), surface, device->get_virtual_device(), screen_extent);
+        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 
     }else{
-        swap_chain = new SwapChain(device->get_physical_device(), surface, device->get_virtual_device(), screen_extent);
+        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
         create_render_pass();
     }
     
@@ -342,7 +341,7 @@ void RenderPipeline::restart_swap_chain()
     //    CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
     //}
 
-    VkImage image_test = Texture::create_texture_image(device, "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
 
     image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
