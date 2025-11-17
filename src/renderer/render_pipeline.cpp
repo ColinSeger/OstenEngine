@@ -26,10 +26,6 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
     {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000},
 };
-    // VkDescriptorPool result;
-    // VkDescriptorPoolSize pool_size{};
-    // pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    // pool_size.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -39,7 +35,6 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 
     assert(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) == VK_SUCCESS);
-    // return result;
 }
 
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
@@ -344,8 +339,6 @@ void RenderPipeline::restart_swap_chain()
         create_render_pass();
     }
     command_pool = CommandBuffer::create_command_pool(device, surface);
-
-    // create_depth_resources();
 
     depth_image_view = create_depth_resources(device, swap_chain->get_extent(), depth_image_memory);
 

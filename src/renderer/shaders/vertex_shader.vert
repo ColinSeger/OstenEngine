@@ -13,8 +13,11 @@ layout(location = 2) in vec2 in_tex_cord;
 layout(location = 0) out vec3 frag_color;
 layout(location = 1) out vec2 frag_tex_cord;
 
+uniform mat4 transformation;
+
 void main() {
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(in_position, 1.0);
+    gl_Position = transformation * vec4(in_position, 1.0);
+    // gl_Position = ubo.proj * ubo.view * ubo.model * vec4(in_position, 1.0);
     frag_color = in_color;
     frag_tex_cord = in_tex_cord;
 }

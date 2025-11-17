@@ -70,12 +70,7 @@ public:
 
     std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
 
-    
-    // VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }
-
     VkSwapchainKHR& get_swap_chain() { return swap_chain; }
-
-    //VkCommandPool& get_command_pool() {  return command_pool; }
 };
 
 namespace Setup

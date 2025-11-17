@@ -126,7 +126,7 @@ void Application::main_game_loop()
 
             ImVec2 wsize = ImGui::GetWindowSize();
 
-            ImGui::Image((ImTextureID)&render_pipeline->descriptor_sets[render_pipeline->current_frame], wsize, ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image((ImTextureID)render_pipeline->descriptor_sets[render_pipeline->current_frame], wsize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::EndChild();
         ImGui::End();
 

@@ -79,8 +79,6 @@ private:
 
     void create_descriptor_sets(std::vector<VkDescriptorSet>& result, VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
-    //void create_depth_resources();
-
 public:
     RenderPipeline(const int width, const int height, const char* application_name);
     ~RenderPipeline();
