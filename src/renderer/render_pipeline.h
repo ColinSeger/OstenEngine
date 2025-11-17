@@ -47,7 +47,7 @@ private:
     std::vector<void*> uniform_buffers_mapped;
 
     VkDescriptorPool descriptor_pool;
-    std::vector<VkDescriptorSet> descriptor_sets;
+    
 
     //TODO check if these even need to be vector
     std::vector<VkSemaphore> image_available_semaphores;
@@ -63,10 +63,7 @@ private:
     std::vector<Vertex>     vertices;//TODO make better
     std::vector<uint32_t>   indices;
     std::vector<Renderable> to_render;
-
-    uint8_t current_frame = 0;
-
-    VkShaderModule create_shader(const std::vector<char>& code);
+    VkCommandPool command_pool;
 
     void shader();
 
@@ -82,7 +79,7 @@ private:
 
     void create_descriptor_sets(std::vector<VkDescriptorSet>& result, VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
-    void create_depth_resources();
+    //void create_depth_resources();
 
 public:
     RenderPipeline(const int width, const int height, const char* application_name);
@@ -113,8 +110,9 @@ public:
 
     float camera_thing[3] = {2, 2, 2};
 
-    VkRenderPass render_pass;
-
+    uint8_t current_frame = 0;//TODO MOVE
+    VkRenderPass render_pass; //TODO MOVE
+    std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 

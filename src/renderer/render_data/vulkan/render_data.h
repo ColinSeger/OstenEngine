@@ -80,4 +80,6 @@ namespace CommandBuffer
     void record_command_buffer(VkCommandBuffer& command_buffer);
 
     void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT);
+
+    VkCommandPool create_command_pool(Device* device, VkSurfaceKHR surface);
 }

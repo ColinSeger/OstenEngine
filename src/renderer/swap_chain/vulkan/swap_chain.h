@@ -41,15 +41,11 @@ private:
 
     VkDevice virtual_device;
 
-    VkCommandPool command_pool;
-
     std::vector<VkImage> swap_chain_images;
 
     std::vector<VkImageView> swap_chain_image_view;
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
-
-    //VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 
     VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
@@ -66,24 +62,20 @@ public:
 
     void create_command_pool(VkPhysicalDevice physical_device);
 
-    void create_command_buffer(const uint8_t MAX_FRAMES_IN_FLIGHT);
-
-    void start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass);
-
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer& render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, VkDescriptorSet descriptor_set, RenderBuffer& render_buffer, const uint32_t index_amount);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 
     VkFormat get_image_format() const { return swap_chain_image_format; }
 
-    // std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
+    std::vector<VkFramebuffer>& get_frame_buffer(){ return swap_chain_framebuffers; }
 
     
     // VkCommandBuffer& get_command_buffer(size_t index) { return command_buffers[index]; }
 
     VkSwapchainKHR& get_swap_chain() { return swap_chain; }
 
-    VkCommandPool& get_command_pool() {  return command_pool; }
+    //VkCommandPool& get_command_pool() {  return command_pool; }
 };
 
 namespace Setup
@@ -94,3 +86,9 @@ namespace Setup
 
     VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 };
+
+namespace RenderPass
+{
+    void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent);
+    void end_render_pass(VkCommandBuffer& command_buffer);
+}

@@ -13,15 +13,6 @@ struct TextureImage
     VkImage texture_image;
     VkDeviceMemory texture_image_memory;
 };
-
-/// @brief Width Height
-struct ImageSize
-{
-    uint32_t width;
-    uint32_t height;
-};
-
-
 namespace Texture
 {
     VkImage create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool);
@@ -29,7 +20,7 @@ namespace Texture
     void create_image
     (
         Device* device, 
-        ImageSize image_size, 
+        VkExtent2D& image_size, 
         VkFormat format, 
         VkImageTiling image_tiling, 
         VkImageUsageFlags usage_flags, 
@@ -40,7 +31,7 @@ namespace Texture
 
     void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool& command_pool);
 
-    void copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool);
+    void copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device* device, VkCommandPool& command_pool);
 
     VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag);
 

@@ -11,9 +11,6 @@
 #include "../external/imgui/backends/imgui_impl_vulkan.h"
 #include "engine/entity_manager/entity_manager.h"
 
-// #include <imgui/backends/imgui_impl_glfw.h>
-// #include <imgui/backends/imgui_impl_vulkan.h>
-
 static void check_vk_result(VkResult err)
 {
     if (err == 0)

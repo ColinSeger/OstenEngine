@@ -1,6 +1,16 @@
 #include "render_pipeline.h"
 
 
+VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory depth_image_memory)
+{
+    VkImage depth_image;
+    VkFormat depth_formating = Texture::find_depth_formats(device->get_physical_device());
+
+    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
+
+    return Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
     VkDescriptorPoolSize pool_sizes[] = {
@@ -60,8 +70,8 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     restart_swap_chain();
 
     if(indices.size() > 0){
-        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
+        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, command_pool);
     }
 
     create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
@@ -133,11 +143,11 @@ void RenderPipeline::draw_model(Renderable to_draw)
     model_loader::load_model(to_draw.mesh_location, vertices, indices);
     
     if(indices.size() > 0){
-        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
+        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
+        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, command_pool);
     }
 /**/
-    VkImage image_test = Texture::create_texture_image(device, to_draw.texture_location, swap_chain->get_command_pool());
+    VkImage image_test = Texture::create_texture_image(device, to_draw.texture_location, command_pool);
     
     image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
@@ -167,14 +177,16 @@ void RenderPipeline::draw_frame()
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    swap_chain->start_render_pass(command_buffer ,image_index, render_pass);
+    RenderPass::start_render_pass(command_buffer, swap_chain->get_frame_buffer()[image_index], render_pass, swap_chain->get_extent());
 
     RenderBuffer render_buffer = {
         vertex_buffer,
         index_buffer
     };
 
-    swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets, render_buffer, static_cast<uint32_t>(vertices.size()), static_cast<uint32_t>(indices.size()), current_frame);
+    swap_chain->bind_pipeline(command_buffer, graphics_pipeline, pipeline_layout, descriptor_sets[current_frame], render_buffer, static_cast<uint32_t>(indices.size()));
+
+    RenderPass::end_render_pass(command_buffer);
 
     VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -323,6 +335,7 @@ void RenderPipeline::restart_swap_chain()
 
     if(swap_chain){
         delete swap_chain;
+        vkDestroyCommandPool(device->get_virtual_device(), command_pool, nullptr);
         
         swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
 
@@ -330,28 +343,21 @@ void RenderPipeline::restart_swap_chain()
         swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
         create_render_pass();
     }
-    
-    swap_chain->create_command_pool(device->get_physical_device());
+    command_pool = CommandBuffer::create_command_pool(device, surface);
 
-    create_depth_resources();
+    // create_depth_resources();
+
+    depth_image_view = create_depth_resources(device, swap_chain->get_extent(), depth_image_memory);
+
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    //if(indices.size() > 0){
-    //    CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, swap_chain->get_command_pool());
-    //    CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, swap_chain->get_command_pool());
-    //}
+    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/viking_room.png", command_pool);
 
-    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
-
-    image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
 /**/
-    //VkImage image_test = Texture::create_texture_image(device, "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png", swap_chain->get_command_pool());
-    
-    //image_view = Texture::create_image_view(device->get_virtual_device(),image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    //texture_sampler = Texture::create_texture_sampler(device);
 
-    CommandBuffer::create_command_buffers(command_buffers, device->get_virtual_device(), swap_chain->get_command_pool(), MAX_FRAMES_IN_FLIGHT);
+    CommandBuffer::create_command_buffers(command_buffers, device->get_virtual_device(), command_pool, MAX_FRAMES_IN_FLIGHT);
 }
 
 std::vector<char> load_shader(const std::string& file_name)
@@ -371,14 +377,14 @@ std::vector<char> load_shader(const std::string& file_name)
     return buffer;
 }
 
-VkShaderModule RenderPipeline::create_shader(const std::vector<char>& code) {
+VkShaderModule create_shader(const std::vector<char>& code, VkDevice virtual_device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device->get_virtual_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(virtual_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
@@ -391,8 +397,8 @@ void RenderPipeline::shader()
     auto vertex_shader = load_shader("src/renderer/shaders/vert.spv");
     auto fragment_shader = load_shader("src/renderer/shaders/frag.spv");
 
-    VkShaderModule vertex_module = create_shader(vertex_shader);
-    VkShaderModule fragment_module = create_shader(fragment_shader);
+    VkShaderModule vertex_module = create_shader(vertex_shader, device->get_virtual_device());
+    VkShaderModule fragment_module = create_shader(fragment_shader, device->get_virtual_device());
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -605,17 +611,4 @@ void RenderPipeline::create_sync_objects()
         assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
         assert(vkCreateFence(device->get_virtual_device(), &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
     }
-}
-
-void RenderPipeline::create_depth_resources()
-{
-    VkImage depth_image;
-    VkFormat depth_formating = Texture::find_depth_formats(device->get_physical_device());//TODO make a thing that searches for format
-    ImageSize image_size{
-        swap_chain->get_extent().width,
-        swap_chain->get_extent().height
-    };
-    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
-
-    depth_image_view = Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }

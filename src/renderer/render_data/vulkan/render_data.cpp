@@ -244,3 +244,17 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
 
     assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data()) == VK_SUCCESS);
 }
+
+VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR surface)
+{
+    VkCommandPool command_pool;
+    QueueFamilyIndicies queue_family_indices = Setup::find_queue_families(device->get_physical_device(), surface);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
+
+    assert(vkCreateCommandPool(device->get_virtual_device(), &poolInfo, nullptr, &command_pool) == VK_SUCCESS);
+    return command_pool;
+}

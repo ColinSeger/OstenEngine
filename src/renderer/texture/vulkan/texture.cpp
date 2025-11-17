@@ -39,7 +39,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     VkImage texture_image{};
     VkDeviceMemory texture_image_memory;
 
-    ImageSize image_sizing;
+    VkExtent2D image_sizing;
     image_sizing.width = texture_width; 
     image_sizing.height = texture_height;
 
@@ -65,7 +65,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
 }
 
 void Texture::create_image( Device* device, 
-                            ImageSize image_size, 
+                            VkExtent2D& image_size, 
                             VkFormat format, 
                             VkImageTiling image_tiling, 
                             VkImageUsageFlags usage_flags, 
@@ -158,7 +158,7 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
     CommandBuffer::end_single_time_commands(device->get_virtual_device(), command_pool, device->get_graphics_queue(), command_buffer);
 }
 
-void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, ImageSize& image_size, Device* device, VkCommandPool& command_pool)
+void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device* device, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->get_virtual_device(), command_pool);
 

@@ -64,7 +64,6 @@ SwapChain::~SwapChain()
     for (auto framebuffer : swap_chain_framebuffers) {
         vkDestroyFramebuffer(virtual_device, framebuffer, nullptr);
     }
-    vkDestroyCommandPool(virtual_device, command_pool, nullptr);
     vkDestroySwapchainKHR(virtual_device, swap_chain, nullptr);
 }
 
@@ -133,36 +132,10 @@ void SwapChain::create_image_views(){
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
-        // swap_chain_image_view[i] = Texture::create_image_view(virtual_device, swap_chain_images[i], swap_chain_image_format);
 
         assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chain_image_view[i]) == VK_SUCCESS);
     }
 }
-
-void SwapChain::create_command_pool(VkPhysicalDevice physical_device)
-{
-    QueueFamilyIndicies queue_family_indices = Setup::find_queue_families(physical_device, surface);
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
-
-    assert(vkCreateCommandPool(virtual_device, &poolInfo, nullptr, &command_pool) == VK_SUCCESS);
-}
-
-// void SwapChain::create_command_buffer(const uint8_t MAX_FRAMES_IN_FLIGHT)
-// {
-//     command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-//     VkCommandBufferAllocateInfo allocation_info{};
-//     allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//     allocation_info.commandPool = command_pool;
-//     allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//     allocation_info.commandBufferCount = command_buffers.size();
-
-//     assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data()) == VK_SUCCESS);
-// }
 
 void SwapChain::create_frame_buffers(VkRenderPass& render_pass, VkImageView depth_image_view)
 {
@@ -187,16 +160,15 @@ void SwapChain::create_frame_buffers(VkRenderPass& render_pass, VkImageView dept
     }
 }
 
-void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t image_index, VkRenderPass render_pass)
+void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
 {
-    
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     render_pass_info.renderPass = render_pass;
-    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.framebuffer = frame_buffer;
     render_pass_info.renderArea.offset = {0, 0};
-    render_pass_info.renderArea.extent = screen_extent;
+    render_pass_info.renderArea.extent = viewport_extent;
 
     VkClearValue clear_values[2]{};
     clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -207,7 +179,28 @@ void SwapChain::start_render_pass(VkCommandBuffer& command_buffer, uint32_t imag
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, std::vector<VkDescriptorSet> descriptor_set, RenderBuffer& render_buffer, uint32_t vertex_count, const uint32_t index_amount, uint8_t frame)
+void draw_frame(VkCommandBuffer& command_buffer, VkDescriptorSet descriptor_set, VkPipelineLayout pipeline_layout, RenderBuffer& render_buffer, const uint32_t index_amount)
+{
+    VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
+    VkDeviceSize offsets[] = {0};
+    if(index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+
+        vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
+
+        vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0); 
+    }
+    
+
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
+
+    vkCmdEndRenderPass(command_buffer);
+}
+
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, VkDescriptorSet descriptor_set, RenderBuffer& render_buffer, const uint32_t index_amount)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -225,25 +218,12 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
     scissor.extent = screen_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
+    draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
     
-    VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
-    VkDeviceSize offsets[] = {0};
-    if(index_amount > 0){
-       vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+}
 
-        vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set[frame], 0, nullptr);
-
-        vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0); 
-    }
-    
-
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
-
-    vkCmdEndRenderPass(command_buffer);
-
+void RenderPass::end_render_pass(VkCommandBuffer& command_buffer)
+{
     assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
 }
 
