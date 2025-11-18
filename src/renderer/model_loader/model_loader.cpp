@@ -74,22 +74,37 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     std::vector<Vertex> vertex;
 
-    OBJ_Mode current_mode = OBJ_Mode::Vertex;
-    std::string value1;
-    std::string value2;
-    std::string value3;
+    OBJ_Mode current_mode = OBJ_Mode::None;
+    std::string values[3];
+    uint8_t index = -1;
 
     for (size_t i = 0; i < file_size; i++)
     {
-        if (file[i] == 'v') {
-            i++;
-            current_mode = OBJ_Mode::Vertex;
+        if(current_mode == OBJ_Mode::None){
+           if (file[i] == 'v') {
+                i++;
+                current_mode = OBJ_Mode::Vertex;
+            } 
         }
-        if(file[i] != '\n'){
+        if(current_mode == OBJ_Mode::None) continue;
+        
+        if(file[i] == '\n'){
             if(current_mode == OBJ_Mode::Vertex){
                 Vertex new_vertex;
-                new_vertex.position = {std::stof(value1), std::stof(value2), std::stof(value3)};
+                new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
                 vertex.push_back(new_vertex);
+                index = -1;
+                values[0].clear();
+                values[1].clear();
+                values[2].clear();
+                current_mode = OBJ_Mode::None;
+            }
+        }else{
+            if(file[i] == ' ')
+            {
+                index++;
+            }else{
+                values[index].push_back(file[i]);
             }
         }
     }

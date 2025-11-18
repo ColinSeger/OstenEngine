@@ -11,7 +11,8 @@ enum class OBJ_Mode : uint8_t
     Vertex,
     Normal,
     TextureCord,
-    Face
+    Face,
+    None
 };
 namespace model_loader
 {
