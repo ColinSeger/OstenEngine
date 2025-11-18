@@ -59,6 +59,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     device = new Device(instance, surface, enable_validation);
 
     model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
+    model_loader::parse_obj("assets/debug_assets/plane.obj", vertices, indices, logs);
 
     
 

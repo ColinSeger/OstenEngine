@@ -168,9 +168,9 @@ void Application::main_game_loop()
                 logs.emplace_back(log);
             }
             ImGui::BeginChild("Logs");
-                for (size_t i = 0; i < logs.size(); i++)
+                for (size_t i = 0; i <  render_pipeline->logs.size(); i++)
                 {
-                    ImGui::Text("(%s)", logs[i].c_str());
+                    ImGui::Text("(%s)", render_pipeline->logs[i].c_str());
                 }
                 for (size_t i = 0; i < Entity_Manager::get_entity_amount(); i++)
                 {

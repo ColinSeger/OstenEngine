@@ -114,5 +114,7 @@ public:
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
+    std::vector<std::string> logs;
+
     void draw_model(Renderable to_render);
 };

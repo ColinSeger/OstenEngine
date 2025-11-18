@@ -40,3 +40,61 @@ void model_loader::load_model(const char* model_path, std::vector<Vertex>& verti
         }
     }
 }/**/
+
+
+void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
+{
+    std::ifstream file_stream;
+
+    //std::ios_base::in | std::ios_base::ate | std::ios_base::binary
+
+    file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
+
+    if(!file_stream.is_open())
+    {
+        vertices.emplace_back(Vertex{});
+        indices.emplace_back(0);
+
+        auto file_path = std::filesystem::current_path();
+        auto filepath_str = file_path.filename().string();
+        std::string error = filepath_str;
+        error.push_back(errno);
+
+        throw std::runtime_error(error);
+        //TODO LOG failed model load
+        return;
+    }
+    uint32_t file_size = file_stream.tellg();
+    file_stream.seekg(0);
+    char* file = new char[file_size];
+    //memset(file, 0, file_size);
+
+    file_stream.read(file, file_size);
+    file_stream.close();
+
+    std::vector<Vertex> vertex;
+
+    OBJ_Mode current_mode = OBJ_Mode::Vertex;
+    std::string value1;
+    std::string value2;
+    std::string value3;
+
+    for (size_t i = 0; i < file_size; i++)
+    {
+        if (file[i] == 'v') {
+            i++;
+            current_mode = OBJ_Mode::Vertex;
+        }
+        if(file[i] != '\n'){
+            if(current_mode == OBJ_Mode::Vertex){
+                Vertex new_vertex;
+                new_vertex.position = {std::stof(value1), std::stof(value2), std::stof(value3)};
+                vertex.push_back(new_vertex);
+            }
+        }
+    }
+    
+
+
+    
+}
