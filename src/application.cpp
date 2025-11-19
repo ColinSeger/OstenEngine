@@ -126,7 +126,7 @@ void Application::main_game_loop()
 
             ImVec2 wsize = ImGui::GetWindowSize();
 
-            ImGui::Image((ImTextureID)render_pipeline->descriptor_sets[render_pipeline->current_frame], wsize, ImVec2(0, 1), ImVec2(1, 0));
+            // ImGui::Image((ImTextureID)render_pipeline->descriptor_sets[render_pipeline->current_frame], wsize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::EndChild();
         ImGui::End();
 
@@ -150,10 +150,12 @@ void Application::main_game_loop()
                 Entity_Manager::remove_entity(entity_to_delete);
             }
 
-
-            ImGui::SliderFloat("XDir", &render_pipeline->spin_x, 0, 1);
-            ImGui::SliderFloat("YDir", &render_pipeline->spin_y, 0, 1);
-            ImGui::SliderFloat("ZDir", &render_pipeline->spin_z, 0, 1);
+            if(render_pipeline->to_render.size() > 0)
+            {
+                ImGui::SliderFloat("XDir", &render_pipeline->to_render[0].transform.position.x, 0, 1);
+                ImGui::SliderFloat("YDir", &render_pipeline->to_render[0].transform.position.y, 0, 1);
+                ImGui::SliderFloat("ZDir", &render_pipeline->to_render[0].transform.position.z, 0, 1);                
+            }
 
             ImGui::SliderFloat3("Camera_thing", render_pipeline->camera_thing, 0, 2000);
 

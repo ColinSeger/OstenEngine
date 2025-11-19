@@ -1,6 +1,6 @@
 #include "transform.h"
 
-glm::mat4 Transformations::get_model_matrix(Transform transform)
+glm::mat4 Transformations::get_model_matrix(Transform transform)//This should be a for loop inside renderer probably
 {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, transform.position);

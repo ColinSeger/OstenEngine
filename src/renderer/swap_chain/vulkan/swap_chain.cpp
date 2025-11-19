@@ -179,28 +179,7 @@ void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffe
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void draw_frame(VkCommandBuffer& command_buffer, VkDescriptorSet descriptor_set, VkPipelineLayout pipeline_layout, RenderBuffer& render_buffer, const uint32_t index_amount)
-{
-    VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
-    VkDeviceSize offsets[] = {0};
-    if(index_amount > 0){
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
-
-        vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
-
-        vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0); 
-    }
-    
-
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
-
-    vkCmdEndRenderPass(command_buffer);
-}
-
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, VkDescriptorSet descriptor_set, RenderBuffer& render_buffer, const uint32_t index_amount)
+void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -218,7 +197,7 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
     scissor.extent = screen_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
+//draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
     
 }
 

@@ -80,6 +80,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     for (size_t i = 0; i < file_size; i++)
     {
+        if(file[i] == '#') continue;
         if(current_mode == OBJ_Mode::None){
            if (file[i] == 'v') {
                 i++;
@@ -91,12 +92,18 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
         if(file[i] == '\n'){
             if(current_mode == OBJ_Mode::Vertex){
                 Vertex new_vertex;
-                new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
-                vertex.push_back(new_vertex);
+                float x = std::stof(values[0]);
+                float y = std::stof(values[1]);
+                float z = std::stof(values[2]);
+                new_vertex.position = glm::vec3(x, y, z);
+                vertices.push_back(new_vertex);
+                indices.push_back(vertices.size());
+                // vertex.push_back(new_vertex);
                 index = -1;
                 values[0].clear();
                 values[1].clear();
                 values[2].clear();
+                
                 current_mode = OBJ_Mode::None;
             }
         }else{

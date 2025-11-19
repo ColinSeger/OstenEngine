@@ -42,9 +42,9 @@ private:
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
 
-    std::vector<VkBuffer> uniform_buffers;
-    std::vector<VkDeviceMemory> uniform_buffers_memory;
-    std::vector<void*> uniform_buffers_mapped;
+    // std::vector<VkBuffer> uniform_buffers;
+    // std::vector<VkDeviceMemory> uniform_buffers_memory;
+    // std::vector<void*> uniform_buffers_mapped;
 
     VkDescriptorPool descriptor_pool;
     
@@ -62,7 +62,7 @@ private:
 
     std::vector<Vertex>     vertices;//TODO make better
     std::vector<uint32_t>   indices;
-    std::vector<Renderable> to_render;
+    
     VkCommandPool command_pool;
 
     void shader();
@@ -77,7 +77,7 @@ private:
 
     void update_uniform_buffer(uint8_t current_image);
 
-    void create_descriptor_sets(std::vector<VkDescriptorSet>& result, VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
+    void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
 public:
     RenderPipeline(const int width, const int height, const char* application_name);
@@ -100,7 +100,7 @@ public:
     SwapChain* get_swap_chain() { return swap_chain; }
 
     bool spin_direction;
-
+    std::vector<Renderable> to_render;
     float spin_x = 0;
     float spin_y = 0;
     float spin_z = 1;
@@ -110,7 +110,7 @@ public:
 
     uint8_t current_frame = 0;//TODO MOVE
     VkRenderPass render_pass; //TODO MOVE
-    std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
+    // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 

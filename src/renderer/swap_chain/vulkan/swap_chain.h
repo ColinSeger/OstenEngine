@@ -62,7 +62,7 @@ public:
 
     void create_command_pool(VkPhysicalDevice physical_device);
 
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkPipelineLayout pipeline_layout, VkDescriptorSet descriptor_set, RenderBuffer& render_buffer, const uint32_t index_amount);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline);
 
     VkExtent2D get_extent() const {  return screen_extent; }
 
