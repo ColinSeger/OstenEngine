@@ -81,7 +81,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     device = new Device(instance, surface, enable_validation);
 
     model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
-
+    //model_loader::parse_obj("assets/debug_assets/plane.obj", vertices, indices, logs);
     // Object 1 - Center
     Renderable first_obj;
     first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
@@ -91,13 +91,13 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     Renderable snd_obj;
     snd_obj.transform.position = {1.0f, 1.0f, 2.0f};
     snd_obj.transform.rotation = {0.0f, 90.0f, -90.0f};
-    snd_obj.transform.scale = {1.0f, 1.0f, 1.0f};
+    snd_obj.transform.scale = {1.0f, 2.0f, 1.0f};
 
     to_render.push_back(first_obj);
-    to_render.push_back(snd_obj);
+    // to_render.push_back(snd_obj);
     //vertices.clear();
     //indices.clear();
-    //model_loader::parse_obj("assets/debug_assets/plane.obj", vertices, indices, logs);
+    
 
     
 

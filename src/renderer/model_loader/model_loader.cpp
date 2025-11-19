@@ -76,16 +76,36 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     OBJ_Mode current_mode = OBJ_Mode::None;
     std::string values[3];
-    uint8_t index = -1;
+    uint8_t index = 0;
 
     for (size_t i = 0; i < file_size; i++)
     {
-        if(file[i] == '#') continue;
+        char value = file[i];
+        if(current_mode == OBJ_Mode::Comment)
+        {
+            if(file[i] == '\n'){
+                current_mode = OBJ_Mode::None;
+            }
+            continue;
+        }
+        
+        
+        
         if(current_mode == OBJ_Mode::None){
-           if (file[i] == 'v') {
+            if(file[i] == '#'){
+                current_mode = OBJ_Mode::Comment;
+                continue;
+            }
+            if (file[i] == 'v') {
                 i++;
                 current_mode = OBJ_Mode::Vertex;
-            } 
+                continue;
+            }
+            if(file[i] == 'f'){
+                current_mode = OBJ_Mode::Face;
+                index = -1;
+                continue;
+            }
         }
         if(current_mode == OBJ_Mode::None) continue;
         
@@ -99,11 +119,19 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
                 vertices.push_back(new_vertex);
                 indices.push_back(vertices.size());
                 // vertex.push_back(new_vertex);
-                index = -1;
+                index = 0;
                 values[0].clear();
                 values[1].clear();
                 values[2].clear();
                 
+                current_mode = OBJ_Mode::None;
+            }
+            if(current_mode == OBJ_Mode::Face){
+                for (size_t i = 0; i < 3; i++)
+                {
+                    indices.push_back(std::stoi(values[i]));
+                }
+                index = -1;
                 current_mode = OBJ_Mode::None;
             }
         }else{
@@ -111,12 +139,12 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             {
                 index++;
             }else{
-                values[index].push_back(file[i]);
+                values[index].push_back(value);
             }
         }
     }
     
 
-
+    delete[] file;
     
 }

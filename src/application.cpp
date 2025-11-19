@@ -153,15 +153,12 @@ void Application::main_game_loop()
             for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
             {
                 const char* test = "test" + i;
+
+                ImGui::Text("Text");
                 ImGui::InputFloat3(test, &render_pipeline->to_render[i].transform.position.x);
-
-
-                // std::string entity = "Position";
-                // entity.push_back(renderable.transform.position.x);
-                
-                // ImGui::PushID("Position");
-                
-                
+                ImGui::SliderFloat3(test+3, &render_pipeline->to_render[i].transform.rotation.x, 0, 360);
+                ImGui::InputFloat3(test+2, &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::Spacing();
             }
             
 
