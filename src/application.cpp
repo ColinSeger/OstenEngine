@@ -149,13 +149,21 @@ void Application::main_game_loop()
             {
                 Entity_Manager::remove_entity(entity_to_delete);
             }
-
-            if(render_pipeline->to_render.size() > 0)
+            
+            for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
             {
-                ImGui::SliderFloat("XDir", &render_pipeline->to_render[0].transform.position.x, 0, 1);
-                ImGui::SliderFloat("YDir", &render_pipeline->to_render[0].transform.position.y, 0, 1);
-                ImGui::SliderFloat("ZDir", &render_pipeline->to_render[0].transform.position.z, 0, 1);                
+                const char* test = "test" + i;
+                ImGui::InputFloat3(test, &render_pipeline->to_render[i].transform.position.x);
+
+
+                // std::string entity = "Position";
+                // entity.push_back(renderable.transform.position.x);
+                
+                // ImGui::PushID("Position");
+                
+                
             }
+            
 
             ImGui::SliderFloat3("Camera_thing", render_pipeline->camera_thing, 0, 2000);
 

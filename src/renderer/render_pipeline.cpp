@@ -84,13 +84,13 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     // Object 1 - Center
     Renderable first_obj;
-    first_obj.transform.position = {0.0f, 0.0f, 0.0f};
-    first_obj.transform.rotation = {0.0f, 0.0f, 0.0f};
+    first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
+    first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
     first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
 
     Renderable snd_obj;
-    snd_obj.transform.position = {10.0f, 5.0f, 5.0f};
-    snd_obj.transform.rotation = {0.0f, 90.0f, 0.0f};
+    snd_obj.transform.position = {1.0f, 1.0f, 2.0f};
+    snd_obj.transform.rotation = {0.0f, 90.0f, -90.0f};
     snd_obj.transform.scale = {1.0f, 1.0f, 1.0f};
 
     to_render.push_back(first_obj);
