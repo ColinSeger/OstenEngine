@@ -6,9 +6,9 @@
 #include <string>
 #include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
-#include "../external/imgui/imgui.h"
-#include "../external/imgui/backends/imgui_impl_glfw.h"
-#include "../external/imgui/backends/imgui_impl_vulkan.h"
+#include "../external/imgui_test/imgui.h"
+#include "../external/imgui_test/imgui_impl_glfw.h"
+#include "../external/imgui_test/imgui_impl_vulkan.h"
 #include "engine/entity_manager/entity_manager.h"
 
 static void check_vk_result(VkResult err)

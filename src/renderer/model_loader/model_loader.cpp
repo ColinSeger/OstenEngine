@@ -1,6 +1,6 @@
 #include "model_loader.h"
 
-
+/*
 void model_loader::load_model(const char* model_path, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
 {
     tinyobj::attrib_t attrib;
@@ -39,7 +39,7 @@ void model_loader::load_model(const char* model_path, std::vector<Vertex>& verti
             indices.push_back(indices.size());
         }
     }
-}/**/
+}*/
 
 
 void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
@@ -99,11 +99,12 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             if (file[i] == 'v') {
                 i++;
                 current_mode = OBJ_Mode::Vertex;
+                index = 0;
                 continue;
             }
             if(file[i] == 'f'){
                 current_mode = OBJ_Mode::Face;
-                index = -1;
+                index = 0;
                 continue;
             }
         }
@@ -127,17 +128,22 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
                 current_mode = OBJ_Mode::None;
             }
             if(current_mode == OBJ_Mode::Face){
-                for (size_t i = 0; i < 3; i++)
-                {
-                    indices.push_back(std::stoi(values[i]));
-                }
-                index = -1;
+                indices.push_back(std::stoi(values[0]));
+                indices.clear();
+                index = 0;
                 current_mode = OBJ_Mode::None;
             }
         }else{
             if(file[i] == ' ')
             {
-                index++;
+                if(current_mode == OBJ_Mode::Vertex){
+                    index++;                    
+                }else{
+                    //if(value == ' ') continue;
+                    //indices.push_back(std::stoi(values[0]));
+                    //indices.clear();
+                }
+
             }else{
                 values[index].push_back(value);
             }

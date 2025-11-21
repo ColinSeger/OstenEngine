@@ -80,8 +80,8 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, enable_validation);
 
-    model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
-    //model_loader::parse_obj("assets/debug_assets/plane.obj", vertices, indices, logs);
+    //model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
+    model_loader::parse_obj("../../../assets/debug_assets/Cube.obj", vertices, indices, logs);
     // Object 1 - Center
     Renderable first_obj;
     first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
@@ -174,18 +174,7 @@ void RenderPipeline::cleanup()
 void RenderPipeline::draw_model(Renderable to_draw)
 {
     
-    model_loader::load_model(to_draw.mesh_location, vertices, indices);
     
-    if(indices.size() > 0){
-        CommandBuffer::create_vertex_buffer(device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
-        CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, command_pool);
-    }
-/**/
-    VkImage image_test = Texture::create_texture_image(device, to_draw.texture_location, command_pool);
-    
-    image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    texture_sampler = Texture::create_texture_sampler(device);
-    create_descriptor_sets(descriptor_pool, device->get_virtual_device(), descriptor_set_layout);
 }
 
 void RenderPipeline::draw_frame()
@@ -403,7 +392,7 @@ void RenderPipeline::restart_swap_chain()
 
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    VkImage image_test = Texture::create_texture_image(device, "assets/debug_assets/viking_room.png", command_pool);
+    VkImage image_test = Texture::create_texture_image(device, "../../../assets/debug_assets/viking_room.png", command_pool);
 
     image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);

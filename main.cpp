@@ -5,9 +5,9 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#define TINYOBJLOADER_IMPLEMENTATION
+//#define TINYOBJLOADER_IMPLEMENTATION
 // #include "external/glm/glm.hpp"
-#include "external/imgui/imgui.h"
+#include "external/imgui_test/imgui.h"
 #include "src/application.h"
 
 int main()
