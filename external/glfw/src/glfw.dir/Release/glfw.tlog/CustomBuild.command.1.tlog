@@ -1,6 +1,6 @@
-^C:\USERS\COLIN\DOCUMENTS\PROJECT\OSTENENGINE\GAMEENGINE\EXTERNAL\GLFW\SRC\CMAKELISTS.TXT
+^C:\TASKS\ENGINE\ENGINE\EXTERNAL\GLFW\SRC\CMAKELISTS.TXT
 setlocal
-C:\Users\colin\Documents\cmake-3.28.2-windows-x86_64\cmake-3.28.2-windows-x86_64\bin\cmake.exe -SC:/Users/colin/Documents/Project/OstenEngine/GameEngine -BC:/Users/colin/Documents/Project/OstenEngine/GameEngine --check-stamp-file C:/Users/colin/Documents/Project/OstenEngine/GameEngine/external/glfw/src/CMakeFiles/generate.stamp
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Tasks/Engine/Engine -BC:/Tasks/Engine/Engine --check-stamp-file C:/Tasks/Engine/Engine/external/glfw/src/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

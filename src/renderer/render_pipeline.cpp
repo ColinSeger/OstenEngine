@@ -4,11 +4,11 @@
 VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory depth_image_memory)
 {
     VkImage depth_image;
-    VkFormat depth_formating = Texture::find_depth_formats(device->get_physical_device());
+    VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
 
     Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
 
-    return Texture::create_image_view(device->get_virtual_device() ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
+    return Texture::create_image_view(device->virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<Renderable>& descriptor_set, VkPipelineLayout pipeline_layout, RenderBuffer& render_buffer, const uint32_t index_amount, uint8_t frame)
@@ -69,16 +69,18 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
 
     #ifdef NDEBUG
-        const bool enable_validation = false;
+        const std::vector<const char*> validation_layers = {};
     #else
-        const bool enable_validation = true;
+        const std::vector<const char*> validation_layers = {
+            "VK_LAYER_KHRONOS_validation"
+        };
     #endif
 
-    instance = Instance::create_instance(application_name, enable_validation);
+    instance = Instance::create_instance(application_name, validation_layers);
 
     assert(glfwCreateWindowSurface(instance, main_window, nullptr, &surface) == VK_SUCCESS);
 
-    device = new Device(instance, surface, enable_validation);
+    device = new Device(instance, surface, validation_layers);
 
     //model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
     model_loader::parse_obj(model_location, vertices, indices, logs);
@@ -108,11 +110,11 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
         CommandBuffer::create_index_buffer(device, indices, index_buffer, index_buffer_memory, command_pool);
     }
 
-    create_descriptor_set_layout(device->get_virtual_device(), descriptor_set_layout);
+    create_descriptor_set_layout(device->virtual_device, descriptor_set_layout);
 
     create_uniform_buffers();
-    create_descriptor_pool(descriptor_pool, device->get_virtual_device());
-    create_descriptor_sets(descriptor_pool, device->get_virtual_device(), descriptor_set_layout);
+    create_descriptor_pool(descriptor_pool, device->virtual_device);
+    create_descriptor_sets(descriptor_pool, device->virtual_device, descriptor_set_layout);
 
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
@@ -122,7 +124,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    assert(vkCreatePipelineLayout(device->get_virtual_device(), &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
+    assert(vkCreatePipelineLayout(device->virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
     
     shader();
 
@@ -136,33 +138,33 @@ RenderPipeline::~RenderPipeline()
 
 void RenderPipeline::cleanup()
 {
-    vkDeviceWaitIdle(device->get_virtual_device());
+    vkDeviceWaitIdle(device->virtual_device);
     delete swap_chain;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         // vkDestroyBuffer(device->get_virtual_device(), uniform_buffers[i], nullptr);
         // vkFreeMemory(device->get_virtual_device(), uniform_buffers_memory[i], nullptr);
     }
-    vkDestroyDescriptorPool(device->get_virtual_device(), descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(device->virtual_device, descriptor_pool, nullptr);
 
-    vkDestroyDescriptorSetLayout(device->get_virtual_device(), descriptor_set_layout, nullptr);
+    vkDestroyDescriptorSetLayout(device->virtual_device, descriptor_set_layout, nullptr);
 
-    vkDestroyBuffer(device->get_virtual_device(), vertex_buffer, nullptr);
-    vkFreeMemory(device->get_virtual_device(), vertex_buffer_memory, nullptr);
-    vkDestroyBuffer(device->get_virtual_device(), index_buffer, nullptr);
-    vkFreeMemory(device->get_virtual_device(), index_buffer_memory, nullptr);
+    vkDestroyBuffer(device->virtual_device, vertex_buffer, nullptr);
+    vkFreeMemory(device->virtual_device, vertex_buffer_memory, nullptr);
+    vkDestroyBuffer(device->virtual_device, index_buffer, nullptr);
+    vkFreeMemory(device->virtual_device, index_buffer_memory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vkDestroySemaphore(device->get_virtual_device(), image_available_semaphores[i], nullptr);
-        vkDestroySemaphore(device->get_virtual_device(), render_finished_semaphores[i], nullptr);
-        vkDestroyFence(device->get_virtual_device(), in_flight_fences[i], nullptr);
+        vkDestroySemaphore(device->virtual_device, image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(device->virtual_device, render_finished_semaphores[i], nullptr);
+        vkDestroyFence(device->virtual_device, in_flight_fences[i], nullptr);
     }
     glfwDestroyWindow(main_window);
     
-    vkDestroyPipeline(device->get_virtual_device(), graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device->get_virtual_device(), pipeline_layout, nullptr);
-    vkDestroyRenderPass(device->get_virtual_device(), render_pass, nullptr);
+    vkDestroyPipeline(device->virtual_device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(device->virtual_device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(device->virtual_device, render_pass, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     
     delete device;
@@ -179,10 +181,10 @@ void RenderPipeline::draw_model(Renderable to_draw)
 
 void RenderPipeline::draw_frame()
 {
-    vkWaitForFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+    vkWaitForFences(device->virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
     
     static uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(device->get_virtual_device(), swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(device->virtual_device, swap_chain->get_swap_chain(), UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         restart_swap_chain();
@@ -193,7 +195,7 @@ void RenderPipeline::draw_frame()
 
     update_uniform_buffer(current_frame);
     
-    vkResetFences(device->get_virtual_device(), 1, &in_flight_fences[current_frame]);
+    vkResetFences(device->virtual_device, 1, &in_flight_fences[current_frame]);
 
     vkResetCommandBuffer(command_buffers[current_frame], 0);
 
@@ -227,7 +229,7 @@ void RenderPipeline::draw_frame()
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    VkResult queue_result = vkQueueSubmit(device->get_graphics_queue(), 1, &submit_info, in_flight_fences[current_frame]);
+    VkResult queue_result = vkQueueSubmit(device->graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
 
     assert(queue_result == VK_SUCCESS);
 
@@ -243,7 +245,7 @@ void RenderPipeline::draw_frame()
     present_info.pResults = nullptr; // Optional
 
     
-    result = vkQueuePresentKHR(device->get_present_queue(), &present_info);
+    result = vkQueuePresentKHR(device->present_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         restart_swap_chain();
@@ -260,7 +262,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     auto current_time = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
-    glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::lookAt(camera_location, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 2000.0f);
     proj[1][1] *= -1;
     // time = 1;
@@ -303,7 +305,7 @@ void RenderPipeline::create_uniform_buffers() {
                 render_this.uniform_buffers_memory[i]
             );
 
-            vkMapMemory(device->get_virtual_device(), render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
+            vkMapMemory(device->virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
         } 
     }
 }
@@ -325,7 +327,7 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
             render_this.uniform_buffers_memory[i]
         );
 
-        vkMapMemory(device->get_virtual_device(), render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
+        vkMapMemory(device->virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
     } 
 }
 
@@ -339,7 +341,7 @@ void RenderPipeline::create_descriptor_set(Renderable& render_this) {
     
     render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
 
-    assert(vkAllocateDescriptorSets(device->get_virtual_device(), &allocInfo, render_this.descriptor_sets.data()) == VK_SUCCESS);
+    assert(vkAllocateDescriptorSets(device->virtual_device, &allocInfo, render_this.descriptor_sets.data()) == VK_SUCCESS);
 
     
 
@@ -375,7 +377,7 @@ void RenderPipeline::create_descriptor_set(Renderable& render_this) {
         descriptor_writes[1].descriptorCount = 1;
         descriptor_writes[1].pImageInfo = &image_info;
 
-        vkUpdateDescriptorSets(device->get_virtual_device(), descriptor_size, descriptor_writes, 0, nullptr);
+        vkUpdateDescriptorSets(device->virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
 }
 
@@ -445,16 +447,16 @@ void RenderPipeline::restart_swap_chain()
         glfwGetFramebufferSize(main_window, &width, &height);
         glfwWaitEvents();
     }
-    vkDeviceWaitIdle(device->get_virtual_device());
+    vkDeviceWaitIdle(device->virtual_device);
 
     if(swap_chain){
         delete swap_chain;
-        vkDestroyCommandPool(device->get_virtual_device(), command_pool, nullptr);
+        vkDestroyCommandPool(device->virtual_device, command_pool, nullptr);
         
-        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+        swap_chain = new SwapChain(main_window, device->physical_device, surface, device->virtual_device);
 
     }else{
-        swap_chain = new SwapChain(main_window, device->get_physical_device(), surface, device->get_virtual_device());
+        swap_chain = new SwapChain(main_window, device->physical_device, surface, device->virtual_device);
         create_render_pass();
     }
     command_pool = CommandBuffer::create_command_pool(device, surface);
@@ -465,11 +467,11 @@ void RenderPipeline::restart_swap_chain()
 
     VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
 
-    image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    image_view = Texture::create_image_view(device->virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
 /**/
 
-    CommandBuffer::create_command_buffers(command_buffers, device->get_virtual_device(), command_pool, MAX_FRAMES_IN_FLIGHT);
+    CommandBuffer::create_command_buffers(command_buffers, device->virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }
 
 std::vector<char> load_shader(const std::string& file_name)
@@ -509,8 +511,8 @@ void RenderPipeline::shader()
     auto vertex_shader = load_shader("src/renderer/shaders/vert.spv");
     auto fragment_shader = load_shader("src/renderer/shaders/frag.spv");
 
-    VkShaderModule vertex_module = create_shader(vertex_shader, device->get_virtual_device());
-    VkShaderModule fragment_module = create_shader(fragment_shader, device->get_virtual_device());
+    VkShaderModule vertex_module = create_shader(vertex_shader, device->virtual_device);
+    VkShaderModule fragment_module = create_shader(fragment_shader, device->virtual_device);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -638,11 +640,11 @@ void RenderPipeline::shader()
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipeline_info.basePipelineIndex = -1; // Optional
 
-    VkResult result = vkCreateGraphicsPipelines(device->get_virtual_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+    VkResult result = vkCreateGraphicsPipelines(device->virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
     assert(result == VK_SUCCESS);
 
-    vkDestroyShaderModule(device->get_virtual_device(), fragment_module, nullptr);
-    vkDestroyShaderModule(device->get_virtual_device(), vertex_module, nullptr);
+    vkDestroyShaderModule(device->virtual_device, fragment_module, nullptr);
+    vkDestroyShaderModule(device->virtual_device, vertex_module, nullptr);
 }
 
 void RenderPipeline::create_render_pass()
@@ -671,7 +673,7 @@ void RenderPipeline::create_render_pass()
 
 
     VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = Texture::find_depth_formats(device->get_physical_device());
+    depth_attachment.format = Texture::find_depth_formats(device->physical_device);
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -701,7 +703,7 @@ void RenderPipeline::create_render_pass()
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    assert(vkCreateRenderPass(device->get_virtual_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS); 
+    assert(vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS); 
 }
 
 void RenderPipeline::create_sync_objects()
@@ -719,8 +721,8 @@ void RenderPipeline::create_sync_objects()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &image_available_semaphores[i]) == VK_SUCCESS);
-        assert(vkCreateSemaphore(device->get_virtual_device(), &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
-        assert(vkCreateFence(device->get_virtual_device(), &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
+        assert(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &image_available_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateFence(device->virtual_device, &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
     }
 }

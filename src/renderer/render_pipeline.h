@@ -101,21 +101,15 @@ public:
     VkSurfaceKHR& get_surface() { return surface; }
 
     SwapChain* get_swap_chain() { return swap_chain; }
-
-    bool spin_direction;
     std::vector<Renderable> to_render;
-    float spin_x = 0;
-    float spin_y = 0;
-    float spin_z = 1;
-    float scale = 1;
-
-    float camera_thing[3] = {2, 2, 2};
 
     uint8_t current_frame = 0;//TODO MOVE
     VkRenderPass render_pass; //TODO MOVE
     // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+    glm::vec3 camera_location{ 6, 0, 0};
 
     std::vector<std::string> logs;
 

@@ -5,11 +5,13 @@
 #include "../../renderer/renderable.h"
 
 
+static void stub(){}
+
 struct Entity{
     uint32_t id;
     Transform transform;
     Renderable rendering;
-    void (*Test)();
+    void (*test)() = stub;
 };
 
 namespace Entity_Manager

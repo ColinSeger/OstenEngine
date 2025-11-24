@@ -1,11 +1,11 @@
 #include "instance.h"
 
-VkInstance Instance::create_instance(const char* name, const bool enable_validation)
+VkInstance Instance::create_instance(const char* name, const std::vector<const char*>& validation_layers)
 {
     VkInstance instance;
     //DEBUG REASONS
-    if(enable_validation){
-        assert(check_validation_layer_support() == true && "Validation layers requested but could not be found");        
+    if(validation_layers.size() > 0){
+        assert(check_validation_layer_support(validation_layers) == true && "Validation layers requested but could not be found");        
     }
 
     VkApplicationInfo app_info{};
@@ -34,7 +34,7 @@ VkInstance Instance::create_instance(const char* name, const bool enable_validat
     create_info.enabledExtensionCount = glfw_extention_count;
     create_info.ppEnabledExtensionNames = glfw_extensions;
 
-    if(enable_validation){
+    if(validation_layers.size() > 0){
         create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
         create_info.ppEnabledLayerNames = validation_layers.data();
     }else{
@@ -46,14 +46,7 @@ VkInstance Instance::create_instance(const char* name, const bool enable_validat
     return instance;
 }
 
-
-
-// Instance::~Instance()
-// {
-//     vkDestroyInstance(instance, nullptr);
-// }
-
-bool Instance::check_validation_layer_support()
+bool Instance::check_validation_layer_support(const std::vector<const char*>& validation_layers)
 {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);

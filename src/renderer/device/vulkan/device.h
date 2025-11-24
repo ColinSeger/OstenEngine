@@ -7,45 +7,31 @@
 #include <string>
 #include "../../swap_chain/vulkan/swap_chain.h"//Look into removing later
 
-class Device
-{
-private:
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
-    VkDevice virtual_device;
+static const std::vector<const char*> device_extensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+
+
+
+
+struct Device
+{
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice virtual_device = VK_NULL_HANDLE;
 
     VkQueue graphics_queue;
     VkQueue present_queue;
 
     VkSurfaceKHR& surface;
 
-    // SwapChain* swap_chain = nullptr;
-
-    const std::vector<const char*> validation_layers = {
-        "VK_LAYER_KHRONOS_validation"
-    };
-
-    const std::vector<const char*> device_extensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
-    void create_virtual_device(bool enable_validation);
-
-    bool is_device_suitable(VkPhysicalDevice device);
-
-    bool check_device_extension_support(VkPhysicalDevice device);
-
-    
-
-public:
-    Device(VkInstance& instance, VkSurfaceKHR& surface, bool enable_validation);
+    Device(VkInstance& instance, VkSurfaceKHR& surface, const std::vector<const char*>& validation_layers);
     ~Device();
-    
-    VkDevice get_virtual_device(){ return virtual_device; }
-
-    VkPhysicalDevice get_physical_device(){ return physical_device; }
-
-    VkQueue& get_graphics_queue() { return graphics_queue; }
-
-    VkQueue& get_present_queue() { return present_queue; }
 };
+
+namespace DeviceFunctions{
+    bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+    bool check_device_extension_support(VkPhysicalDevice device);
+    void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers);
+}

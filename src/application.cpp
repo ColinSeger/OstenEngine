@@ -26,9 +26,9 @@ VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
 
 void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 {
-    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->get_device()->get_virtual_device());
-    VkPhysicalDevice physical_device = render_pipeline->get_device()->get_physical_device();
-    VkDevice virtual_device = render_pipeline->get_device()->get_virtual_device();
+    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->get_device()->virtual_device);
+    VkPhysicalDevice physical_device = render_pipeline->get_device()->physical_device;
+    VkDevice virtual_device = render_pipeline->get_device()->virtual_device;
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -58,7 +58,7 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     init_info.Device = virtual_device;
     init_info.QueueFamily = Setup::find_queue_families(physical_device, render_pipeline->get_surface()).graphics_family.value();
 
-    init_info.Queue = render_pipeline->get_device()->get_graphics_queue();
+    init_info.Queue = render_pipeline->get_device()->graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
@@ -147,6 +147,8 @@ void Application::main_game_loop()
 
             ImGui::Text("(%f)", ((float)fps));
 
+            ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 50);
+
             if(ImGui::Button("Add entity"))
             {
                 Entity_Manager::add_entity(Entity{});
@@ -175,11 +177,7 @@ void Application::main_game_loop()
 
                 ImGui::PopID();
             }
-            
 
-            ImGui::SliderFloat3("Camera_thing", render_pipeline->camera_thing, 0, 2000);
-
-            ImGui::SliderFloat("Scale", &render_pipeline->scale, 0, 1);
         ImGui::End();
 
 

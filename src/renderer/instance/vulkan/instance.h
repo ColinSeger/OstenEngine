@@ -7,12 +7,9 @@
 #include <iostream>
 #include <cstring>
 
-const std::vector<const char*> validation_layers = {
-    "VK_LAYER_KHRONOS_validation"
-};
 namespace Instance
 {
-    VkInstance create_instance(const char* name, const bool enable_validation);
+    VkInstance create_instance(const char* name, const std::vector<const char*>& validation_layers);
 
-    bool check_validation_layer_support(); 
+    bool check_validation_layer_support(const std::vector<const char*>& validation_layers); 
 };

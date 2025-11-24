@@ -3,11 +3,11 @@ namespace {
     std::vector<Entity> entities;    
 }
 
-void Hello(){
+void hello(){
     std::cout << "Hello\n";
 }
 
-void Test(){
+void test(){
     std::cout << "Test\n";
 }
 
@@ -16,9 +16,9 @@ void Entity_Manager::add_entity(Entity entity)
     entity.id = entities.size();
     
     if(entities.size() > 2){
-        entity.Test = &Hello;
+        entity.test = &hello;
     }else{
-        entity.Test = &Test;
+        entity.test = &test;
     }
     entities.emplace_back(entity);
 }
@@ -49,7 +49,7 @@ void Entity_Manager::print_entities()
 {
     for (size_t i = 0; i < entities.size(); i++)
     {
-        entities[i].Test();
+        entities[i].test();
     }
     
 }

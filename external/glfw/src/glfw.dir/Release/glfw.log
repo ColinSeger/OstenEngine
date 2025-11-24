@@ -1,4 +1,4 @@
-﻿  Building Custom Rule C:/Users/colin/Documents/Project/OstenEngine/GameEngine/external/glfw/src/CMakeLists.txt
+﻿  Building Custom Rule C:/Tasks/Engine/Engine/external/glfw/src/CMakeLists.txt
   context.c
   init.c
   input.c
@@ -23,4 +23,4 @@
   Compiling...
   wgl_context.c
   Generating Code...
-  glfw.vcxproj -> C:\Users\colin\Documents\Project\OstenEngine\GameEngine\external\glfw\src\Release\glfw3.lib
+  glfw.vcxproj -> C:\Tasks\Engine\Engine\external\glfw\src\Release\glfw3.lib
