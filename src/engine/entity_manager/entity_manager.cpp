@@ -3,10 +3,23 @@ namespace {
     std::vector<Entity> entities;    
 }
 
+void Hello(){
+    std::cout << "Hello\n";
+}
+
+void Test(){
+    std::cout << "Test\n";
+}
 
 void Entity_Manager::add_entity(Entity entity)
 {
     entity.id = entities.size();
+    
+    if(entities.size() > 2){
+        entity.Test = &Hello;
+    }else{
+        entity.Test = &Test;
+    }
     entities.emplace_back(entity);
 }
 
@@ -30,4 +43,13 @@ void Entity_Manager::remove_entity(uint32_t entity)
 uint32_t Entity_Manager::get_entity_amount()
 {
     return entities.size();
+}
+
+void Entity_Manager::print_entities()
+{
+    for (size_t i = 0; i < entities.size(); i++)
+    {
+        entities[i].Test();
+    }
+    
 }

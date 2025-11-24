@@ -105,8 +105,19 @@ void Application::main_game_loop()
 
     int entity_to_delete = 0;
 
+    double fps = 0;
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
+
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+        if(time > 1)
+        {
+            fps = frames / time;
+            start_time = current_time;
+            frames = 0;             
+        }
         // render_pipeline->draw_frame();
         // continue;
         if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
@@ -133,11 +144,8 @@ void Application::main_game_loop()
         ImGui::Begin("My Thing", &test);
             ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
             ImGui::Spacing();
-            auto current_time = std::chrono::high_resolution_clock::now();
-            float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-            ImGui::Text("(%f)", ((float)frames / time));
 
-
+            ImGui::Text("(%f)", ((float)fps));
 
             if(ImGui::Button("Add entity"))
             {
@@ -148,6 +156,11 @@ void Application::main_game_loop()
             if(ImGui::Button("Remove Entity"))
             {
                 Entity_Manager::remove_entity(entity_to_delete);
+            }
+
+            if(ImGui::Button("Call Entity"))
+            {
+                Entity_Manager::print_entities();
             }
             
             for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)

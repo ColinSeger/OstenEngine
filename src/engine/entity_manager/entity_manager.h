@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <vector>
 #include "../transform.h"
 #include "../../renderer/renderable.h"
@@ -8,6 +9,7 @@ struct Entity{
     uint32_t id;
     Transform transform;
     Renderable rendering;
+    void (*Test)();
 };
 
 namespace Entity_Manager
@@ -19,4 +21,6 @@ namespace Entity_Manager
     void remove_entity(uint32_t entity);
 
     uint32_t get_entity_amount();
+
+    void print_entities();
 }
