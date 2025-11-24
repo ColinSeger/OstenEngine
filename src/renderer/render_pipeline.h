@@ -17,7 +17,7 @@
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
-static const char* model_location = "assets/debug_assets/Cube.obj";
+static const char* model_location = "assets/debug_assets/viking.obj";
 static const char* texture_location = "assets/debug_assets/viking_room.png";
 
 class RenderPipeline
@@ -120,4 +120,8 @@ public:
     std::vector<std::string> logs;
 
     void draw_model(Renderable to_render);
+
+    void create_uniform_buffer(Renderable& render_this);
+
+    void create_descriptor_set(Renderable& render_this);
 };

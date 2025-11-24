@@ -53,14 +53,6 @@ struct Vertex {
         return attribute_descriptions;
     }  
 };
-
-namespace VertexFunctions{
-
-    inline VkVertexInputBindingDescription get_binding_description();
-
-    inline std::array<VkVertexInputAttributeDescription, 2> get_attribute_descriptions();
-}
-
 namespace CommandBuffer
 {
     uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties);

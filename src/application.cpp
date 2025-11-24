@@ -152,13 +152,15 @@ void Application::main_game_loop()
             
             for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
             {
-                const char* test = "test" + i;
+                ImGui::PushID(i);
 
                 ImGui::Text("Text");
-                ImGui::InputFloat3(test, &render_pipeline->to_render[i].transform.position.x);
-                ImGui::SliderFloat3(test+3, &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
-                ImGui::InputFloat3(test+2, &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::InputFloat3("", &render_pipeline->to_render[i].transform.position.x);
+                ImGui::SliderFloat3("test+3", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
+                ImGui::InputFloat3("test+2", &render_pipeline->to_render[i].transform.scale.x);
                 ImGui::Spacing();
+
+                ImGui::PopID();
             }
             
 
@@ -196,6 +198,16 @@ void Application::main_game_loop()
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         frames +=1;
+
+        if(Entity_Manager::get_entity_amount() > render_pipeline->to_render.size()){
+            Renderable first_obj;
+            first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
+            first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
+            first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
+            render_pipeline->create_uniform_buffer(first_obj);
+            render_pipeline->create_descriptor_set(first_obj);
+            render_pipeline->to_render.push_back(first_obj);
+        }
     }
 }
 

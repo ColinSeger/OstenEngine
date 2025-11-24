@@ -94,7 +94,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     snd_obj.transform.scale = {1.0f, 2.0f, 1.0f};
 
     to_render.push_back(first_obj);
-    // to_render.push_back(snd_obj);
+    to_render.push_back(snd_obj);
     //vertices.clear();
     //indices.clear();
     
@@ -305,6 +305,77 @@ void RenderPipeline::create_uniform_buffers() {
 
             vkMapMemory(device->get_virtual_device(), render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
         } 
+    }
+}
+
+void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    render_this.uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+    render_this.uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+    render_this.uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        CommandBuffer::create_buffer(
+            device,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            bufferSize,  
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            render_this.uniform_buffers[i], 
+            render_this.uniform_buffers_memory[i]
+        );
+
+        vkMapMemory(device->get_virtual_device(), render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
+    } 
+}
+
+void RenderPipeline::create_descriptor_set(Renderable& render_this) {
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptor_pool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+    
+    render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
+
+    assert(vkAllocateDescriptorSets(device->get_virtual_device(), &allocInfo, render_this.descriptor_sets.data()) == VK_SUCCESS);
+
+    
+
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = render_this.uniform_buffers[i];
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(UniformBufferObject);
+
+        VkDescriptorImageInfo image_info{};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView = image_view;
+        image_info.sampler = texture_sampler;
+
+        const uint8_t descriptor_size = 2;
+        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &buffer_info;
+        descriptor_writes[0].pImageInfo = nullptr; // Optional
+        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
+
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo = &image_info;
+
+        vkUpdateDescriptorSets(device->get_virtual_device(), descriptor_size, descriptor_writes, 0, nullptr);
     }
 }
 
