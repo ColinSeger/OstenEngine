@@ -88,6 +88,11 @@ Application::~Application()
     cleanup();
 }
 
+void Application::move_camera()
+{
+    render_pipeline->camera_location[0] += 10;
+}
+
 void Application::main_game_loop()
 {
     bool test = true;
@@ -109,6 +114,11 @@ void Application::main_game_loop()
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
+        int state = glfwGetKey(main_window, GLFW_KEY_E);
+        if (state == GLFW_PRESS)
+        {
+            move_camera();
+        }
 
         auto current_time = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();

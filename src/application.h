@@ -35,5 +35,7 @@ public:
     ~Application();
     void main_game_loop();
 
+    void move_camera();
+
     void cleanup();
 };
