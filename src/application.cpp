@@ -88,6 +88,32 @@ Application::~Application()
     cleanup();
 }
 
+void Application::imgui_hierarchy(bool& open)
+{
+    ImGui::Begin("Hierarchy", &open);
+        ImGui::Text("Hierarchy! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
+        ImGui::Spacing();
+        if(ImGui::TreeNode("Thing"))
+        {
+            for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
+            {
+                ImGui::PushID(i);
+
+                ImGui::Text("Transform");
+                ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
+                ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
+                ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::Spacing();
+
+                ImGui::PopID();
+            }
+            
+            ImGui::TreePop();
+        }
+
+    ImGui::End();
+}
+
 void Application::move_camera()
 {
     render_pipeline->camera_location[0] += 10;
@@ -159,6 +185,8 @@ void Application::main_game_loop()
 
             ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 50);
 
+            imgui_hierarchy(test);
+
             if(ImGui::Button("Add entity"))
             {
                 Entity_Manager::add_entity(Entity{});
@@ -179,10 +207,10 @@ void Application::main_game_loop()
             {
                 ImGui::PushID(i);
 
-                ImGui::Text("Text");
-                ImGui::InputFloat3("", &render_pipeline->to_render[i].transform.position.x);
-                ImGui::SliderFloat3("test+3", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
-                ImGui::InputFloat3("test+2", &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::Text("Transform");
+                ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
+                ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
+                ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
                 ImGui::Spacing();
 
                 ImGui::PopID();
@@ -222,9 +250,9 @@ void Application::main_game_loop()
 
         if(Entity_Manager::get_entity_amount() > render_pipeline->to_render.size()){
             Renderable first_obj;
-            first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
-            first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
-            first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
+            first_obj.transform.position =  { -1.0f, 0.0f, 0.0f};
+            first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};
+            first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
             render_pipeline->create_uniform_buffer(first_obj);
             render_pipeline->create_descriptor_set(first_obj);
             render_pipeline->to_render.push_back(first_obj);

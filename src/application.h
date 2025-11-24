@@ -37,5 +37,7 @@ public:
 
     void move_camera();
 
+    void imgui_hierarchy(bool& open);
+
     void cleanup();
 };
