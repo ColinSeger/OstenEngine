@@ -156,7 +156,7 @@ void Application::main_game_loop()
 
                 ImGui::Text("Text");
                 ImGui::InputFloat3(test, &render_pipeline->to_render[i].transform.position.x);
-                ImGui::SliderFloat3(test+3, &render_pipeline->to_render[i].transform.rotation.x, 0, 360);
+                ImGui::SliderFloat3(test+3, &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
                 ImGui::InputFloat3(test+2, &render_pipeline->to_render[i].transform.scale.x);
                 ImGui::Spacing();
             }

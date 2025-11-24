@@ -41,6 +41,24 @@ void model_loader::load_model(const char* model_path, std::vector<Vertex>& verti
     }
 }*/
 
+inline OBJ_Mode select_mode(char* char_to_check)//This is ass
+{
+    if(*char_to_check == '#'){
+        return OBJ_Mode::Comment;
+    }
+    if (*char_to_check == 'v') {
+        char_to_check++;
+        if(*char_to_check == ' '){
+            return OBJ_Mode::Vertex;
+        }
+        
+    }
+    if(*char_to_check == 'f'){
+        return OBJ_Mode::Face;
+    }
+    return OBJ_Mode::None;
+}
+
 
 void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
 {
@@ -64,7 +82,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
         //TODO LOG failed model load
         return;
     }
-    uint32_t file_size = file_stream.tellg();
+    size_t file_size = file_stream.tellg();
     file_stream.seekg(0);
     char* file = new char[file_size];
     //memset(file, 0, file_size);
@@ -75,8 +93,9 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     std::vector<Vertex> vertex;
 
     OBJ_Mode current_mode = OBJ_Mode::None;
-    std::string values[3];
+    std::string values[4];
     uint8_t index = 0;
+    std::string command;
 
     for (size_t i = 0; i < file_size; i++)
     {
@@ -89,25 +108,12 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             continue;
         }
         
-        
-        
         if(current_mode == OBJ_Mode::None){
-            if(file[i] == '#'){
-                current_mode = OBJ_Mode::Comment;
-                continue;
-            }
-            if (file[i] == 'v') {
-                i++;
-                current_mode = OBJ_Mode::Vertex;
-                index = 0;
-                continue;
-            }
-            if(file[i] == 'f'){
-                current_mode = OBJ_Mode::Face;
-                index = 0;
-                continue;
-            }
+            current_mode = select_mode(&file[i]);
+            index = 0;
+            continue;
         }
+        
         if(current_mode == OBJ_Mode::None) continue;
         
         if(file[i] == '\n'){
@@ -118,25 +124,28 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
                 float z = std::stof(values[2]);
                 new_vertex.position = glm::vec3(x, y, z);
                 vertices.push_back(new_vertex);
-                indices.push_back(vertices.size());
-                // vertex.push_back(new_vertex);
-                index = 0;
+
                 values[0].clear();
                 values[1].clear();
                 values[2].clear();
                 
                 current_mode = OBJ_Mode::None;
+                continue;
             }
             if(current_mode == OBJ_Mode::Face){
-                indices.push_back(std::stoi(values[0]));
-                indices.clear();
-                index = 0;
+                for (std::string& index : values)
+                {
+                    if(index.length() <= 0) continue;
+                    indices.push_back(std::stoi(index)-1);
+                    index.clear();
+                }
                 current_mode = OBJ_Mode::None;
+                continue;
             }
         }else{
             if(file[i] == ' ')
             {
-                if(current_mode == OBJ_Mode::Vertex){
+                if(values[0].length() > 0){
                     index++;                    
                 }else{
                     //if(value == ' ') continue;
@@ -145,6 +154,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
                 }
 
             }else{
+                if(index >= 4) continue;
                 values[index].push_back(value);
             }
         }

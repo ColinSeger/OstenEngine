@@ -81,7 +81,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     device = new Device(instance, surface, enable_validation);
 
     //model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
-    model_loader::parse_obj("../../../assets/debug_assets/Cube.obj", vertices, indices, logs);
+    model_loader::parse_obj(model_location, vertices, indices, logs);
     // Object 1 - Center
     Renderable first_obj;
     first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
@@ -392,7 +392,7 @@ void RenderPipeline::restart_swap_chain()
 
     swap_chain->create_frame_buffers(render_pass, depth_image_view);
 
-    VkImage image_test = Texture::create_texture_image(device, "../../../assets/debug_assets/viking_room.png", command_pool);
+    VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
 
     image_view = Texture::create_image_view(device->get_virtual_device(), image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
