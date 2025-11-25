@@ -35,7 +35,9 @@ public:
     ~Application();
     void main_game_loop();
 
-    void move_camera();
+    void move_camera(double delta_time);
+
+    void imgui_hierarchy_pop_up();
 
     void imgui_hierarchy(bool& open);
 

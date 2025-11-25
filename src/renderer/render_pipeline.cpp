@@ -85,18 +85,18 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     //model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
     model_loader::parse_obj(model_location, vertices, indices, logs);
     // Object 1 - Center
-    Renderable first_obj;
-    first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
-    first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
-    first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
+    // Renderable first_obj;
+    // first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
+    // first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
+    // first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
 
-    Renderable snd_obj;
-    snd_obj.transform.position = {1.0f, 1.0f, 2.0f};
-    snd_obj.transform.rotation = {0.0f, 90.0f, -90.0f};
-    snd_obj.transform.scale = {1.0f, 2.0f, 1.0f};
+    // Renderable snd_obj;
+    // snd_obj.transform.position = {1.0f, 1.0f, 2.0f};
+    // snd_obj.transform.rotation = {0.0f, 90.0f, -90.0f};
+    // snd_obj.transform.scale = {1.0f, 2.0f, 1.0f};
 
-    to_render.push_back(first_obj);
-    to_render.push_back(snd_obj);
+    // to_render.push_back(first_obj);
+    // to_render.push_back(snd_obj);
     //vertices.clear();
     //indices.clear();
     
@@ -201,6 +201,7 @@ void RenderPipeline::draw_frame()
 
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
+
 
     RenderPass::start_render_pass(command_buffer, swap_chain->get_frame_buffer()[image_index], render_pass, swap_chain->get_extent());
 

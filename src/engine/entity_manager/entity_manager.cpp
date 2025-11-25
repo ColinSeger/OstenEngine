@@ -53,3 +53,8 @@ void Entity_Manager::print_entities()
     }
     
 }
+
+std::vector<Entity> Entity_Manager::get_all_entities()
+{
+    return entities;
+}

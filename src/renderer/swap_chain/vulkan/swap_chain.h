@@ -29,8 +29,7 @@ struct RenderBuffer
 
 class SwapChain
 {
-private:
-
+public:
     VkSwapchainKHR swap_chain;
 
     VkExtent2D screen_extent;
@@ -52,8 +51,6 @@ private:
     VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
 
     void create_image_views();
-    
-public:
 
     SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSurfaceKHR& surface_reference, VkDevice virtual_device);
     ~SwapChain();

@@ -25,4 +25,6 @@ namespace Entity_Manager
     uint32_t get_entity_amount();
 
     void print_entities();
+
+    std::vector<Entity> get_all_entities();
 }

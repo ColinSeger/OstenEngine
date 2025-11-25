@@ -112,6 +112,8 @@ public:
     glm::vec3 camera_location{ 6, 0, 0};
 
     std::vector<std::string> logs;
+    VkSampler view_sampler;
+    VkImageView last_frame;
 
     void draw_model(Renderable to_render);
 

@@ -49,6 +49,7 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
+    // io.WantCaptureMouse = true;
     
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
     
@@ -88,21 +89,39 @@ Application::~Application()
     cleanup();
 }
 
+void Application::imgui_hierarchy_pop_up()
+{
+    if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
+        ImGui::Text("PopUp");
+        if(ImGui::Button("Spawn Object")){
+            Entity_Manager::add_entity(Entity{});
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void Application::imgui_hierarchy(bool& open)
 {
     ImGui::Begin("Hierarchy", &open);
-        ImGui::Text("Hierarchy! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
+        imgui_hierarchy_pop_up();
+        ImGui::Text("Hierarchy!");
         ImGui::Spacing();
+
+        if(ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)){
+            ImGui::OpenPopup("hierarchy_pop_up");
+        }
+        
         if(ImGui::TreeNode("Thing"))
         {
-            for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
+            auto entities = Entity_Manager::get_all_entities();
+            for (uint16_t i = 0; i < entities.size(); i++)
             {
                 ImGui::PushID(i);
 
-                ImGui::Text("Transform");
-                ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
-                ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
-                ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::Text("(%i)", entities[i].id);
+                // ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
+                // ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
+                // ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
                 ImGui::Spacing();
 
                 ImGui::PopID();
@@ -110,13 +129,12 @@ void Application::imgui_hierarchy(bool& open)
             
             ImGui::TreePop();
         }
-
     ImGui::End();
 }
 
-void Application::move_camera()
+void Application::move_camera(double delta_time)
 {
-    render_pipeline->camera_location[0] += 10;
+    render_pipeline->camera_location[0] += 100 * delta_time;
 }
 
 void Application::main_game_loop()
@@ -125,32 +143,31 @@ void Application::main_game_loop()
     static auto start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
-
-    Renderable render_this;
-    render_this.mesh_location = "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking.obj";
-    render_this.texture_location = "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/assets/debug_assets/viking_room.png";
-
-    //render_pipeline->draw_model(render_this);
-
-    VkDescriptorSet image = ImGui_ImplVulkan_AddTexture(render_pipeline->texture_sampler, render_pipeline->image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    // VkDescriptorSet image = ImGui_ImplVulkan_AddTexture(render_pipeline->texture_sampler, render_pipeline->last_frame, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     int entity_to_delete = 0;
 
     double fps = 0;
 
+    auto last_tick = std::chrono::high_resolution_clock::now();
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
         int state = glfwGetKey(main_window, GLFW_KEY_E);
-        if (state == GLFW_PRESS)
-        {
-            move_camera();
-        }
 
         auto current_time = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-        if(time > 1)
+        double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
+        double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
+
+        if (state == GLFW_PRESS)
         {
-            fps = frames / time;
+            move_camera(delta_time);
+        }
+        
+        
+        if(frame_time > 1)
+        {
+            fps = frames / frame_time;
             start_time = current_time;
             frames = 0;             
         }
@@ -167,13 +184,12 @@ void Application::main_game_loop()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         //ImGui::DockSpaceOverViewport();
-
         ImGui::Begin("GameViewPort");
             ImGui::BeginChild("GameRender");
 
             ImVec2 wsize = ImGui::GetWindowSize();
 
-            // ImGui::Image((ImTextureID)render_pipeline->descriptor_sets[render_pipeline->current_frame], wsize, ImVec2(0, 1), ImVec2(1, 0));
+            //ImGui::Image((ImTextureID)render_pipeline->last_frame, wsize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::EndChild();
         ImGui::End();
 
@@ -186,11 +202,6 @@ void Application::main_game_loop()
             ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 50);
 
             imgui_hierarchy(test);
-
-            if(ImGui::Button("Add entity"))
-            {
-                Entity_Manager::add_entity(Entity{});
-            }
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));
 
             if(ImGui::Button("Remove Entity"))
@@ -257,6 +268,7 @@ void Application::main_game_loop()
             render_pipeline->create_descriptor_set(first_obj);
             render_pipeline->to_render.push_back(first_obj);
         }
+        last_tick = std::chrono::high_resolution_clock::now();
     }
 }
 
