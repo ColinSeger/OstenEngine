@@ -16,6 +16,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
         
         throw std::runtime_error("std::filesystem::current_path()");
     }
+    
 
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;

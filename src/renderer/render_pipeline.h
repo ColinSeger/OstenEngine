@@ -101,6 +101,7 @@ public:
     VkSurfaceKHR& get_surface() { return surface; }
 
     SwapChain* get_swap_chain() { return swap_chain; }
+    
     std::vector<Renderable> to_render;
 
     uint8_t current_frame = 0;//TODO MOVE

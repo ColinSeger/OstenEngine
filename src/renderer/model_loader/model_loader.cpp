@@ -51,7 +51,9 @@ inline OBJ_Mode select_mode(char* char_to_check)//This is ass
         if(*char_to_check == ' '){
             return OBJ_Mode::Vertex;
         }
-        
+        if(*char_to_check == 't'){
+            return OBJ_Mode::TextureCord;
+        }
     }
     if(*char_to_check == 'f'){
         return OBJ_Mode::Face;
@@ -92,74 +94,97 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     std::vector<Vertex> vertex;
 
+    std::vector<uint32_t> texture_index;
+    std::vector<glm::vec2> texture_cord;
+
     OBJ_Mode current_mode = OBJ_Mode::None;
     std::string values[4];
     uint8_t index = 0;
     std::string command;
+    Vertex new_vertex;
+    uint32_t vertex_id = 0;
+
+    vertex.reserve(file_size/40);
+    indices.reserve(file_size/60);
+    texture_cord.reserve(file_size/60);
+    texture_index.reserve(file_size/60);
 
     for (size_t i = 0; i < file_size; i++)
     {
         char value = file[i];
-        if(current_mode == OBJ_Mode::Comment)
-        {
-            if(file[i] == '\n'){
-                current_mode = OBJ_Mode::None;
-            }
-            continue;
-        }
-        
-        if(current_mode == OBJ_Mode::None){
-            current_mode = select_mode(&file[i]);
-            index = 0;
-            continue;
-        }
-        
-        if(current_mode == OBJ_Mode::None) continue;
-        
-        if(file[i] == '\n'){
-            if(current_mode == OBJ_Mode::Vertex){
-                Vertex new_vertex;
-                float x = std::stof(values[0]);
-                float y = std::stof(values[1]);
-                float z = std::stof(values[2]);
-                new_vertex.position = glm::vec3(x, y, z);
-                vertices.push_back(new_vertex);
 
-                values[0].clear();
-                values[1].clear();
-                values[2].clear();
+        if(value == '\n' || current_mode == OBJ_Mode::None){
+
+            switch (current_mode)
+            {
+            case OBJ_Mode::None:
+                current_mode = select_mode(&file[i]);
+                if(current_mode == OBJ_Mode::TextureCord) i++;
+                index = 0;
+            break;
+            case OBJ_Mode::Comment:
+                current_mode = OBJ_Mode::None;
+            break;
+            case OBJ_Mode::Vertex:
+                
+                new_vertex.position = glm::vec3(std::stof(values[0]), std::stof(values[1]), std::stof(values[2]));
+                vertex.push_back(new_vertex);
                 
                 current_mode = OBJ_Mode::None;
-                continue;
-            }
-            if(current_mode == OBJ_Mode::Face){
+            break;
+            case OBJ_Mode::Face:
                 for (std::string& index : values)
                 {
                     if(index.length() <= 0) continue;
-                    indices.push_back(std::stoi(index)-1);
-                    index.clear();
+                    indices.push_back(std::stoi(index) -1);
+                    for (size_t i = 0; i < index.size(); i++)
+                    {
+                        if(index[i] == '/')
+                        {
+                            texture_index.push_back(std::stoi(&index[i+1]) -1);
+                            break;
+                        }
+                    }
                 }
                 current_mode = OBJ_Mode::None;
-                continue;
+            break;
+            case OBJ_Mode::TextureCord:
+                texture_cord.emplace_back(std::stof(values[0]), 1.f - std::stof(values[1]));
+                current_mode = OBJ_Mode::None;
+            break;
+            case OBJ_Mode::Normal:
+                //Todo
+            break;
+            default:
+                break;
             }
-        }else{
-            if(file[i] == ' ')
+            for (std::string& index : values)
             {
-                if(values[0].length() > 0){
-                    index++;                    
-                }else{
-                    //if(value == ' ') continue;
-                    //indices.push_back(std::stoi(values[0]));
-                    //indices.clear();
-                }
-
-            }else{
-                if(index >= 4) continue;
-                values[index].push_back(value);
+                index.clear();
             }
+            continue;
+        }
+
+        if(current_mode == OBJ_Mode::None || current_mode == OBJ_Mode::Comment) continue;
+
+        if(value == ' ')
+        {
+            if(values[0].length() > 0){
+                index++;                    
+            }
+
+        }else{
+            if(index >= 4) continue;
+            values[index].push_back(value);
         }
     }
+    for (size_t i = 0; i < indices.size(); i++)
+    {
+        vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
+    }
     
+    
+    vertices = vertex;
 
     delete[] file;
     
