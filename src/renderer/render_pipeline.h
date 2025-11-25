@@ -17,8 +17,8 @@
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
-static const char* model_location = "assets/debug_assets/viking.obj";
-static const char* texture_location = "assets/debug_assets/viking_room.png";
+static const char* model_location = "assets/debug_assets/napoleon.obj";
+static const char* texture_location = "assets/debug_assets/napoleon_texture.png";
 
 class RenderPipeline
 {
@@ -101,7 +101,7 @@ public:
     VkSurfaceKHR& get_surface() { return surface; }
 
     SwapChain* get_swap_chain() { return swap_chain; }
-    
+
     std::vector<Renderable> to_render;
 
     uint8_t current_frame = 0;//TODO MOVE
@@ -113,10 +113,6 @@ public:
     glm::vec3 camera_location{ 6, 0, 0};
 
     std::vector<std::string> logs;
-    VkSampler view_sampler;
-    VkImageView last_frame;
-
-    void draw_model(Renderable to_render);
 
     void create_uniform_buffer(Renderable& render_this);
 

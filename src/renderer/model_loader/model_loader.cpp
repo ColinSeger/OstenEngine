@@ -1,46 +1,5 @@
 #include "model_loader.h"
 
-/*
-void model_loader::load_model(const char* model_path, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
-{
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err;
-    std::string warning;
-
-    if(tinyobj::LoadObj(&attrib, &shapes, &materials, &warning, &err, model_path) != true) {
-        //char *buf;
-        //char* file = getcwd(buf, 1024);
-
-        auto test = std::filesystem::current_path();
-        auto bro = test.filename().string();
-        throw std::runtime_error(bro);
-    }
-
-    for (const auto& shape : shapes) {
-        for (const auto& index : shape.mesh.indices) {
-            Vertex vertex{};
-
-            vertex.position = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]
-            };
-
-            vertex.texture_cord = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-            };
-
-            vertex.color = {1.0f, 1.0f, 1.0f};
-
-            vertices.push_back(vertex);
-            indices.push_back(indices.size());
-        }
-    }
-}*/
-
 inline OBJ_Mode select_mode(char* char_to_check)//This is ass
 {
     if(*char_to_check == '#'){
@@ -65,8 +24,6 @@ inline OBJ_Mode select_mode(char* char_to_check)//This is ass
 void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
 {
     std::ifstream file_stream;
-
-    //std::ios_base::in | std::ios_base::ate | std::ios_base::binary
 
     file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
@@ -99,7 +56,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     OBJ_Mode current_mode = OBJ_Mode::None;
     std::string values[4];
-    uint8_t index = 0;
+    uint8_t char_index = 0;
     std::string command;
     Vertex new_vertex;
     uint32_t vertex_id = 0;
@@ -120,7 +77,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             case OBJ_Mode::None:
                 current_mode = select_mode(&file[i]);
                 if(current_mode == OBJ_Mode::TextureCord) i++;
-                index = 0;
+                char_index = 0;
             break;
             case OBJ_Mode::Comment:
                 current_mode = OBJ_Mode::None;
@@ -170,12 +127,12 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
         if(value == ' ')
         {
             if(values[0].length() > 0){
-                index++;                    
+                char_index++;                    
             }
 
         }else{
-            if(index >= 4) continue;
-            values[index].push_back(value);
+            if(char_index >= 4) continue;
+            values[char_index].push_back(value);
         }
     }
     for (size_t i = 0; i < indices.size(); i++)

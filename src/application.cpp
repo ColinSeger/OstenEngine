@@ -199,7 +199,7 @@ void Application::main_game_loop()
 
             ImGui::Text("(%f)", ((float)fps));
 
-            ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 50);
+            ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 500);
 
             imgui_hierarchy(test);
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));

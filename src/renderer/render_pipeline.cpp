@@ -173,12 +173,6 @@ void RenderPipeline::cleanup()
     glfwTerminate();
 }
 
-void RenderPipeline::draw_model(Renderable to_draw)
-{
-    
-    
-}
-
 void RenderPipeline::draw_frame()
 {
     vkWaitForFences(device->virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
