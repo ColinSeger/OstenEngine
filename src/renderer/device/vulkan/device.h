@@ -25,8 +25,6 @@ struct Device
     ~Device();
 };
 
-namespace DeviceFunctions{
-    bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
-    bool check_device_extension_support(VkPhysicalDevice device);
-    void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers);
-}
+bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+bool check_device_extension_support(VkPhysicalDevice device);
+void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers);

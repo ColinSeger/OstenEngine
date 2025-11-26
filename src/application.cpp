@@ -134,7 +134,19 @@ void Application::imgui_hierarchy(bool& open)
 
 void Application::move_camera(double delta_time)
 {
-    render_pipeline->camera_location[0] += 100 * delta_time;
+    float camera_speed = 500;
+    if(ImGui::IsKeyDown(ImGuiKey_W)){
+        render_pipeline->camera_location.position[0] -= camera_speed * delta_time;
+    }
+    if(ImGui::IsKeyDown(ImGuiKey_A)){
+        render_pipeline->camera_location.position[2] -= camera_speed * delta_time;
+    }
+    if(ImGui::IsKeyDown(ImGuiKey_S)){
+        render_pipeline->camera_location.position[0] += camera_speed * delta_time;
+    }
+    if(ImGui::IsKeyDown(ImGuiKey_D)){
+        render_pipeline->camera_location.position[2] += camera_speed * delta_time;
+    }
 }
 
 void Application::main_game_loop()
@@ -159,10 +171,7 @@ void Application::main_game_loop()
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
-        if (state == GLFW_PRESS)
-        {
-            move_camera(delta_time);
-        }
+        move_camera(delta_time);
         
         if(frame_time > 1)
         {
@@ -197,7 +206,7 @@ void Application::main_game_loop()
 
             ImGui::Text("(%f)", ((float)fps));
 
-            ImGui::DragFloat3("camera", &render_pipeline->camera_location[0], 0.1f);
+            ImGui::DragFloat3("camera", &render_pipeline->camera_location.position[0], 0.1f);
 
             imgui_hierarchy(test);
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));

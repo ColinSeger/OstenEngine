@@ -47,7 +47,11 @@ SwapChain::SwapChain(GLFWwindow* window, VkPhysicalDevice physical_device, VkSur
 
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    assert(vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain) == VK_SUCCESS && "Failed to create swap chain");
+    VkResult result = vkCreateSwapchainKHR(virtual_device, &create_info, nullptr, &swap_chain);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Failed to create swap chain");
+    }
 
     vkGetSwapchainImagesKHR(virtual_device, swap_chain, &image_amount, nullptr);
     swap_chain_images.resize(image_amount);
@@ -133,7 +137,9 @@ void SwapChain::create_image_views(){
         create_info.subresourceRange.layerCount = 1;
 
 
-        assert(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chain_image_view[i]) == VK_SUCCESS);
+        if(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_chain_image_view[i]) != VK_SUCCESS){
+            assert(false);
+        }
     }
 }
 
@@ -156,7 +162,9 @@ void SwapChain::create_frame_buffers(VkRenderPass& render_pass, VkImageView dept
         framebuffer_info.height = screen_extent.height;
         framebuffer_info.layers = 1;
 
-        assert(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) == VK_SUCCESS);
+        if(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) != VK_SUCCESS){
+            assert(false);
+        }
     }
 }
 
@@ -203,7 +211,9 @@ void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeli
 
 void RenderPass::end_render_pass(VkCommandBuffer& command_buffer)
 {
-    assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
+    if(vkEndCommandBuffer(command_buffer) != VK_SUCCESS){
+        assert(false);
+    }
 }
 
 namespace Setup

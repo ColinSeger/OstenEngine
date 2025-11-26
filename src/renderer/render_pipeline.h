@@ -46,11 +46,7 @@ private:
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
 
-    // std::vector<VkBuffer> uniform_buffers;
-    // std::vector<VkDeviceMemory> uniform_buffers_memory;
-    // std::vector<void*> uniform_buffers_mapped;
 
-    VkDescriptorPool descriptor_pool;
     
 
     //TODO check if these even need to be vector
@@ -84,6 +80,18 @@ private:
     void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
 public:
+
+    VkDescriptorPool descriptor_pool;
+    std::vector<Renderable> to_render;
+
+    uint8_t current_frame = 0;//TODO MOVE
+    VkRenderPass render_pass; //TODO MOVE
+    // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
+    VkImageView image_view;//TODO Temporary way to access image
+    VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+    Transform camera_location{};
+
     RenderPipeline(const int width, const int height, const char* application_name);
     ~RenderPipeline();
 
@@ -97,23 +105,9 @@ public:
 
     Device* get_device() { return device; }
 
-    VkDescriptorPool& get_descriptor_pool() { return descriptor_pool; }
-
     VkSurfaceKHR& get_surface() { return surface; }
 
     SwapChain* get_swap_chain() { return swap_chain; }
-
-    std::vector<Renderable> to_render;
-
-    uint8_t current_frame = 0;//TODO MOVE
-    VkRenderPass render_pass; //TODO MOVE
-    // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
-    VkImageView image_view;//TODO Temporary way to access image
-    VkSampler texture_sampler;//TODO Temporary way to access sampler
-
-    glm::vec3 camera_location{ 6, 0, 0};
-
-    std::vector<std::string> logs;
 
     void create_uniform_buffer(Renderable& render_this);
 

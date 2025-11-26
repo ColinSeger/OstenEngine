@@ -14,9 +14,6 @@ namespace DeviceHelperFunctions
     }
 }
 
-//
-/// Device is
-//
 Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers) : surface { surface_reference }
 {
     // surface_pointer = surface;
@@ -31,7 +28,7 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std:
 
 
     for (const VkPhysicalDevice& device : devices) {
-        if (DeviceFunctions::is_device_suitable(device, surface)) {
+        if (is_device_suitable(device, surface)) {
             physical_device = device;
             break;
         }
@@ -42,7 +39,7 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std:
     //
     ///Creation of virtual device starts here
     //
-    DeviceFunctions::create_virtual_device(this, validation_layers);
+    create_virtual_device(this, validation_layers);
 
 }
 
@@ -51,11 +48,11 @@ Device::~Device()
     vkDestroyDevice(virtual_device, nullptr);
 }
 
-bool DeviceFunctions::is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
+bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
 {
     QueueFamilyIndicies indices = Setup::find_queue_families(device, surface);
 
-    bool has_extention_support = DeviceFunctions::check_device_extension_support(device);
+    bool has_extention_support = check_device_extension_support(device);
 
     bool has_swap_chain_support = false;
 
@@ -70,7 +67,7 @@ bool DeviceFunctions::is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR s
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-bool DeviceFunctions::check_device_extension_support(VkPhysicalDevice device) 
+bool check_device_extension_support(VkPhysicalDevice device) 
 {
     uint32_t extension_count;
 
@@ -89,7 +86,7 @@ bool DeviceFunctions::check_device_extension_support(VkPhysicalDevice device)
     return required_extensions.empty();
 }
 
-void DeviceFunctions::create_virtual_device(Device* device, const std::vector<const char*>& validation_layers)
+void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers)
 {
     QueueFamilyIndicies indices = Setup::find_queue_families(device->physical_device, device->surface);
 
@@ -131,9 +128,12 @@ void DeviceFunctions::create_virtual_device(Device* device, const std::vector<co
     } else {
         create_info.enabledLayerCount = 0;
     }
-
-
-    assert(vkCreateDevice(device->physical_device, &create_info, nullptr, &device->virtual_device) == VK_SUCCESS);
+    VkResult result = vkCreateDevice(device->physical_device, &create_info, nullptr, &device->virtual_device);
+    if(result != VK_SUCCESS)
+    {
+        printf("Issue in creation of virtual device (%i)", result);
+        assert(false && "Failed to create device");
+    }
 
     vkGetDeviceQueue(device->virtual_device, indices.graphics_family.value(), 0, &device->graphics_queue);
     vkGetDeviceQueue(device->virtual_device, indices.present_family.value(), 0, &device->present_queue);

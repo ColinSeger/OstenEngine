@@ -3,7 +3,7 @@
 
 VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory depth_image_memory)
 {
-    VkImage depth_image;
+    VkImage depth_image{};
     VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
 
     Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
@@ -56,7 +56,9 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     pool_info.pPoolSizes = pool_sizes;
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 
-    assert(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) == VK_SUCCESS);
+    if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
+        assert(false && "Descriptor fail");
+    }
 }
 
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
@@ -93,7 +95,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, validation_layers);
 
-    model_loader::parse_obj(model_location, vertices, indices, logs);
+    model_loader::parse_obj(model_location, vertices, indices);
 
     restart_swap_chain();
 
@@ -116,7 +118,9 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    assert(vkCreatePipelineLayout(device->virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) == VK_SUCCESS && "Failed to create pipeline");
+    if(vkCreatePipelineLayout(device->virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
+        assert(false && "Failed to create pipeline");
+    }
     
     shader();
 
@@ -218,7 +222,10 @@ void RenderPipeline::draw_frame()
 
     VkResult queue_result = vkQueueSubmit(device->graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
 
-    assert(queue_result == VK_SUCCESS);
+    if(queue_result != VK_SUCCESS)
+    {
+        assert(false);
+    }
 
     VkSwapchainKHR swap_chains[] = {swap_chain->get_swap_chain()};
 
@@ -247,16 +254,14 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
     static auto start_time = std::chrono::high_resolution_clock::now();
     auto current_time = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+    // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
-    glm::mat4 view = glm::lookAt(camera_location, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::lookAt(camera_location.position, camera_location.rotation, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain->get_extent().width / (float) swap_chain->get_extent().height, 0.1f, 2000.0f);
     proj[1][1] *= -1;
     // time = 1;
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        to_render[render_index].transform.rotation.y += 0.001f;
-        
         glm::mat4 inital_rotation = glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 model = Transformations::get_model_matrix(to_render[render_index].transform) * inital_rotation;
@@ -328,7 +333,9 @@ void RenderPipeline::create_descriptor_set(Renderable& render_this) {
     
     render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
 
-    assert(vkAllocateDescriptorSets(device->virtual_device, &allocInfo, render_this.descriptor_sets.data()) == VK_SUCCESS);
+    if(vkAllocateDescriptorSets(device->virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
+        assert(false);
+    }
 
     
 
@@ -383,7 +390,9 @@ void RenderPipeline::create_descriptor_sets(VkDescriptorPool& descriptor_pool, V
         
         render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
 
-        assert(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) == VK_SUCCESS);
+        if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
+            assert(false);
+        }
 
         
 
@@ -465,7 +474,9 @@ std::vector<char> load_shader(const std::string& file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
-    assert(file.is_open() == true && "Failed to load shaders");
+    if(!file.is_open()){
+        assert(false && "Failed to load shaders");
+    }
 
     size_t file_size = (size_t) file.tellg();
     std::vector<char> buffer(file_size);
@@ -628,7 +639,9 @@ void RenderPipeline::shader()
     pipeline_info.basePipelineIndex = -1; // Optional
 
     VkResult result = vkCreateGraphicsPipelines(device->virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
-    assert(result == VK_SUCCESS);
+    if(result != VK_SUCCESS){
+        assert(false);
+    }
 
     vkDestroyShaderModule(device->virtual_device, fragment_module, nullptr);
     vkDestroyShaderModule(device->virtual_device, vertex_module, nullptr);
@@ -690,7 +703,9 @@ void RenderPipeline::create_render_pass()
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    assert(vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS); 
+    if(vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS){
+        assert(false);
+    } 
 }
 
 void RenderPipeline::create_sync_objects()
@@ -708,8 +723,10 @@ void RenderPipeline::create_sync_objects()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        assert(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &image_available_semaphores[i]) == VK_SUCCESS);
-        assert(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &render_finished_semaphores[i]) == VK_SUCCESS);
-        assert(vkCreateFence(device->virtual_device, &fence_info, nullptr, &in_flight_fences[i]) == VK_SUCCESS);
+        if(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS);
+        if(vkCreateSemaphore(device->virtual_device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS);
+        if(vkCreateFence(device->virtual_device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
+            assert(false);
+        }
     }
 }

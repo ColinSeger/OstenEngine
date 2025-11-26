@@ -25,7 +25,11 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     layoutInfo.bindingCount = sizeof(bindings) / sizeof(bindings[0]);//Gets size of array
     layoutInfo.pBindings = bindings;
 
-    assert(vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout) == VK_SUCCESS);
+    VkResult result = vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout);
+    if(result != VK_SUCCESS)
+    {
+        assert(false);
+    }
 }
 
 VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
@@ -101,7 +105,11 @@ void CommandBuffer::create_buffer(Device* device, VkBufferUsageFlags usage, VkDe
     buffer_info.usage = usage;
     buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    assert(vkCreateBuffer(device->virtual_device, &buffer_info, nullptr, &buffer) == VK_SUCCESS && "Buffer Creation Failed");
+    VkResult result = vkCreateBuffer(device->virtual_device, &buffer_info, nullptr, &buffer);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Failed to create buffer");
+    }
 
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(device->virtual_device, buffer, &memory_requirements);
@@ -111,7 +119,11 @@ void CommandBuffer::create_buffer(Device* device, VkBufferUsageFlags usage, VkDe
     alloc_info.allocationSize = memory_requirements.size;
     alloc_info.memoryTypeIndex = find_memory_type(device->physical_device, memory_requirements.memoryTypeBits, properties);
 
-    assert(vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &buffer_memory) == VK_SUCCESS && "Buffer Memory Allocation Failed");
+    result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &buffer_memory);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Buffer Memory Allocation Failed");
+    }
 
     vkBindBufferMemory(device->virtual_device, buffer, buffer_memory, 0);
 }
@@ -195,8 +207,12 @@ void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0; // Optional
     begin_info.pInheritanceInfo = nullptr; // Optional
+    
 
-    assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS && "Failed at recording command buffer");
+    VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
+    if(result != VK_SUCCESS){
+        assert(false, "Failed at recording command buffer");
+    }
 }
 
 //Can probably make this a array
@@ -210,7 +226,10 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
     allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocation_info.commandBufferCount = command_buffers.size();
 
-    assert(vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data()) == VK_SUCCESS);
+    VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
+    if(result != VK_SUCCESS){
+        assert(false, "Failed at creating command buffers");
+    }
 }
 
 VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR surface)
@@ -223,6 +242,9 @@ VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR su
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-    assert(vkCreateCommandPool(device->virtual_device, &poolInfo, nullptr, &command_pool) == VK_SUCCESS);
+    VkResult result = vkCreateCommandPool(device->virtual_device, &poolInfo, nullptr, &command_pool);
+    if(result != VK_SUCCESS){
+        assert(false, "Failed at Creating command pool");
+    }
     return command_pool;
 }

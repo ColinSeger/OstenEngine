@@ -91,7 +91,11 @@ void Texture::create_image( Device* device,
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    assert(vkCreateImage(device->virtual_device, &image_info, nullptr, &image) == VK_SUCCESS);
+    VkResult result = vkCreateImage(device->virtual_device, &image_info, nullptr, &image);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Failed to create image");
+    }
 
     VkMemoryRequirements memory_requirements;
     vkGetImageMemoryRequirements(device->virtual_device, image, &memory_requirements);
@@ -101,7 +105,11 @@ void Texture::create_image( Device* device,
     alloc_info.allocationSize = memory_requirements.size;
     alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device->physical_device ,memory_requirements.memoryTypeBits, property_flags);
 
-    assert(vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &image_memory) == VK_SUCCESS);
+    result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &image_memory);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Failed allocate memory image");
+    }
 
     vkBindImageMemory(device->virtual_device, image, image_memory, 0);
 }
@@ -206,7 +214,9 @@ VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    assert(vkCreateImageView(virtual_device, &view_info, nullptr, &result) == VK_SUCCESS);
+    if(vkCreateImageView(virtual_device, &view_info, nullptr, &result) != VK_SUCCESS){
+        assert(false);
+    }
 
     return result;
 }
@@ -236,7 +246,9 @@ VkSampler Texture::create_texture_sampler(Device* device)
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    assert(vkCreateSampler(device->virtual_device, &sampler_info, nullptr, &textureSampler) == VK_SUCCESS);
+    if(vkCreateSampler(device->virtual_device, &sampler_info, nullptr, &textureSampler) != VK_SUCCESS){
+        assert(false);
+    }
 
     return textureSampler;
 }

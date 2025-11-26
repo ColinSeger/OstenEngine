@@ -21,6 +21,6 @@ namespace model_loader
 
     bool is_valid_char(char c);
 
-    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs);
+    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
 }/**/
 

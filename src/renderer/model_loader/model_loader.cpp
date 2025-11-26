@@ -30,7 +30,7 @@ static inline OBJ_Mode select_mode(char* char_to_check)//This is ass
     return OBJ_Mode::None;
 }
 
-void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
+void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
 {
     std::ifstream file_stream;
 
