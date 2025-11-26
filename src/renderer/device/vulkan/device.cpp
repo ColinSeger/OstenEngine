@@ -64,8 +64,8 @@ bool DeviceFunctions::is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR s
         has_swap_chain_support = DeviceHelperFunctions::is_completed(swap_chain_support);
     }
 
-    // VkPhysicalDeviceFeatures supported_features;
-    // vkGetPhysicalDeviceFeatures(physical_device, &supported_features);
+    VkPhysicalDeviceFeatures supported_features;
+    vkGetPhysicalDeviceFeatures(device, &supported_features);
     
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
@@ -124,8 +124,9 @@ void DeviceFunctions::create_virtual_device(Device* device, const std::vector<co
     create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
-    if (validation_layers.size() > 0) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+    uint16_t validation_length = validation_layers.size();
+    if (validation_length > 0) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_length);
         create_info.ppEnabledLayerNames = validation_layers.data();
     } else {
         create_info.enabledLayerCount = 0;

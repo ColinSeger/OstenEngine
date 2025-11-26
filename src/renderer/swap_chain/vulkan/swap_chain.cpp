@@ -224,10 +224,15 @@ namespace Setup
             if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphics_family = index;
             }
+
             VkBool32 present_support = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &present_support);
+
             if (present_support) {
                 indices.present_family = index;
+            }
+            if(indices.graphics_family.has_value() && indices.present_family.has_value()){
+                break;
             }
 
             index++;

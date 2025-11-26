@@ -17,6 +17,10 @@ enum class OBJ_Mode : uint8_t
 };
 namespace model_loader
 {
+    const char valid_chars[14] = "0123456789.-/";
+
+    bool is_valid_char(char c);
 
     void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs);
 }/**/
+

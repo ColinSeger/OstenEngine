@@ -65,9 +65,6 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
-
-
     #ifdef NDEBUG
         const std::vector<const char*> validation_layers = {};
     #else
@@ -75,33 +72,24 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
             "VK_LAYER_KHRONOS_validation"
         };
     #endif
+    
+    instance = Instance::create_instance(application_name, validation_layers); 
 
-    instance = Instance::create_instance(application_name, validation_layers);
+    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
+
+    if (!glfwVulkanSupported()) {
+        printf("GLFW says Vulkan NOT supported!\n");
+    }
+
+
+
+
 
     assert(glfwCreateWindowSurface(instance, main_window, nullptr, &surface) == VK_SUCCESS);
 
     device = new Device(instance, surface, validation_layers);
 
-    //model_loader::load_model("assets/debug_assets/viking.obj", vertices, indices);
     model_loader::parse_obj(model_location, vertices, indices, logs);
-    // Object 1 - Center
-    // Renderable first_obj;
-    // first_obj.transform.position = {-1.0f, 0.0f, 0.0f};
-    // first_obj.transform.rotation = {0.0f, 0.0f, -90.0f};
-    // first_obj.transform.scale = {1.0f, 1.0f, 1.0f};
-
-    // Renderable snd_obj;
-    // snd_obj.transform.position = {1.0f, 1.0f, 2.0f};
-    // snd_obj.transform.rotation = {0.0f, 90.0f, -90.0f};
-    // snd_obj.transform.scale = {1.0f, 2.0f, 1.0f};
-
-    // to_render.push_back(first_obj);
-    // to_render.push_back(snd_obj);
-    //vertices.clear();
-    //indices.clear();
-    
-
-    
 
     restart_swap_chain();
 
@@ -141,10 +129,10 @@ void RenderPipeline::cleanup()
     vkDeviceWaitIdle(device->virtual_device);
     delete swap_chain;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        // vkDestroyBuffer(device->get_virtual_device(), uniform_buffers[i], nullptr);
-        // vkFreeMemory(device->get_virtual_device(), uniform_buffers_memory[i], nullptr);
-    }
+    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    //     vkDestroyBuffer(device->virtual_device, uniform_buffers[i], nullptr);
+    //     vkFreeMemory(device->virtual_device, uniform_buffers_memory[i], nullptr);
+    // }
     vkDestroyDescriptorPool(device->virtual_device, descriptor_pool, nullptr);
 
     vkDestroyDescriptorSetLayout(device->virtual_device, descriptor_set_layout, nullptr);

@@ -1,6 +1,16 @@
 #include "model_loader.h"
 
-inline OBJ_Mode select_mode(char* char_to_check)//This is ass
+
+bool model_loader::is_valid_char(char c)
+{
+    for(char valid : valid_chars)
+    {
+        if(c == valid) return true;
+    }
+    return false;
+}
+
+static inline OBJ_Mode select_mode(char* char_to_check)//This is ass
 {
     if(*char_to_check == '#'){
         return OBJ_Mode::Comment;
@@ -19,7 +29,6 @@ inline OBJ_Mode select_mode(char* char_to_check)//This is ass
     }
     return OBJ_Mode::None;
 }
-
 
 void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::vector<std::string> logs)
 {
@@ -58,7 +67,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     std::string values[4];
     uint8_t char_index = 0;
     std::string command;
-    Vertex new_vertex;
+    Vertex new_vertex {};
     uint32_t vertex_id = 0;
 
     vertex.reserve(file_size/40);
@@ -124,14 +133,11 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
         if(current_mode == OBJ_Mode::None || current_mode == OBJ_Mode::Comment) continue;
 
-        if(value == ' ')
-        {
-            if(values[0].length() > 0){
-                char_index++;                    
-            }
-
-        }else{
-            if(char_index >= 4) continue;
+        if(value == ' ' && values[0].length() > 0){
+            char_index++;                    
+            continue;
+        }
+        else if (is_valid_char(value)){
             values[char_index].push_back(value);
         }
     }

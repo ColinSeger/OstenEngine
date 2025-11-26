@@ -1,7 +1,7 @@
 #include "application.h"
 
 
-VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
+static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
 {
     VkDescriptorPool imgui_pool;
 
@@ -24,7 +24,7 @@ VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
+static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 {
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->get_device()->virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->get_device()->physical_device;
@@ -199,7 +199,7 @@ void Application::main_game_loop()
 
             ImGui::Text("(%f)", ((float)fps));
 
-            ImGui::SliderFloat3("camera", &render_pipeline->camera_location[0], 0, 500);
+            ImGui::DragFloat3("camera", &render_pipeline->camera_location[0], 0.1f);
 
             imgui_hierarchy(test);
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));
@@ -219,9 +219,9 @@ void Application::main_game_loop()
                 ImGui::PushID(i);
 
                 ImGui::Text("Transform");
-                ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
-                ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
-                ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
+                ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 1.f);
+                ImGui::DragFloat3("Rotation",  &render_pipeline->to_render[i].transform.rotation.x, 0.1f);
+                ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    1.f);
                 ImGui::Spacing();
 
                 ImGui::PopID();

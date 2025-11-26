@@ -1,8 +1,8 @@
 #pragma once
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <chrono>
-#include <vulkan/vulkan.h>
 #include <string>
 #include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
