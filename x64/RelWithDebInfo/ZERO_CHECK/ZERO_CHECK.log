@@ -1,1 +1,9 @@
 ﻿  1>Checking Build System
+  CMake is re-running because C:/Tasks/Engine/Engine/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Tasks/Engine/Engine/CMakeLists.txt'
+    is newer than 'C:/Tasks/Engine/Engine/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Including Win32 support
+  -- Configuring done (0.8s)
+  -- Generating done (0.8s)
+  -- Build files have been written to: C:/Tasks/Engine/Engine

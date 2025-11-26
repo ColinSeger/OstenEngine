@@ -1,8 +1,1 @@
-﻿  Building Custom Rule C:/Tasks/Engine/Engine/CMakeLists.txt
-  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  Generating Code...
-  imgui.vcxproj -> C:\Tasks\Engine\Engine\RelWithDebInfo\imgui.lib
+﻿  imgui.vcxproj -> C:\Tasks\Engine\Engine\RelWithDebInfo\imgui.lib

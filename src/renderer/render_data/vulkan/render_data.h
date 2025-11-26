@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include "vulkan/vulkan.h"
+#include "../../../debugger/debugger.h"
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 
@@ -19,9 +20,9 @@ typedef struct{
 }VertexAtributes;
 
 struct Vertex {
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec2 texture_cord;
+    glm::vec3 position{};
+    glm::vec3 color{};
+    glm::vec2 texture_cord{};
 
     static VkVertexInputBindingDescription get_binding_description() {
         VkVertexInputBindingDescription binding_description{};

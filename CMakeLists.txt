@@ -21,7 +21,6 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw)
 
 add_subdirectory(external/glm)
-# target_include_directories(external/imgui)
 
 # Set where the ImGui files are stored
 set(IMGUI_PATH  "external/imgui")
@@ -38,6 +37,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/model_loader/model_loader.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_vulkan.cpp
+    src/debugger/debugger.cpp
     src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
@@ -49,7 +49,6 @@ add_executable(${PROJECT_NAME}
     src/engine/transform.cpp
     )
 
-# target_include_directories(${PROJECT_NAME} PRIVATE ${OstenEngine_INCLUDE_DIRS})
 if (${UNIX})
     target_link_libraries(${PROJECT_NAME} 
         PRIVATE 

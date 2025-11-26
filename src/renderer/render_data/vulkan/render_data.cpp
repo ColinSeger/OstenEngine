@@ -67,14 +67,15 @@ uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint3
 {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
-
+    
     for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
         if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }
-
+    debug::log((char*)"Failed to find memory");
     assert(false && "failed to find suitable memory type!");
+    return 1;
 }
 
 void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)

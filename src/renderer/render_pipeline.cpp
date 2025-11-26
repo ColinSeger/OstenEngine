@@ -61,9 +61,19 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
 {
-    assert(glfwInit() == GLFW_TRUE && "GLFW Failed to open");
+    debug::log((char*)"sHIT");
+    glfwSetErrorCallback([](int code, const char* desc) {
+        printf("GLFW ERROR %d: %s\n", code, desc);
+    });
+    if(!glfwInit()){
+        puts("glfwInit failed");
+        assert(false && "GLFW Failed to open");
+    }
+
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
 
     #ifdef NDEBUG
         const std::vector<const char*> validation_layers = {};
@@ -75,17 +85,11 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     
     instance = Instance::create_instance(application_name, validation_layers); 
 
-    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
+    VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
-    if (!glfwVulkanSupported()) {
-        printf("GLFW says Vulkan NOT supported!\n");
+    if(result != VK_SUCCESS){
+        assert(false && "Failed to create surface");
     }
-
-
-
-
-
-    assert(glfwCreateWindowSurface(instance, main_window, nullptr, &surface) == VK_SUCCESS);
 
     device = new Device(instance, surface, validation_layers);
 

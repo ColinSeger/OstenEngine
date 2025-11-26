@@ -52,7 +52,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     }
     size_t file_size = file_stream.tellg();
     file_stream.seekg(0);
-    char* file = new char[file_size];
+    char* file = (char*)malloc(sizeof(char) * file_size);
     //memset(file, 0, file_size);
 
     file_stream.read(file, file_size);
@@ -64,11 +64,11 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     std::vector<glm::vec2> texture_cord;
 
     OBJ_Mode current_mode = OBJ_Mode::None;
-    std::string values[4];
+    std::string values[3];
     uint8_t char_index = 0;
-    std::string command;
     Vertex new_vertex {};
-    uint32_t vertex_id = 0;
+
+    // char line[31];
 
     vertex.reserve(file_size/40);
     indices.reserve(file_size/60);
@@ -93,7 +93,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             break;
             case OBJ_Mode::Vertex:
                 
-                new_vertex.position = glm::vec3(std::stof(values[0]), std::stof(values[1]), std::stof(values[2]));
+                new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
                 vertex.push_back(new_vertex);
                 
                 current_mode = OBJ_Mode::None;
@@ -149,6 +149,6 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     
     vertices = vertex;
 
-    delete[] file;
+    free(file);
     
 }

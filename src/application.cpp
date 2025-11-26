@@ -164,15 +164,13 @@ void Application::main_game_loop()
             move_camera(delta_time);
         }
         
-        
         if(frame_time > 1)
         {
             fps = frames / frame_time;
             start_time = current_time;
             frames = 0;             
         }
-        // render_pipeline->draw_frame();
-        // continue;
+
         if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
         {
             ImGui_ImplGlfw_Sleep(10);
@@ -185,12 +183,12 @@ void Application::main_game_loop()
         ImGui::NewFrame();
         //ImGui::DockSpaceOverViewport();
         ImGui::Begin("GameViewPort");
-            ImGui::BeginChild("GameRender");
-
-            ImVec2 wsize = ImGui::GetWindowSize();
-
-            //ImGui::Image((ImTextureID)render_pipeline->last_frame, wsize, ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::EndChild();
+            ImGui::BeginViewportSideBar("name", nullptr, ImGuiDir_Up, 30, ImGuiWindowFlags_NoScrollbar);
+                ImGui::Button("Button on bar1");
+            ImGui::End();
+            ImGui::BeginViewportSideBar("name2", nullptr, ImGuiDir_Up, 30, ImGuiWindowFlags_NoScrollbar);
+                ImGui::Button("Button on bar2");
+            ImGui::End();
         ImGui::End();
 
         ImGui::Begin("My Thing", &test);
@@ -231,19 +229,11 @@ void Application::main_game_loop()
 
 
         ImGui::Begin("Console");
-            if(ImGui::Button("Add Log"))
-            {
-                std::string log = "Test";
-                logs.emplace_back(log);
-            }
+            debug::get_all_logs(logs);
             ImGui::BeginChild("Logs");
-                for (size_t i = 0; i <  render_pipeline->logs.size(); i++)
+                for (size_t i = 0; i <  logs.size(); i++)
                 {
-                    ImGui::Text("(%s)", render_pipeline->logs[i].c_str());
-                }
-                for (size_t i = 0; i < Entity_Manager::get_entity_amount(); i++)
-                {
-                    ImGui::Text("(%i)", i);
+                    ImGui::Text("(%s)", logs[i]);
                 }
                 
             ImGui::EndChild();
