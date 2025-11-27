@@ -10,7 +10,6 @@ static void stub(){}
 struct Entity{
     uint32_t id;
     Transform transform;
-    Renderable rendering;
     void (*test)() = stub;
 };
 

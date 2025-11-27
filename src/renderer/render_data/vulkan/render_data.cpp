@@ -264,7 +264,7 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
 VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR surface)
 {
     VkCommandPool command_pool;
-    QueueFamilyIndicies queue_family_indices = Setup::find_queue_families(device->physical_device, surface);
+    QueueFamilyIndicies queue_family_indices = find_queue_families(device->physical_device, surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

@@ -13,6 +13,63 @@ namespace DeviceHelperFunctions
         return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
     }
 }
+QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface){
+    QueueFamilyIndicies indices;
+    // Logic to find queue family indices to populate struct with
+    uint32_t queue_family_amount = 0;
+
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_amount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families.data());
+    
+
+    int index = 0;
+    for (const auto& queue_family : queue_families) {
+        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphics_family = index;
+        }
+
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &present_support);
+
+        if (present_support) {
+            indices.present_family = index;
+        }
+        if(indices.graphics_family.has_value() && indices.present_family.has_value()){
+            break;
+        }
+
+        index++;
+    }
+
+    return indices;
+}
+
+SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface){
+    SwapChainSupportDetails swap_chain_details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
+
+    uint32_t format_amount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, nullptr);
+
+    if (format_amount != 0) {
+        swap_chain_details.surface_formats.resize(format_amount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats.data());
+    }
+
+    uint32_t present_mode_amount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, nullptr);
+
+    if (present_mode_amount != 0) {
+        swap_chain_details.surface_present_modes.resize(present_mode_amount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, swap_chain_details.surface_present_modes.data());
+    }
+
+    return swap_chain_details;
+}
+
 
 Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers) : surface { surface_reference }
 {
@@ -50,14 +107,14 @@ Device::~Device()
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
 {
-    QueueFamilyIndicies indices = Setup::find_queue_families(device, surface);
+    QueueFamilyIndicies indices = find_queue_families(device, surface);
 
     bool has_extention_support = check_device_extension_support(device);
 
     bool has_swap_chain_support = false;
 
     if(has_extention_support){
-        SwapChainSupportDetails swap_chain_support = Setup::find_swap_chain_support(device, surface);
+        SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device, surface);
         has_swap_chain_support = DeviceHelperFunctions::is_completed(swap_chain_support);
     }
 
@@ -88,7 +145,7 @@ bool check_device_extension_support(VkPhysicalDevice device)
 
 void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers)
 {
-    QueueFamilyIndicies indices = Setup::find_queue_families(device->physical_device, device->surface);
+    QueueFamilyIndicies indices = find_queue_families(device->physical_device, device->surface);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
@@ -121,7 +178,7 @@ void create_virtual_device(Device* device, const std::vector<const char*>& valid
     create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
-    uint16_t validation_length = validation_layers.size();
+    uint32_t validation_length = validation_layers.size();
     if (validation_length > 0) {
         create_info.enabledLayerCount = static_cast<uint32_t>(validation_length);
         create_info.ppEnabledLayerNames = validation_layers.data();

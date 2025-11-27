@@ -57,13 +57,13 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     init_info.Instance = render_pipeline->get_instance();
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    init_info.QueueFamily = Setup::find_queue_families(physical_device, render_pipeline->get_surface()).graphics_family.value();
+    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->get_surface()).graphics_family.value();
 
     init_info.Queue = render_pipeline->get_device()->graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = Setup::find_swap_chain_support(physical_device, render_pipeline->get_surface()).surface_capabilities.minImageCount + 1;
+    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->get_surface()).surface_capabilities.minImageCount + 1;
     init_info.Allocator = nullptr;
     init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
