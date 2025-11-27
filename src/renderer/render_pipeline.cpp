@@ -137,7 +137,7 @@ RenderPipeline::~RenderPipeline()
 void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device->virtual_device);
-    delete swap_chain;
+    delete swap_chain_images;
 
     // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     //     vkDestroyBuffer(device->virtual_device, uniform_buffers[i], nullptr);
@@ -176,7 +176,7 @@ void RenderPipeline::draw_frame()
     vkWaitForFences(device->virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
     
     static uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(device->virtual_device, swap_chain->swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(device->virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         restart_swap_chain();
@@ -195,14 +195,14 @@ void RenderPipeline::draw_frame()
     CommandBuffer::record_command_buffer(command_buffer);
 
 
-    RenderPass::start_render_pass(command_buffer, swap_chain->swap_chain_framebuffers[image_index], render_pass, swap_chain->screen_extent);
+    RenderPass::start_render_pass(command_buffer, swap_chain_images->swap_chain_framebuffers[image_index], render_pass, swap_chain.screen_extent);
 
     RenderBuffer render_buffer = {
         vertex_buffer,
         index_buffer
     };
 
-    swap_chain->bind_pipeline(command_buffer, graphics_pipeline);
+    swap_chain_images->bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
     swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
 
@@ -229,7 +229,7 @@ void RenderPipeline::draw_frame()
         assert(false);
     }
 
-    VkSwapchainKHR swap_chains[] = {swap_chain->swap_chain};
+    VkSwapchainKHR swap_chains[] = {swap_chain.swap_chain};
 
     VkPresentInfoKHR present_info{};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -259,7 +259,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
 
     glm::mat4 view = glm::lookAt(camera_location.position, camera_location.rotation, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain->screen_extent.width / (float) swap_chain->screen_extent.height, 0.1f, 2000.0f);
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 0.1f, 2000.0f);
     proj[1][1] *= -1;
     // time = 1;
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
@@ -446,22 +446,22 @@ void RenderPipeline::restart_swap_chain()
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(device->virtual_device);
-
-    if(swap_chain){
-        delete swap_chain;
+    swap_chain = create_swap_chain(main_window, device, surface);
+    if(swap_chain_images){
+        delete swap_chain_images;
         vkDestroyCommandPool(device->virtual_device, command_pool, nullptr);
         
-        swap_chain = new SwapChain(main_window, device, surface);
+        swap_chain_images = new SwapChainImages(&swap_chain, device, surface);
 
     }else{
-        swap_chain = new SwapChain(main_window, device, surface);
+        swap_chain_images = new SwapChainImages(&swap_chain, device, surface);
         create_render_pass();
     }
     command_pool = CommandBuffer::create_command_pool(device, surface);
 
-    depth_image_view = create_depth_resources(device, swap_chain->screen_extent, depth_image_memory);
+    depth_image_view = create_depth_resources(device, swap_chain.screen_extent, depth_image_memory);
 
-    swap_chain->create_frame_buffers(device->virtual_device, render_pass, depth_image_view);
+    swap_chain_images->create_frame_buffers(device->virtual_device, render_pass, depth_image_view, swap_chain.screen_extent);
 
     VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
 
@@ -546,14 +546,14 @@ void RenderPipeline::shader()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) swap_chain->screen_extent.width;
-    viewport.height = (float) swap_chain->screen_extent.height;
+    viewport.width = (float) swap_chain.screen_extent.width;
+    viewport.height = (float) swap_chain.screen_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = swap_chain->screen_extent;
+    scissor.extent = swap_chain.screen_extent;
 
     VkPipelineViewportStateCreateInfo viewport_state{};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -660,7 +660,7 @@ void RenderPipeline::create_render_pass()
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     VkAttachmentDescription color_attachment{};
-    color_attachment.format = swap_chain->swap_chain_image_format;
+    color_attachment.format = swap_chain.swap_chain_image_format;
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

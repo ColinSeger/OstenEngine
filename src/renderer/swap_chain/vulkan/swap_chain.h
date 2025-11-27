@@ -15,37 +15,42 @@ struct RenderBuffer
     VkBuffer& index_buffer;
 };
 
-class SwapChain
+VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
+
+VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+
+VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+
+struct SwapChain
 {
-public:
     VkSwapchainKHR swap_chain;
 
     VkExtent2D screen_extent;
 
     VkFormat swap_chain_image_format;
+};
 
+SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface);
+
+struct SwapChainImages
+{
     std::vector<VkImage> swap_chain_images;
 
     std::vector<VkImageView> swap_chain_image_view;
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
 
-    VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+    void create_image_views(VkDevice virtual_device, VkFormat image_format);
 
-    void create_image_views(VkDevice virtual_device);
+    SwapChainImages(SwapChain* swap_chain, Device* device, VkSurfaceKHR surface_reference);
+    ~SwapChainImages();
 
-    SwapChain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference);
-    ~SwapChain();
+    void create_frame_buffers(VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
 
-    void create_frame_buffers(VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view);
-
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline);
+    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
 };
 
-VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
-
-VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
-
+int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
 
 namespace RenderPass
 {

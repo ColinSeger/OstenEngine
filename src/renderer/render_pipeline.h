@@ -31,7 +31,9 @@ private:
     //Device manager
     Device* device = nullptr;
 
-    SwapChain* swap_chain = nullptr;
+    SwapChain swap_chain;
+
+    SwapChainImages* swap_chain_images = nullptr;
 
     VkDescriptorSetLayout descriptor_set_layout;
     VkPipelineLayout pipeline_layout;
@@ -107,7 +109,7 @@ public:
 
     VkSurfaceKHR& get_surface() { return surface; }
 
-    SwapChain* get_swap_chain() { return swap_chain; }
+    SwapChainImages* get_swap_chain() { return swap_chain_images; }
 
     void create_uniform_buffer(Renderable& render_this);
 

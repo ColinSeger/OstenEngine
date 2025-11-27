@@ -20,16 +20,38 @@ VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capa
     }
 }
 
-SwapChain::SwapChain(GLFWwindow* window, Device* device, VkSurfaceKHR surface)
-{
+VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
+
+    for (const auto& available_format : available_formats) {
+        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return available_format;
+        }
+    }
+
+    return available_formats[0];
+}
+
+VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
+    for (const auto& available_present_mode : available_present_modes) {
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return available_present_mode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface){
+    SwapChain test {};
+    VkSwapchainKHR swap_chain;
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
 
-    screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
+    VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
 
-    swap_chain_image_format = surface_format.format;
+    VkFormat swap_chain_image_format = surface_format.format;
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
@@ -72,43 +94,31 @@ SwapChain::SwapChain(GLFWwindow* window, Device* device, VkSurfaceKHR surface)
     if(result != VK_SUCCESS){
         assert(false && "Failed to create swap chain");
     }
+    test.swap_chain = swap_chain;
+    test.screen_extent = screen_extent;
+    test.swap_chain_image_format = swap_chain_image_format;
 
-    vkGetSwapchainImagesKHR(device->virtual_device, swap_chain, &image_amount, nullptr);
-    swap_chain_images.resize(image_amount);
-    vkGetSwapchainImagesKHR(device->virtual_device, swap_chain, &image_amount, swap_chain_images.data());
-
-    create_image_views(device->virtual_device);
-    
+    return test;
 }
-SwapChain::~SwapChain()
+
+SwapChainImages::SwapChainImages(SwapChain* swap_chain, Device* device, VkSurfaceKHR surface)
+{
+    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface);
+
+    uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
+
+    swap_chain_images.resize(image_amount);
+    vkGetSwapchainImagesKHR(device->virtual_device, swap_chain->swap_chain, &image_amount, swap_chain_images.data());
+
+    create_image_views(device->virtual_device, swap_chain->swap_chain_image_format);
+}
+
+SwapChainImages::~SwapChainImages()
 {
 
 }
 
-
-VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
-
-    for (const auto& available_format : available_formats) {
-        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            return available_format;
-        }
-    }
-
-    return available_formats[0];
-}
-
-
-VkPresentModeKHR SwapChain::select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
-    for (const auto& available_present_mode : available_present_modes) {
-        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return available_present_mode;
-        }
-    }
-
-    return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-void SwapChain::create_image_views(VkDevice virtual_device){
+void SwapChainImages::create_image_views(VkDevice virtual_device, VkFormat image_format){
     swap_chain_image_view.resize(swap_chain_images.size());
     
     for (size_t i = 0; i < swap_chain_images.size(); i++)
@@ -118,7 +128,7 @@ void SwapChain::create_image_views(VkDevice virtual_device){
         create_info.image = swap_chain_images[i];
 
         create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        create_info.format = swap_chain_image_format;
+        create_info.format = image_format;
 
         create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -138,7 +148,7 @@ void SwapChain::create_image_views(VkDevice virtual_device){
     }
 }
 
-void SwapChain::create_frame_buffers(VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view)
+void SwapChainImages::create_frame_buffers(VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent)
 {
     swap_chain_framebuffers.resize(swap_chain_image_view.size());
 
@@ -153,8 +163,8 @@ void SwapChain::create_frame_buffers(VkDevice virtual_device, VkRenderPass& rend
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = sizeof(attachments) / sizeof(attachments[1]);
         framebuffer_info.pAttachments = attachments;
-        framebuffer_info.width = screen_extent.width;
-        framebuffer_info.height = screen_extent.height;
+        framebuffer_info.width = extent.width;
+        framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
 
         if(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_chain_framebuffers[i]) != VK_SUCCESS){
@@ -182,22 +192,22 @@ void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffe
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void SwapChain::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline)
+void SwapChainImages::bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent)
 {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(screen_extent.width);
-    viewport.height = static_cast<float>(screen_extent.height);
+    viewport.width = static_cast<float>(extent.width);
+    viewport.height = static_cast<float>(extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = screen_extent;
+    scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
 //draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
