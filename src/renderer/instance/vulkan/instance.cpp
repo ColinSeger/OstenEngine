@@ -5,7 +5,7 @@ VkInstance Instance::create_instance(const char* name, const std::vector<const c
     VkInstance instance = VK_NULL_HANDLE;
     uint16_t layer_size = validation_layers.size();
     if(layer_size > 0){
-        if(check_validation_layer_support(validation_layers) == true){
+        if(check_validation_layer_support(validation_layers) != true){
             assert(false && "Validation layers requested but could not be found");
         }       
     }

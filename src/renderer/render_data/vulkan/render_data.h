@@ -12,48 +12,21 @@ struct UniformBufferObject {
     glm::mat4 view;
     glm::mat4 proj;
 };
-
-void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
-
-typedef struct{
-    VkVertexInputAttributeDescription array[3];
-}VertexAtributes;
-
 struct Vertex {
     glm::vec3 position{};
     glm::vec3 color{};
-    glm::vec2 texture_cord{};
-
-    static VkVertexInputBindingDescription get_binding_description() {
-        VkVertexInputBindingDescription binding_description{};
-        binding_description.binding = 0;
-        binding_description.stride = sizeof(Vertex);
-        binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return binding_description;
-    }
-
-
-    static VertexAtributes get_attribute_descriptions() {
-        VertexAtributes attribute_descriptions{};
-        attribute_descriptions.array[0].binding = 0;
-        attribute_descriptions.array[0].location = 0;
-        attribute_descriptions.array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute_descriptions.array[0].offset = offsetof(Vertex, position);
-
-        attribute_descriptions.array[1].binding = 0;
-        attribute_descriptions.array[1].location = 1;
-        attribute_descriptions.array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute_descriptions.array[1].offset = offsetof(Vertex, color);
-
-        attribute_descriptions.array[2].binding = 0;
-        attribute_descriptions.array[2].location = 2;
-        attribute_descriptions.array[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attribute_descriptions.array[2].offset = offsetof(Vertex, texture_cord);
-
-        return attribute_descriptions;
-    }  
+    glm::vec2 texture_cord{}; 
 };
+
+struct VertexAtributes{
+    VkVertexInputAttributeDescription array[3];
+};
+
+VkVertexInputBindingDescription get_binding_description();
+VertexAtributes get_attribute_descriptions();
+
+void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
+
 namespace CommandBuffer
 {
     uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties);

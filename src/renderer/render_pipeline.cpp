@@ -95,7 +95,9 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     device = new Device(instance, surface, validation_layers);
 
-    model_loader::parse_obj(model_location, vertices, indices);
+    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+
+    ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
 
     restart_swap_chain();
 
@@ -526,8 +528,8 @@ void RenderPipeline::shader()
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
-    auto binding_description = Vertex::get_binding_description();
-    auto attribute_descriptions = Vertex::get_attribute_descriptions();
+    auto binding_description = get_binding_description();
+    auto attribute_descriptions = get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

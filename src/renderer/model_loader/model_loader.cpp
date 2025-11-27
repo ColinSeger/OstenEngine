@@ -1,7 +1,7 @@
 #include "model_loader.h"
 
 
-bool model_loader::is_valid_char(char c)
+bool ModelLoader::is_valid_char(char c)
 {
     for(char valid : valid_chars)
     {
@@ -10,27 +10,27 @@ bool model_loader::is_valid_char(char c)
     return false;
 }
 
-static inline OBJ_Mode select_mode(char* char_to_check)//This is ass
+static inline ObjMode select_mode(char* char_to_check)//This is ass
 {
     if(*char_to_check == '#'){
-        return OBJ_Mode::Comment;
+        return ObjMode::Comment;
     }
     if (*char_to_check == 'v') {
         char_to_check++;
         if(*char_to_check == ' '){
-            return OBJ_Mode::Vertex;
+            return ObjMode::Vertex;
         }
         if(*char_to_check == 't'){
-            return OBJ_Mode::TextureCord;
+            return ObjMode::TextureCord;
         }
     }
     if(*char_to_check == 'f'){
-        return OBJ_Mode::Face;
+        return ObjMode::Face;
     }
-    return OBJ_Mode::None;
+    return ObjMode::None;
 }
 
-void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
 {
     std::ifstream file_stream;
 
@@ -63,7 +63,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     std::vector<uint32_t> texture_index;
     std::vector<glm::vec2> texture_cord;
 
-    OBJ_Mode current_mode = OBJ_Mode::None;
+    ObjMode current_mode = ObjMode::None;
     std::string values[3];
     uint8_t char_index = 0;
     Vertex new_vertex {};
@@ -79,26 +79,26 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
     {
         char value = file[i];
 
-        if(value == '\n' || current_mode == OBJ_Mode::None){
+        if(value == '\n' || current_mode == ObjMode::None){
 
             switch (current_mode)
             {
-            case OBJ_Mode::None:
+            case ObjMode::None:
                 current_mode = select_mode(&file[i]);
-                if(current_mode == OBJ_Mode::TextureCord) i++;
+                if(current_mode == ObjMode::TextureCord) i++;
                 char_index = 0;
             break;
-            case OBJ_Mode::Comment:
-                current_mode = OBJ_Mode::None;
+            case ObjMode::Comment:
+                current_mode = ObjMode::None;
             break;
-            case OBJ_Mode::Vertex:
+            case ObjMode::Vertex:
                 
                 new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
                 vertex.push_back(new_vertex);
                 
-                current_mode = OBJ_Mode::None;
+                current_mode = ObjMode::None;
             break;
-            case OBJ_Mode::Face:
+            case ObjMode::Face:
                 for (std::string& index : values)
                 {
                     if(index.length() <= 0) continue;
@@ -112,13 +112,13 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
                         }
                     }
                 }
-                current_mode = OBJ_Mode::None;
+                current_mode = ObjMode::None;
             break;
-            case OBJ_Mode::TextureCord:
+            case ObjMode::TextureCord:
                 texture_cord.emplace_back(std::stof(values[0]), 1.f - std::stof(values[1]));
-                current_mode = OBJ_Mode::None;
+                current_mode = ObjMode::None;
             break;
-            case OBJ_Mode::Normal:
+            case ObjMode::Normal:
                 //Todo
             break;
             default:
@@ -131,7 +131,7 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
             continue;
         }
 
-        if(current_mode == OBJ_Mode::None || current_mode == OBJ_Mode::Comment) continue;
+        if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue;
 
         if(value == ' ' && values[0].length() > 0){
             char_index++;                    
@@ -151,4 +151,67 @@ void model_loader::parse_obj(const char* path_of_obj, std::vector<Vertex>& verti
 
     free(file);
     
+}
+
+void ModelLoader::serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+{
+    std::ofstream file(filename, std::ios::binary);
+
+    if(!file.is_open()){
+        abort();
+    }
+    uint32_t index_start = vertices.size() * sizeof(Vertex);
+
+    file.write(reinterpret_cast<const char*>(&index_start), sizeof(uint32_t));
+
+    for(Vertex vertex : vertices){
+        file.write(reinterpret_cast<const char*>(&vertex), sizeof(Vertex));
+    }
+
+    for(uint32_t index : indices){
+        file.write(reinterpret_cast<const char*>(&index), sizeof(uint32_t));
+    }
+
+    file.close();
+}
+
+void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+{
+    std::ifstream file(filename, std::ios::binary);
+
+    if(!file.is_open()){
+        abort();//
+    }
+    file.seekg (0, std::ios::end);
+    size_t file_size = file.tellg();
+    file.seekg(0);
+
+    
+    uint32_t index_start = sizeof(uint32_t);
+
+    file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
+    size_t vertex_done = index_start;
+
+    Vertex* vertex_ptr = (Vertex*)calloc(vertex_done / sizeof(Vertex), sizeof(Vertex));
+    uint32_t* index_ptr = (uint32_t*)malloc(file_size - index_start);
+
+    Vertex* read_this = vertex_ptr;
+    uint32_t* read_index = index_ptr;
+
+    file.read(reinterpret_cast<char*>(vertex_ptr), vertex_done);
+    file.read(reinterpret_cast<char*>(index_ptr), file_size - vertex_done);
+    file.close();
+
+    for(size_t index = 0; index < vertex_done; index += sizeof(Vertex)){
+        vertices.push_back(*read_this);
+        read_this++;
+    }
+    
+    for(size_t index = vertex_done; index <= file_size; index += sizeof(uint32_t)){
+        indices.push_back(*read_index);
+        read_index++;
+    }
+    
+    free(vertex_ptr);
+    free(index_ptr);
 }
