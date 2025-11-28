@@ -8,6 +8,7 @@
 #include "../../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
+#include "../../texture/vulkan/texture.h"
 
 struct RenderBuffer
 {
@@ -21,6 +22,8 @@ VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatK
 
 VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
 
+
+
 struct SwapChain
 {
     VkSwapchainKHR swap_chain;
@@ -30,27 +33,38 @@ struct SwapChain
     VkFormat swap_chain_image_format;
 };
 
-SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface);
+
+
+SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain);
 
 struct SwapChainImages
 {
+    VkImage depth_image;
+
+    VkDeviceMemory  depth_image_memory;
+
+    VkImageView     depth_image_view;
+
     std::vector<VkImage> swap_chain_images;
 
     std::vector<VkImageView> swap_chain_image_view;
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
-
-    void create_image_views(VkDevice virtual_device, VkFormat image_format);
-
-    SwapChainImages(SwapChain* swap_chain, Device* device, VkSurfaceKHR surface_reference);
-    ~SwapChainImages();
-
-    void create_frame_buffers(VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
-
-    void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
 };
 
+int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images);
+
+void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
+
+void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKHR surface, SwapChainImages& swap_images);
+
+void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
+
+void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
+
 int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
+
+VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image);
 
 namespace RenderPass
 {

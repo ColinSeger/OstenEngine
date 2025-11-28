@@ -1,16 +1,5 @@
 #include "render_pipeline.h"
 
-
-VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory depth_image_memory)
-{
-    VkImage depth_image{};
-    VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
-
-    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
-
-    return Texture::create_image_view(device->virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
-
 void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<Renderable>& descriptor_set, VkPipelineLayout pipeline_layout, RenderBuffer& render_buffer, const uint32_t index_amount, uint8_t frame)
 {
     VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
@@ -137,7 +126,6 @@ RenderPipeline::~RenderPipeline()
 void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device->virtual_device);
-    delete swap_chain_images;
 
     // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     //     vkDestroyBuffer(device->virtual_device, uniform_buffers[i], nullptr);
@@ -195,14 +183,14 @@ void RenderPipeline::draw_frame()
     CommandBuffer::record_command_buffer(command_buffer);
 
 
-    RenderPass::start_render_pass(command_buffer, swap_chain_images->swap_chain_framebuffers[image_index], render_pass, swap_chain.screen_extent);
+    RenderPass::start_render_pass(command_buffer, swap_chain_images.swap_chain_framebuffers[image_index], render_pass, swap_chain.screen_extent);
 
     RenderBuffer render_buffer = {
         vertex_buffer,
         index_buffer
     };
 
-    swap_chain_images->bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
+    bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
     swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
 
@@ -439,6 +427,7 @@ void RenderPipeline::create_descriptor_sets(VkDescriptorPool& descriptor_pool, V
 
 void RenderPipeline::restart_swap_chain()
 {
+    
     int width = 0, height = 0;
     glfwGetFramebufferSize(main_window, &width, &height);
     while (width == 0 || height == 0) {
@@ -446,28 +435,32 @@ void RenderPipeline::restart_swap_chain()
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(device->virtual_device);
-    swap_chain = create_swap_chain(main_window, device, surface);
-    if(swap_chain_images){
-        delete swap_chain_images;
+    
+    if(swap_chain_images.swap_chain_images.size() > 0){
+        vkDestroyImageView(device->virtual_device, image_view, nullptr);
+        vkDestroySampler(device->virtual_device, texture_sampler, nullptr);
+        clean_swap_chain(device->virtual_device, swap_chain, swap_chain_images);
+
         vkDestroyCommandPool(device->virtual_device, command_pool, nullptr);
-        
-        swap_chain_images = new SwapChainImages(&swap_chain, device, surface);
+
+        create_swap_chain(main_window, device, surface, swap_chain);
+        create_swap_chain_images(swap_chain, device, surface, swap_chain_images);
 
     }else{
-        swap_chain_images = new SwapChainImages(&swap_chain, device, surface);
+        create_swap_chain(main_window, device, surface, swap_chain);
+        create_swap_chain_images(swap_chain, device, surface, swap_chain_images);
         create_render_pass();
     }
     command_pool = CommandBuffer::create_command_pool(device, surface);
 
-    depth_image_view = create_depth_resources(device, swap_chain.screen_extent, depth_image_memory);
+    swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
 
-    swap_chain_images->create_frame_buffers(device->virtual_device, render_pass, depth_image_view, swap_chain.screen_extent);
+    create_frame_buffers(swap_chain_images, device->virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
 
     VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
 
     image_view = Texture::create_image_view(device->virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(device);
-/**/
 
     CommandBuffer::create_command_buffers(command_buffers, device->virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }

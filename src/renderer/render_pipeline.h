@@ -33,7 +33,7 @@ private:
 
     SwapChain swap_chain;
 
-    SwapChainImages* swap_chain_images = nullptr;
+    SwapChainImages swap_chain_images;
 
     VkDescriptorSetLayout descriptor_set_layout;
     VkPipelineLayout pipeline_layout;
@@ -57,8 +57,6 @@ private:
     std::vector<VkFence> in_flight_fences;
 
     //TODO move out of class
-    VkDeviceMemory  depth_image_memory;
-    VkImageView     depth_image_view;
     std::vector<VkCommandBuffer> command_buffers;
     //
 
@@ -108,8 +106,6 @@ public:
     Device* get_device() { return device; }
 
     VkSurfaceKHR& get_surface() { return surface; }
-
-    SwapChainImages* get_swap_chain() { return swap_chain_images; }
 
     void create_uniform_buffer(Renderable& render_this);
 
