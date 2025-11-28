@@ -18,8 +18,8 @@
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
-static const char* model_location = "assets/debug_assets/napoleon.obj";
-static const char* texture_location = "assets/debug_assets/napoleon_texture.png";
+static const char* model_location = "assets/debug_assets/viking.obj";
+static const char* texture_location = "assets/debug_assets/viking_room.png";
 
 class RenderPipeline
 {

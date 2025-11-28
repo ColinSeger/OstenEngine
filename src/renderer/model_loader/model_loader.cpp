@@ -46,14 +46,15 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
         std::string error = filepath_str;
         error.push_back(errno);
 
-        throw std::runtime_error(error);
+        // throw std::runtime_error(error);
+        debug::log((char*)"Failed to load model");
         //TODO LOG failed model load
         return;
     }
+
     size_t file_size = file_stream.tellg();
     file_stream.seekg(0);
     char* file = (char*)malloc(sizeof(char) * file_size);
-    //memset(file, 0, file_size);
 
     file_stream.read(file, file_size);
     file_stream.close();
@@ -65,10 +66,9 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
 
     ObjMode current_mode = ObjMode::None;
     std::string values[3];
+
     uint8_t char_index = 0;
     Vertex new_vertex {};
-
-    // char line[31];
 
     vertex.reserve(file_size/40);
     indices.reserve(file_size/60);
@@ -145,7 +145,6 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
     {
         vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
     }
-    
     
     vertices = vertex;
 

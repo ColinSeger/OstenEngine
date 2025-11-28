@@ -84,7 +84,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     create_device(device, instance, surface, validation_layers);
 
-    ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+    ModelLoader::parse_obj(model_location, vertices, indices);
 
     // ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
 
