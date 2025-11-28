@@ -26,9 +26,9 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
 
 static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 {
-    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->get_device()->virtual_device);
-    VkPhysicalDevice physical_device = render_pipeline->get_device()->physical_device;
-    VkDevice virtual_device = render_pipeline->get_device()->virtual_device;
+    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
+    VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
+    VkDevice virtual_device = render_pipeline->device.virtual_device;
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -54,16 +54,16 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
     
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = render_pipeline->get_instance();
+    init_info.Instance = render_pipeline->instance;
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->get_surface()).graphics_family.value();
+    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->surface).graphics_family.value();
 
-    init_info.Queue = render_pipeline->get_device()->graphics_queue;
+    init_info.Queue = render_pipeline->device.graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->get_surface()).surface_capabilities.minImageCount + 1;
+    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->surface).surface_capabilities.minImageCount + 1;
     init_info.Allocator = nullptr;
     init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
@@ -77,7 +77,7 @@ Application::Application(const int width, const int height, const char* name) : 
 {
     render_pipeline = new RenderPipeline(width, height, application_name);
 
-    main_window = render_pipeline->get_main_window();
+    main_window = render_pipeline->main_window;
 
     init_imgui(main_window, render_pipeline);
 /**/

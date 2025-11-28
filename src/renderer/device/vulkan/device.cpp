@@ -71,9 +71,9 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
 }
 
 
-Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers) : surface { surface_reference }
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers)
 {
-    // surface_pointer = surface;
+    device.surface = surface_reference;
     uint32_t device_amount = 0;
 
     vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
@@ -84,26 +84,26 @@ Device::Device(VkInstance& instance, VkSurfaceKHR& surface_reference, const std:
     vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
 
 
-    for (const VkPhysicalDevice& device : devices) {
-        if (is_device_suitable(device, surface)) {
-            physical_device = device;
+    for (const VkPhysicalDevice& device_physical : devices) {
+        if (is_device_suitable(device_physical, device.surface)) {
+            device.physical_device = device_physical;
             break;
         }
     }
 
-    assert(physical_device != VK_NULL_HANDLE && "No vulkan supported graphics found");
+    assert(device.physical_device != VK_NULL_HANDLE && "No vulkan supported graphics found");
 
     //
     ///Creation of virtual device starts here
     //
-    create_virtual_device(this, validation_layers);
+    create_virtual_device(&device, validation_layers);
 
 }
 
-Device::~Device()
-{
-    vkDestroyDevice(virtual_device, nullptr);
-}
+// Device::~Device()
+// {
+//     vkDestroyDevice(virtual_device, nullptr);
+// }
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
 {

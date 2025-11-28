@@ -33,12 +33,10 @@ struct Device
     VkQueue graphics_queue;
     VkQueue present_queue;
 
-    VkSurfaceKHR& surface;
-
-    Device(VkInstance& instance, VkSurfaceKHR& surface, const std::vector<const char*>& validation_layers);
-    ~Device();
+    VkSurfaceKHR surface;
 };
 
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers);
 // int create_device();
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);

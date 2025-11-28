@@ -23,13 +23,13 @@ static const char* texture_location = "assets/debug_assets/napoleon_texture.png"
 
 class RenderPipeline
 {
-private:
+public:
     //Window to render to
     GLFWwindow* main_window = nullptr;
     //The Vulkan instance
     VkInstance instance = VK_NULL_HANDLE;
     //Device manager
-    Device* device = nullptr;
+    Device device;
 
     SwapChain swap_chain;
 
@@ -48,9 +48,6 @@ private:
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
 
-
-    
-
     //TODO check if these even need to be vector
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
@@ -64,6 +61,18 @@ private:
     std::vector<uint32_t>   indices;
     
     VkCommandPool command_pool;
+
+    VkDescriptorPool descriptor_pool;
+    std::vector<Renderable> to_render;
+
+    uint8_t current_frame = 0;//TODO MOVE
+    VkRenderPass render_pass; //TODO MOVE
+    // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
+    VkImageView image_view;//TODO Temporary way to access image
+    VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+    Transform camera_location{};
+
 
     void shader();
 
@@ -79,33 +88,12 @@ private:
 
     void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
 
-public:
-
-    VkDescriptorPool descriptor_pool;
-    std::vector<Renderable> to_render;
-
-    uint8_t current_frame = 0;//TODO MOVE
-    VkRenderPass render_pass; //TODO MOVE
-    // std::vector<VkDescriptorSet> descriptor_sets;//TODO MOVE
-    VkImageView image_view;//TODO Temporary way to access image
-    VkSampler texture_sampler;//TODO Temporary way to access sampler
-
-    Transform camera_location{};
-
     RenderPipeline(const int width, const int height, const char* application_name);
     ~RenderPipeline();
 
     void draw_frame();
 
     void cleanup();
-
-    GLFWwindow* get_main_window(){ return main_window; }
-
-    VkInstance& get_instance() { return instance; }
-
-    Device* get_device() { return device; }
-
-    VkSurfaceKHR& get_surface() { return surface; }
 
     void create_uniform_buffer(Renderable& render_this);
 
