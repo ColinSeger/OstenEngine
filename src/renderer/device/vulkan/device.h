@@ -17,9 +17,6 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> surface_present_modes;
 };
 
-QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface);
-SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface);
-
 static const std::vector<const char*> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -41,3 +38,6 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 bool check_device_extension_support(VkPhysicalDevice device);
 void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers);
+
+QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface);
+SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface);

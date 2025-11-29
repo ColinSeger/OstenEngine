@@ -52,7 +52,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
 {
-    debug::log((char*)"sHIT");
+    Debug::log((char*)"sHIT");
     glfwSetErrorCallback([](int code, const char* desc) {
         printf("GLFW ERROR %d: %s\n", code, desc);
     });

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-namespace debug
+namespace Debug
 {
     void log(char* log);
 

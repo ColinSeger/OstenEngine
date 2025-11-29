@@ -1,7 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
-#include <cassert>
 #include <chrono>
 #include <string>
 #include "../external/imgui_test/imgui.h"

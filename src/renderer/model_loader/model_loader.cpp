@@ -47,7 +47,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
         error.push_back(errno);
 
         // throw std::runtime_error(error);
-        debug::log((char*)"Failed to load model");
+        Debug::log((char*)"Failed to load model");
         //TODO LOG failed model load
         return;
     }
@@ -85,18 +85,17 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
             {
             case ObjMode::None:
                 current_mode = select_mode(&file[i]);
-                if(current_mode == ObjMode::TextureCord) i++;
+                if(current_mode == ObjMode::TextureCord) i++;//do i even need to?
                 char_index = 0;
+                continue;
             break;
             case ObjMode::Comment:
-                current_mode = ObjMode::None;
+                
             break;
             case ObjMode::Vertex:
                 
                 new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
-                vertex.push_back(new_vertex);
-                
-                current_mode = ObjMode::None;
+                vertex.emplace_back(new_vertex);
             break;
             case ObjMode::Face:
                 for (std::string& index : values)
@@ -112,11 +111,9 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
                         }
                     }
                 }
-                current_mode = ObjMode::None;
             break;
             case ObjMode::TextureCord:
                 texture_cord.emplace_back(Vector2{std::stof(values[0]), 1.f - std::stof(values[1])});
-                current_mode = ObjMode::None;
             break;
             case ObjMode::Normal:
                 //Todo
@@ -128,10 +125,11 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
             {
                 index.clear();
             }
+            current_mode = ObjMode::None;
             continue;
         }
 
-        if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue;
+        if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
 
         if(value == ' ' && values[0].length() > 0){
             char_index++;                    
@@ -184,15 +182,15 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     file.seekg (0, std::ios::end);
     size_t file_size = file.tellg();
     file.seekg(0);
-
     
-    uint32_t index_start = sizeof(uint32_t);
+    size_t index_start = 0;//represents where vertexes end and indices start
 
     file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
     size_t vertex_done = index_start;
 
+    //Alocate chunk of memory for vertxes and indexes
     Vertex* vertex_ptr = (Vertex*)calloc(vertex_done / sizeof(Vertex), sizeof(Vertex));
-    uint32_t* index_ptr = (uint32_t*)malloc(file_size - index_start);
+    uint32_t* index_ptr = (uint32_t*)malloc(file_size - (index_start +1));
 
     Vertex* read_this = vertex_ptr;
     uint32_t* read_index = index_ptr;
@@ -202,12 +200,12 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     file.close();
 
     for(size_t index = 0; index < vertex_done; index += sizeof(Vertex)){
-        vertices.push_back(*read_this);
+        vertices.emplace_back(*read_this);
         read_this++;
     }
     
     for(size_t index = vertex_done; index <= file_size; index += sizeof(uint32_t)){
-        indices.push_back(*read_index);
+        indices.emplace_back(*read_index);
         read_index++;
     }
     

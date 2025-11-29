@@ -238,7 +238,7 @@ void Application::main_game_loop()
 
 
         ImGui::Begin("Console");
-            debug::get_all_logs(logs);
+            Debug::get_all_logs(logs);
             ImGui::BeginChild("Logs");
                 for (size_t i = 0; i <  logs.size(); i++)
                 {

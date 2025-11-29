@@ -106,7 +106,7 @@ uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint3
             return i;
         }
     }
-    debug::log((char*)"Failed to find memory");
+    Debug::log((char*)"Failed to find memory");
     assert(false && "failed to find suitable memory type!");
     return 1;
 }
