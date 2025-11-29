@@ -43,7 +43,6 @@ set -e  # stop if any command fails
 #cd "../../"
 
 g++ -o build/OstenEngine main.cpp  \
-    external/vk_include/vulkan/vulkan.h\
     external/imgui_test/imgui.cpp \
     external/imgui_test/imgui_impl_glfw.cpp \
     external/imgui_test/imgui_impl_vulkan.cpp \
@@ -60,7 +59,8 @@ g++ -o build/OstenEngine main.cpp  \
     src/renderer/model_loader/model_loader.cpp \
     src/engine/entity_manager/entity_manager.cpp \
     src/engine/transform.cpp \
-    -Iexternal/glfw/include/ -Lexternal/glfw-install/lib64 -lglfw3 -lX11 -Iexternal/vk_include/ -lvulkan 
+    src/debugger/debugger.cpp \
+    -Iexternal/glfw/include/ -Lexternal/glfw-install/lib64 -lglfw3 -lX11 -Iexternal/vk_include/ -lvulkan -g
 
 echo "✅ Succesfully Built"
 #./build/OstenEngine

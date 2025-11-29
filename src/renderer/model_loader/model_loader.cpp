@@ -62,7 +62,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
     std::vector<Vertex> vertex;
 
     std::vector<uint32_t> texture_index;
-    std::vector<glm::vec2> texture_cord;
+    std::vector<Vector2> texture_cord;
 
     ObjMode current_mode = ObjMode::None;
     std::string values[3];
@@ -115,7 +115,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
                 current_mode = ObjMode::None;
             break;
             case ObjMode::TextureCord:
-                texture_cord.emplace_back(std::stof(values[0]), 1.f - std::stof(values[1]));
+                texture_cord.emplace_back(Vector2{std::stof(values[0]), 1.f - std::stof(values[1])});
                 current_mode = ObjMode::None;
             break;
             case ObjMode::Normal:

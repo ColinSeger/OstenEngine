@@ -1,5 +1,16 @@
 #include "swap_chain.h"
 
+uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
+{
+    if(value > max){
+        return max;
+    }
+    if(value < min){
+        return min;
+    }
+    return value;
+}
+
 VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities, GLFWwindow* window) {
     
     if (surface_capabilities.currentExtent.width != UINT32_MAX) {
@@ -13,8 +24,8 @@ VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capa
             static_cast<uint32_t>(height)
         };
 
-        actual_extent.width = glm::clamp(actual_extent.width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
-        actual_extent.height = glm::clamp(actual_extent.height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
+        actual_extent.width = simple_clamp(actual_extent.width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
+        actual_extent.height = simple_clamp(actual_extent.height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
 
         return actual_extent;
     }

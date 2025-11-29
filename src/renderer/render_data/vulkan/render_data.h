@@ -7,15 +7,40 @@
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 
+enum Direction : uint8_t{
+    X = 0,
+    Y = 1,
+    Z = 2
+};
+
+struct Vector2{
+    float x = 0;
+    float y = 0;
+};
+
+struct Vector3{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+};
+
+struct Matrix {
+    float translation[4];
+    float rotation[4];
+    float scale[4];
+};
+
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
 };
+
+
 struct Vertex {
-    glm::vec3 position{};
-    glm::vec3 color{};
-    glm::vec2 texture_cord{}; 
+    Vector3 position{};
+    Vector3 color{};
+    Vector2 texture_cord{}; 
 };
 
 struct VertexAtributes{

@@ -240,7 +240,7 @@ void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
 
     VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
     if(result != VK_SUCCESS){
-        assert(false, "Failed at recording command buffer");
+        assert(false && "Failed at recording command buffer");
     }
 }
 
@@ -257,7 +257,7 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
 
     VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
     if(result != VK_SUCCESS){
-        assert(false, "Failed at creating command buffers");
+        assert(false && "Failed at creating command buffers");
     }
 }
 
@@ -273,7 +273,7 @@ VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR su
 
     VkResult result = vkCreateCommandPool(device->virtual_device, &poolInfo, nullptr, &command_pool);
     if(result != VK_SUCCESS){
-        assert(false, "Failed at Creating command pool");
+        assert(false && "Failed at Creating command pool");
     }
     return command_pool;
 }

@@ -71,11 +71,6 @@ bool Instance::check_validation_layer_support(const std::vector<const char*>& va
             return false;
         }
     }
-    
-
-    // for(const char* layer_name : validation_layers){
-        
-    // }
 
     return true;
 }

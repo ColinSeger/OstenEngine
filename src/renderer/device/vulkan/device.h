@@ -5,7 +5,6 @@
 #include <optional>
 #include <set>
 #include <string>
-// #include "../../swap_chain/vulkan/swap_chain.h"//Look into removing later
 
 struct QueueFamilyIndicies{
     std::optional<uint32_t> graphics_family;

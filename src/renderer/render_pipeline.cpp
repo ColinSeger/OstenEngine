@@ -255,6 +255,8 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
         glm::mat4 model = Transformations::get_model_matrix(to_render[render_index].transform) * inital_rotation;
 
+        Matrix model2 {};
+
         UniformBufferObject ubo{
             ubo.model = model,
             ubo.view = view,

@@ -6,7 +6,6 @@
 #include <optional>
 #include "../../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../../external/imgui_test/imgui_impl_vulkan.h"
-#include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 #include "../../texture/vulkan/texture.h"
 

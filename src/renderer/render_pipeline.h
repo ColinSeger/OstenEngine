@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <fstream>
-#include <chrono>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
 #include "../debugger/debugger.h"
