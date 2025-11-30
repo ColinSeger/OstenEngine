@@ -5,6 +5,7 @@ std::vector<char*> logs{};
 void Debug::log(char* log)
 {
     logs.push_back(log);
+    std::cout << log << '\n';
 }
 
 

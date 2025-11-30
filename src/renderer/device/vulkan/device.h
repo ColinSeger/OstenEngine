@@ -1,10 +1,10 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include <cassert>
 #include <vector>
 #include <optional>
 #include <set>
 #include <string>
+#include "../../../debugger/debugger.h"
 
 struct QueueFamilyIndicies{
     std::optional<uint32_t> graphics_family;

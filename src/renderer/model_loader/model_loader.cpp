@@ -188,7 +188,7 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
     size_t vertex_done = index_start;
 
-    //Alocate chunk of memory for vertxes and indexes
+    //Allocate chunk of memory for vertxes and indexes
     Vertex* vertex_ptr = (Vertex*)calloc(vertex_done / sizeof(Vertex), sizeof(Vertex));
     uint32_t* index_ptr = (uint32_t*)malloc(file_size - (index_start +1));
 

@@ -1,12 +1,9 @@
-#include <iostream>
+#include <iosfwd>
 #define STB_IMAGE_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-//#define TINYOBJLOADER_IMPLEMENTATION
-// #include "external/glm/glm.hpp"
-#include "external/imgui_test/imgui.h"
 #include "src/application.h"
 
 int main()

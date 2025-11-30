@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <stdexcept>
 #include <filesystem>
 #include <fstream>
 #include "../render_data/vulkan/render_data.h"

@@ -78,7 +78,9 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
 
     vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
 
-    assert(device_amount > 0 && "There is no device that supports vulkan on this computer");
+    if(device_amount <= 0){
+        throw "There is no device that supports vulkan on this computer";
+    }
 
     std::vector<VkPhysicalDevice> devices(device_amount);
     vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
@@ -91,7 +93,9 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         }
     }
 
-    assert(device.physical_device != VK_NULL_HANDLE && "No vulkan supported graphics found");
+    if(device.physical_device == VK_NULL_HANDLE){
+        throw "No vulkan supported graphics found";
+    }
 
     //
     ///Creation of virtual device starts here
@@ -186,10 +190,12 @@ void create_virtual_device(Device* device, const std::vector<const char*>& valid
         create_info.enabledLayerCount = 0;
     }
     VkResult result = vkCreateDevice(device->physical_device, &create_info, nullptr, &device->virtual_device);
+
     if(result != VK_SUCCESS)
     {
-        printf("Issue in creation of virtual device (%i)", result);
-        assert(false && "Failed to create device");
+        Debug::log((char*)"Issue in creation of virtual device ");
+
+        throw "Failed to create device";
     }
 
     vkGetDeviceQueue(device->virtual_device, indices.graphics_family.value(), 0, &device->graphics_queue);
