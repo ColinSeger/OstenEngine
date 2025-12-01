@@ -1,6 +1,7 @@
 #pragma once
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
+#include "entity_manager/entity_system.h"
 
 struct Transform
 {
@@ -13,3 +14,5 @@ namespace Transformations
 {
     glm::mat4 get_model_matrix(Transform transform);
 }
+
+uint8_t print_transform(System& system);

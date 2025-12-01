@@ -165,6 +165,26 @@ void Application::main_game_loop()
 
     auto last_tick = std::chrono::high_resolution_clock::now();
 
+    System sys{};
+    Transform rt{};
+    uint32_t t = sizeof(rt);
+    init_system(sys, t, 50);
+    add_action(sys, &print_transform);
+    
+    
+    Transform* point = (Transform*)sys.components;
+    for (size_t i = 0; i < 3; i ++)
+    {
+        rt.position.x = i;
+        *point = Transform{};
+        point->position.x = i;
+        point->position.y = i;
+        point->position.z = i;
+        point += sizeof(Transform);
+    }
+    sys.run_system(sys);
+    
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
         int state = glfwGetKey(main_window, GLFW_KEY_E);

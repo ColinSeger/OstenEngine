@@ -10,3 +10,14 @@ glm::mat4 Transformations::get_model_matrix(Transform transform)//This should be
     model = glm::scale(model, transform.scale);
     return model;
 }
+
+uint8_t print_transform(System& system)
+{
+    Transform* trans = (Transform*)system.components;
+    for (size_t i = 0; i < 3; i ++)
+    {
+        printf("Printing Transform %f \n", trans->position.x);
+        trans += sizeof(Transform);
+    }
+    return 0;
+}
