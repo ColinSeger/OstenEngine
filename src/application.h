@@ -11,6 +11,7 @@
 #include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
 #include "engine/entity_manager/entity_manager.h"
+#include "editor/file_explorer/file_explorer.h"
 
 static void check_vk_result(VkResult err)
 {
@@ -28,6 +29,8 @@ class Application
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
+
+    FileExplorer file_explorer;
 
 public:
 

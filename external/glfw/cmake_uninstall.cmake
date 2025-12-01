@@ -1,22 +1,22 @@
 
-if (NOT EXISTS "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/external/glfw/install_manifest.txt")
-    message(FATAL_ERROR "Cannot find install manifest: \"C:/Users/colin/Documents/Project/OstenEngine/GameEngine/external/glfw/install_manifest.txt\"")
+if (NOT EXISTS "C:/Tasks/Engine/Engine/external/glfw/install_manifest.txt")
+    message(FATAL_ERROR "Cannot find install manifest: \"C:/Tasks/Engine/Engine/external/glfw/install_manifest.txt\"")
 endif()
 
-file(READ "C:/Users/colin/Documents/Project/OstenEngine/GameEngine/external/glfw/install_manifest.txt" files)
+file(READ "C:/Tasks/Engine/Engine/external/glfw/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 
 foreach (file ${files})
   message(STATUS "Uninstalling \"$ENV{DESTDIR}${file}\"")
   if (EXISTS "$ENV{DESTDIR}${file}")
-    exec_program("C:/Users/colin/Documents/cmake-3.28.2-windows-x86_64/cmake-3.28.2-windows-x86_64/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+    exec_program("C:/Program Files/CMake/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
                  OUTPUT_VARIABLE rm_out
                  RETURN_VALUE rm_retval)
     if (NOT "${rm_retval}" STREQUAL 0)
       MESSAGE(FATAL_ERROR "Problem when removing \"$ENV{DESTDIR}${file}\"")
     endif()
   elseif (IS_SYMLINK "$ENV{DESTDIR}${file}")
-    EXEC_PROGRAM("C:/Users/colin/Documents/cmake-3.28.2-windows-x86_64/cmake-3.28.2-windows-x86_64/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+    EXEC_PROGRAM("C:/Program Files/CMake/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
                  OUTPUT_VARIABLE rm_out
                  RETURN_VALUE rm_retval)
     if (NOT "${rm_retval}" STREQUAL 0)

@@ -80,6 +80,8 @@ Application::Application(const int width, const int height, const char* name) : 
     main_window = render_pipeline->main_window;
 
     init_imgui(main_window, render_pipeline);
+
+    file_explorer = init_file_explorer();
 /**/
     
 }
@@ -191,14 +193,9 @@ void Application::main_game_loop()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         //ImGui::DockSpaceOverViewport();
-        ImGui::Begin("GameViewPort");
-            ImGui::BeginViewportSideBar("name", nullptr, ImGuiDir_Up, 30, ImGuiWindowFlags_NoScrollbar);
-                ImGui::Button("Button on bar1");
-            ImGui::End();
-            ImGui::BeginViewportSideBar("name2", nullptr, ImGuiDir_Up, 30, ImGuiWindowFlags_NoScrollbar);
-                ImGui::Button("Button on bar2");
-            ImGui::End();
-        ImGui::End();
+        start_file_explorer(file_explorer);
+
+        end_file_explorer();
 
         ImGui::Begin("My Thing", &test);
             ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);

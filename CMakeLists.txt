@@ -47,6 +47,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/texture/vulkan/texture.cpp
     src/engine/entity_manager/entity_manager.cpp
     src/engine/transform.cpp
+    src/editor/file_explorer/file_explorer.cpp
     )
 
 if (${UNIX})
