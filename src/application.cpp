@@ -181,6 +181,8 @@ void Application::main_game_loop()
         add_component(sys, &component);
     }
     sys.run_system(sys);
+
+    systems.push_back(sys);
     
 
     while(!glfwWindowShouldClose(main_window)) {
@@ -190,6 +192,12 @@ void Application::main_game_loop()
         auto current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
+
+        for (System system : systems)
+        {
+            system.run_system(system);
+        }
+        
 
         move_camera(delta_time);
         

@@ -32,6 +32,8 @@ class Application
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
+    
+    std::vector<System> systems;
 
     FileExplorer file_explorer;
 
