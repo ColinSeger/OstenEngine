@@ -9,7 +9,7 @@ static void stub(){}
 
 struct Entity{
     uint32_t id;
-    Transform transform;
+    uint32_t transform;
     void (*test)() = stub;
 };
 

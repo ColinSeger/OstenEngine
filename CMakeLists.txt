@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/render_data/vulkan/render_data.cpp
     src/renderer/render_pipeline.cpp
     src/renderer/texture/vulkan/texture.cpp
+    src/engine/entity_manager/components.cpp
     src/engine/entity_manager/entity_manager.cpp
     src/engine/entity_manager/entity_system.cpp
     src/engine/transform.cpp

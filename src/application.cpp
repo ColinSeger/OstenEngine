@@ -169,18 +169,16 @@ void Application::main_game_loop()
     Transform rt{};
     uint32_t t = sizeof(rt);
     init_system(sys, t, 50);
-    add_action(sys, &print_transform);
-    
-    
-    Transform* point = (Transform*)sys.components;
-    for (size_t i = 0; i < 3; i ++)
+    //add_action(sys, &print_transform);
+    TransformComponent cop;
+    sys.type = cop.id;
+    sys.run_system = debug;
+    for (size_t i = 0; i < 5; i ++)
     {
-        rt.position.x = i;
-        *point = Transform{};
-        point->position.x = i;
-        point->position.y = i;
-        point->position.z = i;
-        point += sizeof(Transform);
+        TransformComponent component {};
+
+        component.transform.position.x = i;
+        add_component(sys, &component);
     }
     sys.run_system(sys);
     

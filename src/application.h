@@ -13,6 +13,8 @@
 #include "engine/entity_manager/entity_manager.h"
 #include "editor/file_explorer/file_explorer.h"
 #include "engine/entity_manager/entity_system.h"
+#include "engine/entity_manager/components.h"
+
 
 static void check_vk_result(VkResult err)
 {
