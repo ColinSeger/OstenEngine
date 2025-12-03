@@ -7,9 +7,15 @@
 
 static void stub(){}
 
+struct TempID
+{
+    uint32_t index = 0;
+    uint16_t type = 0;
+};
+
 struct Entity{
     uint32_t id;
-    uint32_t transform;
+    std::vector<TempID> components;
     void (*test)() = stub;
 };
 

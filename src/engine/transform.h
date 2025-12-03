@@ -13,6 +13,12 @@ struct Transform
 namespace Transformations
 {
     glm::mat4 get_model_matrix(Transform transform);
+
+    Vector3 forward_vector(Transform transform);
+
+    Vector3 right_vector(Transform transform);
+
+    Vector3 up_vector(Transform transform);
 }
 
 //uint8_t print_transform(System& system);

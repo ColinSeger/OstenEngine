@@ -15,7 +15,8 @@ struct System
 
 uint8_t add_action(System& system, uint8_t (*function)(System&));
 
-uint8_t init_system(System& system, uint16_t component_size, uint32_t capacity); 
+uint8_t init_system(System& system, uint16_t component_size, uint32_t capacity);
+uint8_t init_system(System& system, Component* component, uint32_t capacity);
 uint16_t add_component(System& system, void* component);
 
 void add_transform(TransformComponent transform);

@@ -10,6 +10,17 @@ uint8_t init_system(System& system, uint16_t component_size, uint32_t capacity)
     return 1;
 }
 
+uint8_t init_system(System& system, Component* component, uint32_t capacity)
+{
+    system.amount = 0;
+    system.type = static_cast<Component*>(component)->id;
+    system.size_of_component = get_component_size_by_type(system.type);
+
+    system.components = (Component*)malloc(capacity * system.size_of_component);
+
+    return 1;
+}
+
 uint8_t add_action(System& system, uint8_t (*function)(System&))
 {
     if(function == nullptr) return 0;
@@ -28,7 +39,7 @@ uint16_t add_component(System& system, void* component)
         memcpy(comp , component, size);        
     }
 
-    return 0;
+    return 1;
 }
 
 

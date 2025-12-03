@@ -138,16 +138,16 @@ void Application::move_camera(double delta_time)
 {
     float camera_speed = 500;
     if(ImGui::IsKeyDown(ImGuiKey_W)){
-        render_pipeline->camera_location.position -= Cameras::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
+        render_pipeline->camera_location.position -= Transformations::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_A)){
-        render_pipeline->camera_location.position -= Cameras::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
+        render_pipeline->camera_location.position -= Transformations::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_S)){
-        render_pipeline->camera_location.position += Cameras::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
+        render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_D)){
-        render_pipeline->camera_location.position += Cameras::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
+        render_pipeline->camera_location.position += Transformations::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
 }
 
@@ -168,7 +168,7 @@ void Application::main_game_loop()
     System sys{};
     Transform rt{};
     uint32_t t = sizeof(rt);
-    init_system(sys, t, 50);
+    init_system(sys, (Component*)&rt, 50);
     //add_action(sys, &print_transform);
     TransformComponent cop;
     sys.type = cop.id;

@@ -15,10 +15,4 @@ namespace Cameras{
 
     void camera_movement();
 
-    Vector3 forward_vector(Transform transform);
-
-    Vector3 right_vector(Transform transform);
-
-    Vector3 up_vector(Transform transform);
-
 }
