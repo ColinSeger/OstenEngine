@@ -1,11 +1,13 @@
 #pragma once
 #include "../transform.h"
+#include "../../renderer/camera/camera.h"
 
 
-enum class Type{
+enum class Type : uint16_t{
     Component = 0,
     Transform = 1,
-    Render = 2
+    Render = 2,
+    Camera = 3
 };
 
 
@@ -23,6 +25,12 @@ struct TransformComponent
 struct RenderComponent
 {
     const uint16_t id = 2;
+};
+
+struct CameraComponent
+{
+    const uint16_t id = 3;
+    Camera camera;
 };
 
 uint16_t get_component_size_by_type(uint16_t type);

@@ -13,6 +13,7 @@
 #include "texture/vulkan/texture.h"
 #include "model_loader/model_loader.h"
 #include "renderable.h"
+#include "camera/camera.h"
 
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;

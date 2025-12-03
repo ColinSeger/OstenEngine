@@ -21,3 +21,5 @@ uint16_t add_component(System& system, void* component);
 void add_transform(TransformComponent transform);
 
 uint8_t debug(System& system);
+
+uint8_t destroy_system(System& system);

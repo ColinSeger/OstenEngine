@@ -37,7 +37,19 @@ uint8_t debug(System& system){
     for (size_t i = 0; i < system.amount; i++)
     {
         printf("Test %f \n", t->transform.position.x);
+        t->transform.position.x += 0.001f;
         t++;
     }
+    return 1;
+}
+
+uint8_t destroy_system(System& system)
+{
+    system.amount = 0;
+    system.run_system = system.stub_system;
+    system.type = 0;
+    
+    free(system.components);
+
     return 1;
 }

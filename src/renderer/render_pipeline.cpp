@@ -244,8 +244,12 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     static auto start_time = std::chrono::high_resolution_clock::now();
     auto current_time = std::chrono::high_resolution_clock::now();
     // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-
-    glm::mat4 view = glm::lookAt(camera_location.position, camera_location.rotation, glm::vec3(0.0f, 1.0f, 0.0f));
+    // glm::vec3 forward = glm::fo
+    Vector3 test = camera_location.position + Cameras::forward_vector(camera_location);
+    Vector3 up = Cameras::up_vector(camera_location);
+    glm::vec3 pos = {camera_location.position.x ,camera_location.position.x ,camera_location.position.x};
+    
+    glm::mat4 view = glm::lookAt(pos, {test.x, test.y, test.z}, {0, 0, 1});
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 0.1f, 2000.0f);
     proj[1][1] *= -1;
     // time = 1;

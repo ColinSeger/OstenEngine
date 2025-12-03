@@ -138,16 +138,16 @@ void Application::move_camera(double delta_time)
 {
     float camera_speed = 500;
     if(ImGui::IsKeyDown(ImGuiKey_W)){
-        render_pipeline->camera_location.position[0] -= camera_speed * delta_time;
+        render_pipeline->camera_location.position -= Cameras::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_A)){
-        render_pipeline->camera_location.position[2] -= camera_speed * delta_time;
+        render_pipeline->camera_location.position -= Cameras::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_S)){
-        render_pipeline->camera_location.position[0] += camera_speed * delta_time;
+        render_pipeline->camera_location.position += Cameras::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
     if(ImGui::IsKeyDown(ImGuiKey_D)){
-        render_pipeline->camera_location.position[2] += camera_speed * delta_time;
+        render_pipeline->camera_location.position += Cameras::right_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     }
 }
 
@@ -229,7 +229,8 @@ void Application::main_game_loop()
 
             ImGui::Text("(%f)", ((float)fps));
 
-            ImGui::DragFloat3("camera", &render_pipeline->camera_location.position[0], 0.1f);
+            ImGui::DragFloat3("camera_position", &render_pipeline->camera_location.position.x, 0.1f);
+            ImGui::DragFloat3("camera_rotation", &render_pipeline->camera_location.rotation.x, 0.1f);
 
             imgui_hierarchy(test);
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));

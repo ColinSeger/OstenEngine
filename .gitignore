@@ -1,4 +1,6 @@
 
+
+
 build/*
 
 Makefile
@@ -19,6 +21,8 @@ Debug
 .vs/
 
 .vs\OstenEngine
+
+.qtcreator/
 
 # Compiled Static libraries
 *.lai

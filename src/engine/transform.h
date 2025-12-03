@@ -1,10 +1,11 @@
 #pragma once
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
+#include "../renderer/render_data/vulkan/render_data.h"
 
 struct Transform
 {
-    glm::vec3 position = {0.0f, 0.0f, 0.0f};
+    Vector3 position = {0.0f, 0.0f, 0.0f};
     glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
     glm::vec3 scale = {1.0f, 1.0f, 1.0f};
 };
