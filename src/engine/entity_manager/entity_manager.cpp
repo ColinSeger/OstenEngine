@@ -3,7 +3,7 @@ namespace {
     std::unordered_map<std::string, uint32_t> entity_names;
     std::vector<Entity> entities;    
 }
-std::unordered_map<std::string, uint32_t> EntityManager::get_entity_names(){
+std::unordered_map<std::string, uint32_t>& EntityManager::get_entity_names(){
     return entity_names;
 }
 void hello(){
@@ -65,6 +65,15 @@ void EntityManager::print_entities()
         entities[i].test();
     }
     
+}
+
+void rename_entity(std::string current_name, std::string new_name)
+{
+    if(entity_names.contains(current_name)){
+        uint32_t id = entity_names[current_name];
+        entity_names.erase(current_name);
+        entity_names[new_name] = id;
+    }
 }
 
 std::vector<Entity>& EntityManager::get_all_entities()

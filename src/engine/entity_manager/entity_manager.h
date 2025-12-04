@@ -26,7 +26,7 @@ struct Entity{
 
 namespace EntityManager
 {
-    std::unordered_map<std::string, uint32_t> get_entity_names();
+    std::unordered_map<std::string, uint32_t>& get_entity_names();
 
     void add_entity(Entity entity, std::string name);
     
@@ -39,6 +39,8 @@ namespace EntityManager
     uint32_t get_entity_amount();
 
     void print_entities();
+
+    void rename_entity(std::string current_name, std::string new_name);
 
     std::vector<Entity>& get_all_entities();
 }
