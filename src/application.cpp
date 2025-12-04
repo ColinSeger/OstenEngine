@@ -96,7 +96,23 @@ void Application::imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            Entity_Manager::add_entity(Entity{});
+            if(Entity_Manager::get_entity_names().contains("GameObject"))
+            {
+                std::string name ("GameObject");
+                for (size_t i = 0; i < 9; i++)
+                {
+                    if(Entity_Manager::get_entity_names().contains(name)){
+                        name.push_back('A');
+                    }else{
+                        Entity_Manager::add_entity(Entity{}, name);
+                        break;
+                    }
+                }
+                
+            }else{
+                Entity_Manager::add_entity(Entity{}, "GameObject");
+            }
+            
         }
         ImGui::EndPopup();
     }
@@ -116,18 +132,19 @@ void Application::imgui_hierarchy(bool& open)
         if(ImGui::TreeNode("Thing"))
         {
             auto entities = Entity_Manager::get_all_entities();
-            for (uint16_t i = 0; i < entities.size(); i++)
+            if(Entity_Manager::get_all_entities().size() > 0)
             {
-                ImGui::PushID(i);
+                for (auto& name : Entity_Manager::get_entity_names())
+                {
+                    ImGui::PushID(name.second);
 
-                ImGui::Text("(%i)", entities[i].id);
-                // ImGui::InputFloat3("Position",  &render_pipeline->to_render[i].transform.position.x);
-                // ImGui::SliderFloat3("Rotation", &render_pipeline->to_render[i].transform.rotation.x, 0, 1);
-                // ImGui::InputFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x);
-                ImGui::Spacing();
+                    ImGui::Text("(%s)", name.first.c_str());
+                    ImGui::Spacing();
 
-                ImGui::PopID();
+                    ImGui::PopID();
+                }
             }
+
             
             ImGui::TreePop();
         }
@@ -168,10 +185,12 @@ void Application::main_game_loop()
     System sys{};
     Transform rt{};
     uint32_t t = sizeof(rt);
-    init_system(sys, (Component*)&rt, 50);
-    //add_action(sys, &print_transform);
     TransformComponent cop;
     sys.type = cop.id;
+    cop.transform = rt;
+    init_system(sys, &cop, 50);
+    //add_action(sys, &print_transform);
+    
     sys.run_system = debug;
     for (size_t i = 0; i < 5; i ++)
     {
@@ -180,14 +199,13 @@ void Application::main_game_loop()
         component.transform.position.x = i;
         add_component(sys, &component);
     }
-    sys.run_system(sys);
+    // sys.run_system(sys);
 
-    systems.push_back(sys);
+    // systems.push_back(sys);
     
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
-        int state = glfwGetKey(main_window, GLFW_KEY_E);
 
         auto current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
@@ -197,9 +215,6 @@ void Application::main_game_loop()
         {
             system.run_system(system);
         }
-        
-
-        move_camera(delta_time);
         
         if(frame_time > 1)
         {
@@ -213,6 +228,7 @@ void Application::main_game_loop()
             ImGui_ImplGlfw_Sleep(10);
             continue;
         }
+        
         /**/
         // Start the Dear ImGui frame
         ImGui_ImplVulkan_NewFrame();
@@ -275,7 +291,7 @@ void Application::main_game_loop()
         // ImGui::ShowDemoWindow(&test);
 
         // ImDrawData* main_draw_data = ImGui::GetDrawData();
-        
+        move_camera(delta_time);
         render_pipeline->draw_frame();
 
         ImGui::UpdatePlatformWindows();

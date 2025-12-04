@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "../transform.h"
 #include "../../renderer/camera/camera.h"
 
@@ -34,3 +35,13 @@ struct CameraComponent
 };
 
 uint16_t get_component_size_by_type(uint16_t type);
+
+// union Components
+// {
+//     Component component;
+//     TransformComponent transform;
+//     RenderComponent renderable;
+//     CameraComponent camera;
+// };
+
+// Component* get_component_by_index(Type index);

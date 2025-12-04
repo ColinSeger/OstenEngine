@@ -1,8 +1,10 @@
 #pragma once
+#include <cstdint>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <string>
+#include <unordered_map>
 #include "../external/imgui_test/imgui.h"
 #include "../external/imgui_test/imgui_internal.h"
 #include "../external/imgui_test/imgui_impl_glfw.h"

@@ -1,8 +1,13 @@
 #pragma once
+#include <cstdint>
 #include <iostream>
 #include <vector>
+#include <string>
+#include <unordered_map>
 #include "../transform.h"
 #include "../../renderer/renderable.h"
+#include "components.h"
+#include "entity_system.h"
 
 
 static void stub(){}
@@ -21,7 +26,11 @@ struct Entity{
 
 namespace Entity_Manager
 {
-    void add_entity(Entity entity);
+    std::unordered_map<std::string, uint32_t> get_entity_names();
+
+    void add_entity(Entity entity, std::string name);
+    
+    void add_component(uint32_t entity_id, Type component, System& system);
 
     void remove_entity(Entity entity);
 
@@ -31,5 +40,5 @@ namespace Entity_Manager
 
     void print_entities();
 
-    std::vector<Entity> get_all_entities();
+    std::vector<Entity>& get_all_entities();
 }
