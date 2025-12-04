@@ -3,10 +3,9 @@ namespace {
     std::unordered_map<std::string, uint32_t> entity_names;
     std::vector<Entity> entities;    
 }
-std::unordered_map<std::string, uint32_t> Entity_Manager::get_entity_names(){
+std::unordered_map<std::string, uint32_t> EntityManager::get_entity_names(){
     return entity_names;
 }
-// Entity_Manager::std::unordered_map<std::string, uint32_t> entity_names;
 void hello(){
     std::cout << "Hello\n";
 }
@@ -15,7 +14,7 @@ void test(){
     std::cout << "Test\n";
 }
 
-void Entity_Manager::add_entity(Entity entity, std::string name)
+void EntityManager::add_entity(Entity entity, std::string name)
 {
     entity.id = entities.size();
     
@@ -28,7 +27,7 @@ void Entity_Manager::add_entity(Entity entity, std::string name)
     entity_names[name] = entity.id;
 }
 
-void Entity_Manager::add_component(uint32_t entity_id, Type component, System& system)
+void EntityManager::add_component(uint32_t entity_id, Type component, System& system)
 {
     TempID temp = TempID{
         0,
@@ -37,12 +36,12 @@ void Entity_Manager::add_component(uint32_t entity_id, Type component, System& s
     entities[entity_id].components.push_back(temp);
 }
 
-void Entity_Manager::remove_entity(Entity entity)
+void EntityManager::remove_entity(Entity entity)
 {
     //std::find(entities.begin(), entities.end(), entity);
 }
 
-void Entity_Manager::remove_entity(uint32_t entity)
+void EntityManager::remove_entity(uint32_t entity)
 {
     for (size_t i = 0; i < entities.size(); i++)
     {
@@ -54,12 +53,12 @@ void Entity_Manager::remove_entity(uint32_t entity)
     }
 }
 
-uint32_t Entity_Manager::get_entity_amount()
+uint32_t EntityManager::get_entity_amount()
 {
     return entities.size();
 }
 
-void Entity_Manager::print_entities()
+void EntityManager::print_entities()
 {
     for (size_t i = 0; i < entities.size(); i++)
     {
@@ -68,7 +67,7 @@ void Entity_Manager::print_entities()
     
 }
 
-std::vector<Entity>& Entity_Manager::get_all_entities()
+std::vector<Entity>& EntityManager::get_all_entities()
 {
     return entities;
 }

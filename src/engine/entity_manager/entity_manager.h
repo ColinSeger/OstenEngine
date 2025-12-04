@@ -24,7 +24,7 @@ struct Entity{
     void (*test)() = stub;
 };
 
-namespace Entity_Manager
+namespace EntityManager
 {
     std::unordered_map<std::string, uint32_t> get_entity_names();
 

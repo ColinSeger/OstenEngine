@@ -96,21 +96,21 @@ void Application::imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            if(Entity_Manager::get_entity_names().contains("GameObject"))
+            if(EntityManager::get_entity_names().contains("GameObject"))
             {
                 std::string name ("GameObject");
                 for (size_t i = 0; i < 9; i++)
                 {
-                    if(Entity_Manager::get_entity_names().contains(name)){
+                    if(EntityManager::get_entity_names().contains(name)){
                         name.push_back('A');
                     }else{
-                        Entity_Manager::add_entity(Entity{}, name);
+                        EntityManager::add_entity(Entity{}, name);
                         break;
                     }
                 }
                 
             }else{
-                Entity_Manager::add_entity(Entity{}, "GameObject");
+                EntityManager::add_entity(Entity{}, "GameObject");
             }
             
         }
@@ -131,10 +131,10 @@ void Application::imgui_hierarchy(bool& open)
         
         if(ImGui::TreeNode("Thing"))
         {
-            auto entities = Entity_Manager::get_all_entities();
-            if(Entity_Manager::get_all_entities().size() > 0)
+            auto entities = EntityManager::get_all_entities();
+            if(EntityManager::get_all_entities().size() > 0)
             {
-                for (auto& name : Entity_Manager::get_entity_names())
+                for (auto& name : EntityManager::get_entity_names())
                 {
                     ImGui::PushID(name.second);
 
@@ -253,12 +253,12 @@ void Application::main_game_loop()
 
             if(ImGui::Button("Remove Entity"))
             {
-                Entity_Manager::remove_entity(entity_to_delete);
+                EntityManager::remove_entity(entity_to_delete);
             }
 
             if(ImGui::Button("Call Entity"))
             {
-                Entity_Manager::print_entities();
+                EntityManager::print_entities();
             }
             
             for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
@@ -298,7 +298,7 @@ void Application::main_game_loop()
         ImGui::RenderPlatformWindowsDefault();
         frames +=1;
 
-        if(Entity_Manager::get_entity_amount() > render_pipeline->to_render.size()){
+        if(EntityManager::get_entity_amount() > render_pipeline->to_render.size()){
             Renderable first_obj;
             first_obj.transform.position =  { -1.0f, 0.0f, 0.0f};
             first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};

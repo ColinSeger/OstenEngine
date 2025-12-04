@@ -44,10 +44,11 @@ uint16_t add_component(System& system, void* component)
         uint32_t size_offset = size * system.amount;
         comp += size_offset;
         memcpy(comp , component, size);
-        system.amount++;    
+        system.amount++;
+        return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 
