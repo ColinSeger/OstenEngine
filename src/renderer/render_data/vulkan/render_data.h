@@ -76,8 +76,6 @@ struct VertexAtributes{
 VkVertexInputBindingDescription get_binding_description();
 VertexAtributes get_attribute_descriptions();
 
-void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
-
 namespace CommandBuffer
 {
     uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties);

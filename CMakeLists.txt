@@ -41,6 +41,7 @@ add_executable(${PROJECT_NAME}
     src/renderer/device/vulkan/device.cpp
     src/renderer/swap_chain/vulkan/swap_chain.cpp
     src/renderer/render_data/vulkan/render_data.cpp
+    src/renderer/descriptors/descriptors.cpp
     src/renderer/render_pipeline.cpp
     src/renderer/texture/vulkan/texture.cpp
     src/renderer/camera/camera.cpp

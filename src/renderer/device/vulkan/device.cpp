@@ -73,7 +73,6 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
 
 void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers)
 {
-    device.surface = surface_reference;
     uint32_t device_amount = 0;
 
     vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
@@ -87,7 +86,7 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
 
 
     for (const VkPhysicalDevice& device_physical : devices) {
-        if (is_device_suitable(device_physical, device.surface)) {
+        if (is_device_suitable(device_physical, surface_reference)) {
             device.physical_device = device_physical;
             break;
         }
@@ -97,17 +96,14 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         throw "No vulkan supported graphics found";
     }
 
-    //
-    ///Creation of virtual device starts here
-    //
-    create_virtual_device(&device, validation_layers);
+    create_virtual_device(device, surface_reference, validation_layers);
 
 }
 
-// Device::~Device()
-// {
-//     vkDestroyDevice(virtual_device, nullptr);
-// }
+void destroy_device(Device& device)
+{
+    vkDestroyDevice(device.virtual_device, nullptr);
+}
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
 {
@@ -147,9 +143,9 @@ bool check_device_extension_support(VkPhysicalDevice device)
     return required_extensions.empty();
 }
 
-void create_virtual_device(Device* device, const std::vector<const char*>& validation_layers)
+void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers)
 {
-    QueueFamilyIndicies indices = find_queue_families(device->physical_device, device->surface);
+    QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
@@ -189,7 +185,7 @@ void create_virtual_device(Device* device, const std::vector<const char*>& valid
     } else {
         create_info.enabledLayerCount = 0;
     }
-    VkResult result = vkCreateDevice(device->physical_device, &create_info, nullptr, &device->virtual_device);
+    VkResult result = vkCreateDevice(device.physical_device, &create_info, nullptr, &device.virtual_device);
 
     if(result != VK_SUCCESS)
     {
@@ -198,8 +194,8 @@ void create_virtual_device(Device* device, const std::vector<const char*>& valid
         throw "Failed to create device";
     }
 
-    vkGetDeviceQueue(device->virtual_device, indices.graphics_family.value(), 0, &device->graphics_queue);
-    vkGetDeviceQueue(device->virtual_device, indices.present_family.value(), 0, &device->present_queue);
+    vkGetDeviceQueue(device.virtual_device, indices.graphics_family.value(), 0, &device.graphics_queue);
+    vkGetDeviceQueue(device.virtual_device, indices.present_family.value(), 0, &device.present_queue);
 }
 
 

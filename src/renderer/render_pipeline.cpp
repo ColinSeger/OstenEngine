@@ -22,34 +22,6 @@ void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<Renderable>& d
     vkCmdEndRenderPass(command_buffer);
 }
 
-void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
-{
-    VkDescriptorPoolSize pool_sizes[] = {
-    {VK_DESCRIPTOR_TYPE_SAMPLER,                1000},
-    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE},
-    {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000},
-    {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000},
-    {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000},
-    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000},
-    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-    {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000},
-};
-
-    VkDescriptorPoolCreateInfo pool_info{};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = (uint32_t) IM_ARRAYSIZE(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-
-    if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
-        assert(false && "Descriptor fail");
-    }
-}
-
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
 {
     Debug::log((char*)"sHIT");
@@ -86,6 +58,8 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     ModelLoader::parse_obj(model_location, vertices, indices);
 
+    // ModelLoader::parse_obj("assets/debug_assets/napoleon.bin", vertices, indices);
+
     // ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
 
     restart_swap_chain();
@@ -99,7 +73,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     create_uniform_buffers();
     create_descriptor_pool(descriptor_pool, device.virtual_device);
-    create_descriptor_sets(descriptor_pool, device.virtual_device, descriptor_set_layout);
+    create_descriptor_sets(descriptor_pool, device.virtual_device, descriptor_set_layout, image_view, texture_sampler, to_render);
 
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
@@ -153,6 +127,8 @@ void RenderPipeline::cleanup()
     vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     
+    destroy_device(device);
+
     vkDestroyInstance(instance, nullptr);
     
     glfwTerminate();
@@ -316,118 +292,6 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
 
         vkMapMemory(device.virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
     } 
-}
-
-void RenderPipeline::create_descriptor_set(Renderable& render_this) {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-    
-    render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-
-    if(vkAllocateDescriptorSets(device.virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
-        assert(false);
-    }
-
-    
-
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo buffer_info{};
-        buffer_info.buffer = render_this.uniform_buffers[i];
-        buffer_info.offset = 0;
-        buffer_info.range = sizeof(UniformBufferObject);
-
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = image_view;
-        image_info.sampler = texture_sampler;
-
-        const uint8_t descriptor_size = 2;
-        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &buffer_info;
-        descriptor_writes[0].pImageInfo = nullptr; // Optional
-        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
-
-        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
-        descriptor_writes[1].dstBinding = 1;
-        descriptor_writes[1].dstArrayElement = 0;
-        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pImageInfo = &image_info;
-
-        vkUpdateDescriptorSets(device.virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
-    }
-}
-
-void RenderPipeline::create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout)
-{
-    for (size_t render_index = 0; render_index < to_render.size(); render_index++)
-    {
-        Renderable& render_this = to_render[render_index];
-
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptor_pool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
-        
-        render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-
-        if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
-            assert(false);
-        }
-
-        
-
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorBufferInfo buffer_info{};
-            buffer_info.buffer = render_this.uniform_buffers[i];
-            buffer_info.offset = 0;
-            buffer_info.range = sizeof(UniformBufferObject);
-
-            VkDescriptorImageInfo image_info{};
-            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            image_info.imageView = image_view;
-            image_info.sampler = texture_sampler;
-
-            const uint8_t descriptor_size = 2;
-            VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
-            descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
-            descriptor_writes[0].dstBinding = 0;
-            descriptor_writes[0].dstArrayElement = 0;
-            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptor_writes[0].descriptorCount = 1;
-            descriptor_writes[0].pBufferInfo = &buffer_info;
-            descriptor_writes[0].pImageInfo = nullptr; // Optional
-            descriptor_writes[0].pTexelBufferView = nullptr; // Optional
-
-            descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
-            descriptor_writes[1].dstBinding = 1;
-            descriptor_writes[1].dstArrayElement = 0;
-            descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptor_writes[1].descriptorCount = 1;
-            descriptor_writes[1].pImageInfo = &image_info;
-
-            vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
-        }
-    }
-
-
 }
 
 void RenderPipeline::restart_swap_chain()

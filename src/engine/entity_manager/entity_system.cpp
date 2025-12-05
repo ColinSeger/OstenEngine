@@ -5,7 +5,6 @@ uint8_t init_system(System& system, uint16_t component_size, uint32_t capacity)
 {
     system.amount = 0;
     system.capacity = capacity;
-    system.size_of_component = component_size;
     system.components = (Component*)malloc(capacity * component_size);
 
     return 1;
@@ -21,9 +20,9 @@ uint8_t init_system(System& system, void* component, uint32_t capacity)
     system.capacity = capacity;
     system.type = cmp->id;
     
-    system.size_of_component = get_component_size_by_type(system.type);
+    uint16_t size_of_component = get_component_size_by_type(system.type);
 
-    system.components = (Component*)malloc(capacity * system.size_of_component);
+    system.components = (Component*)malloc(capacity * size_of_component);
 
     return 1;
 }
@@ -35,7 +34,7 @@ uint8_t add_action(System& system, uint8_t (*function)(System&))
     return 1;
 }
 
-uint16_t add_component(System& system, void* component)
+uint8_t add_component(System& system, void* component)
 {
     uint16_t type = static_cast<Component*>(component)->id;
     if(system.type == type && system.amount < system.capacity){

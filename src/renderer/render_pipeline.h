@@ -14,6 +14,7 @@
 #include "model_loader/model_loader.h"
 #include "renderable.h"
 #include "camera/camera.h"
+#include "descriptors/descriptors.h"
 
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -86,8 +87,6 @@ public:
 
     void update_uniform_buffer(uint8_t current_image);
 
-    void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout);
-
     RenderPipeline(const int width, const int height, const char* application_name);
     ~RenderPipeline();
 
@@ -96,6 +95,4 @@ public:
     void cleanup();
 
     void create_uniform_buffer(Renderable& render_this);
-
-    void create_descriptor_set(Renderable& render_this);
 };
