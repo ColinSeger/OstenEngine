@@ -1,7 +1,7 @@
 #include "texture.h"
 
 
-VkImage Texture::create_texture_image(Device* device ,const char* texture_location, VkCommandPool& command_pool)
+VkImage Texture::create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool)
 {
     int texture_width;
     int texture_height;
@@ -31,9 +31,9 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     );
 
     void* data;
-    vkMapMemory(device->virtual_device, staging_buffer_memory, 0, image_size, 0, &data);
+    vkMapMemory(device.virtual_device, staging_buffer_memory, 0, image_size, 0, &data);
         memcpy(data, image_pixels, static_cast<size_t>(image_size));
-    vkUnmapMemory(device->virtual_device, staging_buffer_memory);
+    vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
     stbi_image_free(image_pixels);
 
@@ -65,7 +65,7 @@ VkImage Texture::create_texture_image(Device* device ,const char* texture_locati
     return texture_image;
 }
 
-void Texture::create_image( Device* device, 
+void Texture::create_image( Device& device, 
                             VkExtent2D& image_size, 
                             VkFormat format, 
                             VkImageTiling image_tiling, 
@@ -91,32 +91,32 @@ void Texture::create_image( Device* device,
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult result = vkCreateImage(device->virtual_device, &image_info, nullptr, &image);
+    VkResult result = vkCreateImage(device.virtual_device, &image_info, nullptr, &image);
 
     if(result != VK_SUCCESS){
         assert(false && "Failed to create image");
     }
 
     VkMemoryRequirements memory_requirements;
-    vkGetImageMemoryRequirements(device->virtual_device, image, &memory_requirements);
+    vkGetImageMemoryRequirements(device.virtual_device, image, &memory_requirements);
 
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = memory_requirements.size;
-    alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device->physical_device ,memory_requirements.memoryTypeBits, property_flags);
+    alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device.physical_device ,memory_requirements.memoryTypeBits, property_flags);
 
-    result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &image_memory);
+    result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &image_memory);
 
     if(result != VK_SUCCESS){
         assert(false && "Failed allocate memory image");
     }
 
-    vkBindImageMemory(device->virtual_device, image, image_memory, 0);
+    vkBindImageMemory(device.virtual_device, image, image_memory, 0);
 }
 
-void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool& command_pool)
+void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool)
 {
-    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->virtual_device, command_pool);
+    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -164,12 +164,12 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
         1, &barrier
     );
 
-    CommandBuffer::end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue, command_buffer);
+    CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
 }
 
-void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device* device, VkCommandPool& command_pool)
+void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
 {
-    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->virtual_device, command_pool);
+    VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -197,7 +197,7 @@ void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& i
         &region
     );
 
-    CommandBuffer::end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue, command_buffer);
+    CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
 }
 
 VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)
@@ -221,12 +221,12 @@ VkImageView Texture::create_image_view(VkDevice virtual_device, VkImage texture_
     return result;
 }
 
-VkSampler Texture::create_texture_sampler(Device* device)
+VkSampler Texture::create_texture_sampler(Device& device)
 {
     VkSampler textureSampler{};
 
     VkPhysicalDeviceProperties properties{};//Move this out later
-    vkGetPhysicalDeviceProperties(device->physical_device, &properties);
+    vkGetPhysicalDeviceProperties(device.physical_device, &properties);
 
     VkSamplerCreateInfo sampler_info{};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -246,7 +246,7 @@ VkSampler Texture::create_texture_sampler(Device* device)
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    if(vkCreateSampler(device->virtual_device, &sampler_info, nullptr, &textureSampler) != VK_SUCCESS){
+    if(vkCreateSampler(device.virtual_device, &sampler_info, nullptr, &textureSampler) != VK_SUCCESS){
         assert(false);
     }
 

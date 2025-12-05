@@ -221,8 +221,8 @@ Model ModelLoader::create_model(Device& device, VkCommandPool command_pool, std:
 {
     Model result {};
     result.index_amount = indices.size();
-    CommandBuffer::create_vertex_buffer(&device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
-    CommandBuffer::create_index_buffer(&device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
+    CommandBuffer::create_vertex_buffer(device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
+    CommandBuffer::create_index_buffer(device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
 
 
     return result;

@@ -304,8 +304,24 @@ void Application::main_game_loop()
             first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};
             first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
             render_pipeline->create_uniform_buffer(first_obj);
-            create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, render_pipeline->image_view, render_pipeline->texture_sampler);
+            VkImage image_test;
+            if(render_pipeline->to_render.size() < 2){
+                image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
+            }else{
+                image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
+            }
+            
+            VkImageView image_view;//TODO Temporary way to access image
+            VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+
+            image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+            texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
+
+            create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, image_view, texture_sampler);
             render_pipeline->to_render.push_back(first_obj);
+            vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
+            vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
         }
         last_tick = std::chrono::high_resolution_clock::now();
     }

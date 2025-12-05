@@ -35,7 +35,7 @@ VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDevi
 {
     VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
 
-    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
+    Texture::create_image(*device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
 
     return Texture::create_image_view(device->virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }

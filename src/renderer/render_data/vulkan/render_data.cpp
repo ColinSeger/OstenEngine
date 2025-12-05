@@ -81,9 +81,9 @@ uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint3
     return 1;
 }
 
-void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
+void CommandBuffer::copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
 {
-    VkCommandBuffer command_buffer = begin_single_time_commands(device->virtual_device, command_pool);
+    VkCommandBuffer command_buffer = begin_single_time_commands(device.virtual_device, command_pool);
 
     VkBufferCopy copy_region{};
     //Look into merging copied buffers into this using a offset
@@ -93,10 +93,10 @@ void CommandBuffer::copy_buffer(Device* device, VkBuffer& src_buffer, VkBuffer& 
 
     vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
-    end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue, command_buffer);
+    end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
 }
 
-void CommandBuffer::create_buffer(Device* device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
+void CommandBuffer::create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
 {
     VkBufferCreateInfo buffer_info{};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -104,30 +104,30 @@ void CommandBuffer::create_buffer(Device* device, VkBufferUsageFlags usage, VkDe
     buffer_info.usage = usage;
     buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult result = vkCreateBuffer(device->virtual_device, &buffer_info, nullptr, &buffer);
+    VkResult result = vkCreateBuffer(device.virtual_device, &buffer_info, nullptr, &buffer);
 
     if(result != VK_SUCCESS){
         assert(false && "Failed to create buffer");
     }
 
     VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device->virtual_device, buffer, &memory_requirements);
+    vkGetBufferMemoryRequirements(device.virtual_device, buffer, &memory_requirements);
 
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = memory_requirements.size;
-    alloc_info.memoryTypeIndex = find_memory_type(device->physical_device, memory_requirements.memoryTypeBits, properties);
+    alloc_info.memoryTypeIndex = find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &buffer_memory);
+    result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &buffer_memory);
 
     if(result != VK_SUCCESS){
         assert(false && "Buffer Memory Allocation Failed");
     }
 
-    vkBindBufferMemory(device->virtual_device, buffer, buffer_memory, 0);
+    vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
 }
 
-void CommandBuffer::create_vertex_buffer(Device* device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+void CommandBuffer::create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
 {
     VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
@@ -144,9 +144,9 @@ void CommandBuffer::create_vertex_buffer(Device* device, std::vector<Vertex>& ve
     );
 
     void* data;
-    vkMapMemory(device->virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
+    vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
     std::memcpy(data, vertices.data(), (size_t) buffer_size);
-    vkUnmapMemory(device->virtual_device, staging_buffer_memory);
+    vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
     create_buffer(
         device,
@@ -159,11 +159,11 @@ void CommandBuffer::create_vertex_buffer(Device* device, std::vector<Vertex>& ve
 
     CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
 
-    vkDestroyBuffer(device->virtual_device,staging_buffer, nullptr);
-    vkFreeMemory(device->virtual_device, staging_buffer_memory, nullptr);
+    vkDestroyBuffer(device.virtual_device,staging_buffer, nullptr);
+    vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
 }
 
-void CommandBuffer::create_index_buffer(Device* device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+void CommandBuffer::create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
 {
     VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
 
@@ -180,9 +180,9 @@ void CommandBuffer::create_index_buffer(Device* device, std::vector<uint32_t>& i
     );
 
     void* data;
-    vkMapMemory(device->virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
+    vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
     std::memcpy(data, indicies.data(), (size_t) buffer_size);
-    vkUnmapMemory(device->virtual_device, staging_buffer_memory);
+    vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
     create_buffer(
         device,
@@ -195,8 +195,8 @@ void CommandBuffer::create_index_buffer(Device* device, std::vector<uint32_t>& i
 
     CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
 
-    vkDestroyBuffer(device->virtual_device, staging_buffer, nullptr);
-    vkFreeMemory(device->virtual_device, staging_buffer_memory, nullptr);
+    vkDestroyBuffer(device.virtual_device, staging_buffer, nullptr);
+    vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
 }
 
 
@@ -231,17 +231,17 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
     }
 }
 
-VkCommandPool CommandBuffer::create_command_pool(Device* device, VkSurfaceKHR surface)
+VkCommandPool CommandBuffer::create_command_pool(Device& device, VkSurfaceKHR surface)
 {
     VkCommandPool command_pool;
-    QueueFamilyIndicies queue_family_indices = find_queue_families(device->physical_device, surface);
+    QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-    VkResult result = vkCreateCommandPool(device->virtual_device, &poolInfo, nullptr, &command_pool);
+    VkResult result = vkCreateCommandPool(device.virtual_device, &poolInfo, nullptr, &command_pool);
     if(result != VK_SUCCESS){
         assert(false && "Failed at Creating command pool");
     }

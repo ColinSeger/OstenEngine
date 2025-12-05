@@ -64,15 +64,9 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
     models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-
-
-    // if(indices.size() > 0){
-    //     CommandBuffer::create_vertex_buffer(&device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
-    //     CommandBuffer::create_index_buffer(&device, indices, index_buffer, index_buffer_memory, command_pool);
-    // }
-    
-
     vertices.clear();
+    indices.clear();
+
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
     create_uniform_buffers();
@@ -105,19 +99,9 @@ void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device.virtual_device);
 
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //     vkDestroyBuffer(device.virtual_device, uniform_buffers[i], nullptr);
-    //     vkFreeMemory(device.virtual_device, uniform_buffers_memory[i], nullptr);
-    // }
     vkDestroyDescriptorPool(device.virtual_device, descriptor_pool, nullptr);
 
     vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
-
-    // vkDestroyBuffer(device.virtual_device, vertex_buffer, nullptr);
-    // vkFreeMemory(device.virtual_device, vertex_buffer_memory, nullptr);
-    // vkDestroyBuffer(device.virtual_device, index_buffer, nullptr);
-    // vkFreeMemory(device.virtual_device, index_buffer_memory, nullptr);
-
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(device.virtual_device, image_available_semaphores[i], nullptr);
@@ -273,7 +257,7 @@ void RenderPipeline::create_uniform_buffers() {
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             CommandBuffer::create_buffer(
-                &device,
+                device,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 bufferSize,  
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
@@ -295,7 +279,7 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
-            &device,
+            device,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             bufferSize,  
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
@@ -309,7 +293,6 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
 
 void RenderPipeline::restart_swap_chain()
 {
-    
     int width = 0, height = 0;
     glfwGetFramebufferSize(main_window, &width, &height);
     while (width == 0 || height == 0) {
@@ -333,16 +316,16 @@ void RenderPipeline::restart_swap_chain()
         create_swap_chain_images(swap_chain, &device, surface, swap_chain_images);
         create_render_pass();
     }
-    command_pool = CommandBuffer::create_command_pool(&device, surface);
+    command_pool = CommandBuffer::create_command_pool(device, surface);
 
     swap_chain_images.depth_image_view = create_depth_resources(&device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
 
     create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
 
-    VkImage image_test = Texture::create_texture_image(&device, texture_location, command_pool);
+    VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
 
     image_view = Texture::create_image_view(device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    texture_sampler = Texture::create_texture_sampler(&device);
+    texture_sampler = Texture::create_texture_sampler(device);
 
     CommandBuffer::create_command_buffers(command_buffers, device.virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }
