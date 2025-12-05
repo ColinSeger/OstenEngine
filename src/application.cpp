@@ -298,15 +298,15 @@ void Application::main_game_loop()
         ImGui::RenderPlatformWindowsDefault();
         frames +=1;
 
-        // if(EntityManager::get_entity_amount() > render_pipeline->to_render.size()){
-        //     Renderable first_obj;
-        //     first_obj.transform.position =  { -1.0f, 0.0f, 0.0f};
-        //     first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};
-        //     first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
-        //     render_pipeline->create_uniform_buffer(first_obj);
-        //     create_descriptor_set(first_obj);
-        //     render_pipeline->to_render.push_back(first_obj);
-        // }
+        if(EntityManager::get_entity_amount() > render_pipeline->to_render.size()){
+            Renderable first_obj;
+            first_obj.transform.position =  { -1.0f, 0.0f, 0.0f};
+            first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};
+            first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
+            render_pipeline->create_uniform_buffer(first_obj);
+            create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, render_pipeline->image_view, render_pipeline->texture_sampler);
+            render_pipeline->to_render.push_back(first_obj);
+        }
         last_tick = std::chrono::high_resolution_clock::now();
     }
 }

@@ -1,25 +1,18 @@
 #include "render_pipeline.h"
 
-void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<Renderable>& descriptor_set, VkPipelineLayout pipeline_layout, RenderBuffer& render_buffer, const uint32_t index_amount, uint8_t frame)
+void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
 {
-    VkBuffer vertex_buffers[] = {render_buffer.vertex_buffer};
+    VkBuffer vertex_buffers[] = {model.vertex_buffer};
     VkDeviceSize offsets[] = {0};
-    for (size_t i = 0; i < descriptor_set.size(); i++){
-        if(index_amount > 0){
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+    if(model.index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-            vkCmdBindIndexBuffer(command_buffer, render_buffer.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set[i].descriptor_sets[frame], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
 
-            vkCmdDrawIndexed(command_buffer, index_amount, 1, 0, 0, 0); 
-        }
+        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0); 
     }
-
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
-
-    vkCmdEndRenderPass(command_buffer);
 }
 
 RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
@@ -56,19 +49,30 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     create_device(device, instance, surface, validation_layers);
 
-    ModelLoader::parse_obj(model_location, vertices, indices);
+    
 
-    // ModelLoader::parse_obj("assets/debug_assets/napoleon.bin", vertices, indices);
+    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
 
     // ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
 
     restart_swap_chain();
 
-    if(indices.size() > 0){
-        CommandBuffer::create_vertex_buffer(&device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
-        CommandBuffer::create_index_buffer(&device, indices, index_buffer, index_buffer_memory, command_pool);
-    }
+    ModelLoader::parse_obj(model_location, vertices, indices);
+    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+    vertices.clear();
+    indices.clear();
 
+    ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+
+
+    // if(indices.size() > 0){
+    //     CommandBuffer::create_vertex_buffer(&device, vertices, vertex_buffer, vertex_buffer_memory, command_pool);
+    //     CommandBuffer::create_index_buffer(&device, indices, index_buffer, index_buffer_memory, command_pool);
+    // }
+    
+
+    vertices.clear();
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
     create_uniform_buffers();
@@ -109,10 +113,10 @@ void RenderPipeline::cleanup()
 
     vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
 
-    vkDestroyBuffer(device.virtual_device, vertex_buffer, nullptr);
-    vkFreeMemory(device.virtual_device, vertex_buffer_memory, nullptr);
-    vkDestroyBuffer(device.virtual_device, index_buffer, nullptr);
-    vkFreeMemory(device.virtual_device, index_buffer_memory, nullptr);
+    // vkDestroyBuffer(device.virtual_device, vertex_buffer, nullptr);
+    // vkFreeMemory(device.virtual_device, vertex_buffer_memory, nullptr);
+    // vkDestroyBuffer(device.virtual_device, index_buffer, nullptr);
+    // vkFreeMemory(device.virtual_device, index_buffer_memory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -160,14 +164,23 @@ void RenderPipeline::draw_frame()
 
     RenderPass::start_render_pass(command_buffer, swap_chain_images.swap_chain_framebuffers[image_index], render_pass, swap_chain.screen_extent);
 
-    RenderBuffer render_buffer = {
-        vertex_buffer,
-        index_buffer
-    };
-
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
+    // swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
+    int test = 0;
+    for(Renderable& render : to_render){
+        test++;
+        if(test <= 2){
+            swap_draw_frame(command_buffer, render, pipeline_layout, models[0], current_frame);            
+        }else{
+            swap_draw_frame(command_buffer, render, pipeline_layout, models[1], current_frame);   
+        }
+    }
+
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
+
+    vkCmdEndRenderPass(command_buffer);
 
     RenderPass::end_render_pass(command_buffer);
 

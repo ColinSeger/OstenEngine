@@ -29,7 +29,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     }
 }
 
-void create_descriptor_set(Device device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
+void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
 
     std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
 

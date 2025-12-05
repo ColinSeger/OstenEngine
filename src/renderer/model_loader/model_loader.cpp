@@ -36,6 +36,8 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
 
     file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
+    size_t index_offset = indices.size();
+
     if(!file_stream.is_open())
     {
         vertices.emplace_back(Vertex{});
@@ -101,7 +103,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
                 for (std::string& index : values)
                 {
                     if(index.length() <= 0) continue;
-                    indices.push_back(std::stoi(index) -1);
+                    indices.push_back(std::stoi(index) -1 + index_offset);
                     for (size_t i = 0; i < index.size(); i++)
                     {
                         if(index[i] == '/')
@@ -139,13 +141,15 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
             values[char_index].push_back(value);
         }
     }
-    for (size_t i = 0; i < indices.size(); i++)
+    for (size_t i = 0; i < indices.size() - index_offset; i++)
     {
         vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
     }
+    for (size_t i = 0; i < vertex.size(); i++)//Temp solution
+    {
+        vertices.emplace_back(vertex[i]);
+    }
     
-    vertices = vertex;
-
     free(file);
     
 }
@@ -211,4 +215,15 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     
     free(vertex_ptr);
     free(index_ptr);
+}
+
+Model ModelLoader::create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+{
+    Model result {};
+    result.index_amount = indices.size();
+    CommandBuffer::create_vertex_buffer(&device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
+    CommandBuffer::create_index_buffer(&device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
+
+
+    return result;
 }
