@@ -22,15 +22,15 @@ add_subdirectory(external/glm)
 
 # Set where the ImGui files are stored
 set(IMGUI_PATH  "external/imgui")
-    
-# Compile as static library 
-file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp) 
+
+# Compile as static library
+file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
 add_library("imgui" STATIC ${IMGUI_SOURCES})
 target_include_directories("imgui" PUBLIC ${IMGUI_PATH})
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
     main.cpp
     src/renderer/model_loader/model_loader.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
@@ -53,22 +53,22 @@ add_executable(${PROJECT_NAME}
     )
 
 if (${UNIX})
-    target_link_libraries(${PROJECT_NAME} 
-        PRIVATE 
-        Vulkan::Vulkan 
-        glfw 
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        Vulkan::Vulkan
+        glfw
         glm::glm
         PUBLIC
         imgui
         X11
-        )    
+        )
 endif (${UNIX})
 
-target_link_libraries(${PROJECT_NAME} 
-        PRIVATE 
-        Vulkan::Vulkan 
-        glfw 
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        Vulkan::Vulkan
+        glfw
         glm::glm
         PUBLIC
         imgui
-        )  
+        )
