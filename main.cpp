@@ -1,10 +1,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
-#include "external/math_3d.h"
+//#include "external/math_3d.h"
+//#define MATH_3D_IMPLEMENTATION
 
 
 #include "src/application.h"
-#define MATH_3D_IMPLEMENTATION
 
 int main()
 {
