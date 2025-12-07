@@ -5,7 +5,7 @@ namespace DeviceHelperFunctions
 {
     bool is_completed(QueueFamilyIndicies& queue_family)
     {
-        return queue_family.graphics_family.has_value() && queue_family.present_family.has_value();
+        return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
     }
 
     bool is_completed(SwapChainSupportDetails& swap_chain_support)
@@ -22,21 +22,23 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_amount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families.data());
-    
+
 
     int index = 0;
     for (const auto& queue_family : queue_families) {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphics_family = index;
+            indices.graphics_family.number = index;
+            indices.graphics_family.has_value = true;
         }
 
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &present_support);
 
         if (present_support) {
-            indices.present_family = index;
+            indices.present_family.number = index;
+            indices.present_family.has_value = true;
         }
-        if(indices.graphics_family.has_value() && indices.present_family.has_value()){
+        if(indices.graphics_family.has_value && indices.present_family.has_value){
             break;
         }
 
@@ -120,11 +122,11 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can impr
 
     VkPhysicalDeviceFeatures supported_features;
     vkGetPhysicalDeviceFeatures(device, &supported_features);
-    
+
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-bool check_device_extension_support(VkPhysicalDevice device) 
+bool check_device_extension_support(VkPhysicalDevice device)
 {
     uint32_t extension_count;
 
@@ -148,7 +150,7 @@ void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vect
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = {indices.graphics_family.value(), indices.present_family.value()};
+    std::set<uint32_t> unique_queue_families = {indices.graphics_family.number, indices.present_family.number};
     float queuePriority = 1.0f;
 
 
@@ -161,7 +163,7 @@ void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vect
         queue_create_infos.push_back(queue_create_info);
     }
 
-    
+
     // queue_create_info.pQueuePriorities = &queuePriority;
 
     VkPhysicalDeviceFeatures device_features{};
@@ -194,8 +196,6 @@ void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vect
         throw "Failed to create device";
     }
 
-    vkGetDeviceQueue(device.virtual_device, indices.graphics_family.value(), 0, &device.graphics_queue);
-    vkGetDeviceQueue(device.virtual_device, indices.present_family.value(), 0, &device.present_queue);
+    vkGetDeviceQueue(device.virtual_device, indices.graphics_family.number, 0, &device.graphics_queue);
+    vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
-
-

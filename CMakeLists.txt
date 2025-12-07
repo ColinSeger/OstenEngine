@@ -1,15 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(OstenEngine VERSION 0.1 LANGUAGES CXX)
-
+# set(CMAKE_C_COMPILER gcc)
+# set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 20)
 # set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+project(OstenEngine VERSION 0.1 LANGUAGES CXX)
+
 
 find_package(Vulkan REQUIRED)
 if (${UNIX})
     find_package(X11 REQUIRED)
 endif (${UNIX})
-# find_package(imgui)
 
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

@@ -11,7 +11,7 @@ void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, V
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
 
-        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0); 
+        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
     }
 }
 
@@ -38,8 +38,8 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
             "VK_LAYER_KHRONOS_validation"
         };
     #endif
-    
-    instance = Instance::create_instance(application_name, validation_layers); 
+
+    instance = Instance::create_instance(application_name, validation_layers);
 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
@@ -49,7 +49,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     create_device(device, instance, surface, validation_layers);
 
-    
+
 
     // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
 
@@ -84,7 +84,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     if(vkCreatePipelineLayout(device.virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
         assert(false && "Failed to create pipeline");
     }
-    
+
     shader();
 
     create_sync_objects();
@@ -109,23 +109,23 @@ void RenderPipeline::cleanup()
         vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
     }
     glfwDestroyWindow(main_window);
-    
+
     vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
     vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
-    
+
     destroy_device(device);
 
     vkDestroyInstance(instance, nullptr);
-    
+
     glfwTerminate();
 }
 
 void RenderPipeline::draw_frame()
 {
     vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
-    
+
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
@@ -137,7 +137,7 @@ void RenderPipeline::draw_frame()
     }
 
     update_uniform_buffer(current_frame);
-    
+
     vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
 
     vkResetCommandBuffer(command_buffers[current_frame], 0);
@@ -155,9 +155,9 @@ void RenderPipeline::draw_frame()
     for(Renderable& render : to_render){
         test++;
         if(test <= 2){
-            swap_draw_frame(command_buffer, render, pipeline_layout, models[0], current_frame);            
+            swap_draw_frame(command_buffer, render, pipeline_layout, models[0], current_frame);
         }else{
-            swap_draw_frame(command_buffer, render, pipeline_layout, models[1], current_frame);   
+            swap_draw_frame(command_buffer, render, pipeline_layout, models[1], current_frame);
         }
     }
 
@@ -200,7 +200,7 @@ void RenderPipeline::draw_frame()
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
 
-    
+
     result = vkQueuePresentKHR(device.present_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
@@ -221,7 +221,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     Vector3 test = camera_location.position + Transformations::forward_vector(camera_location);
     Vector3 up = Transformations::up_vector(camera_location);
     glm::vec3 pos = {camera_location.position.x ,camera_location.position.x ,camera_location.position.x};
-    
+
     glm::mat4 view = glm::lookAt(pos, {test.x, test.y, test.z}, {0, 0, 1});
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 0.1f, 2000.0f);
     proj[1][1] *= -1;
@@ -242,7 +242,6 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
         memcpy(to_render[render_index].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
     }
-    
 }
 
 void RenderPipeline::create_uniform_buffers() {
@@ -259,14 +258,14 @@ void RenderPipeline::create_uniform_buffers() {
             CommandBuffer::create_buffer(
                 device,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                bufferSize,  
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                render_this.uniform_buffers[i], 
+                bufferSize,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                render_this.uniform_buffers[i],
                 render_this.uniform_buffers_memory[i]
             );
 
             vkMapMemory(device.virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
-        } 
+        }
     }
 }
 
@@ -281,14 +280,14 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            bufferSize,  
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-            render_this.uniform_buffers[i], 
+            bufferSize,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            render_this.uniform_buffers[i],
             render_this.uniform_buffers_memory[i]
         );
 
         vkMapMemory(device.virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
-    } 
+    }
 }
 
 void RenderPipeline::restart_swap_chain()
@@ -300,7 +299,7 @@ void RenderPipeline::restart_swap_chain()
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(device.virtual_device);
-    
+
     if(swap_chain_images.swap_chain_images.size() > 0){
         vkDestroyImageView(device.virtual_device, image_view, nullptr);
         vkDestroySampler(device.virtual_device, texture_sampler, nullptr);
@@ -565,7 +564,7 @@ void RenderPipeline::create_render_pass()
 
     if(vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS){
         assert(false);
-    } 
+    }
 }
 
 void RenderPipeline::create_sync_objects()
@@ -583,8 +582,12 @@ void RenderPipeline::create_sync_objects()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        if(vkCreateSemaphore(device.virtual_device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS);
-        if(vkCreateSemaphore(device.virtual_device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS);
+        if(vkCreateSemaphore(device.virtual_device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS){
+            assert(false);
+        }
+        if(vkCreateSemaphore(device.virtual_device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS){
+            assert(false);
+        }
         if(vkCreateFence(device.virtual_device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
             assert(false);
         }

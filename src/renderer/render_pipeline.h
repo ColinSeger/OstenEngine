@@ -40,7 +40,7 @@ public:
     VkPipelineLayout pipeline_layout;
 
     VkPipeline graphics_pipeline;
-    
+
     VkSurfaceKHR surface;
 
     //TODO check if these even need to be vector
@@ -53,7 +53,7 @@ public:
 
     std::vector<Vertex>     vertices;//TODO make better
     std::vector<uint32_t>   indices;
-    
+
     VkCommandPool command_pool;
 
     VkDescriptorPool descriptor_pool;

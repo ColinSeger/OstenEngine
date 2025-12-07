@@ -1,0 +1,6 @@
+CompileFlags:
+  Add:
+    [
+      -IC:/VulkanSDK/1.4.328.1/Include,
+      -IC:\Users\colin\Documents\Project\OstenEngine\GameEngine\external\glfw\include,
+    ]

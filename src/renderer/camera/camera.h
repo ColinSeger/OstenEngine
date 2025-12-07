@@ -1,6 +1,5 @@
 #pragma once
-#include "../../../external/glm/glm.hpp"
-#include "../../../external/glm/gtc/matrix_transform.hpp"
+
 #include "../render_data/vulkan/render_data.h"
 // #include "../../engine/transform.h"
 

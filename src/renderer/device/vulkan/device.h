@@ -1,14 +1,20 @@
 #pragma once
+#include <cstdint>
 #include <vulkan/vulkan.h>
 #include <vector>
-#include <optional>
 #include <set>
 #include <string>
 #include "../../../debugger/debugger.h"
 
+struct optional
+{
+    uint32_t number;
+    bool has_value = false;
+};
+
 struct QueueFamilyIndicies{
-    std::optional<uint32_t> graphics_family;
-    std::optional<uint32_t> present_family;
+    optional graphics_family;
+    optional present_family;
 };
 
 struct SwapChainSupportDetails {

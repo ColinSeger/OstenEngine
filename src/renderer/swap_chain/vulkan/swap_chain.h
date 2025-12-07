@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <stdint.h>
-#include <optional>
 #include "../../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../device/vulkan/device.h"

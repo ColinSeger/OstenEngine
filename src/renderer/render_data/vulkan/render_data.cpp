@@ -29,7 +29,7 @@ VertexAtributes get_attribute_descriptions() {
     attribute_descriptions.array[2].offset = offsetof(Vertex, texture_cord);
 
     return attribute_descriptions;
-}  
+}
 
 VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
 {
@@ -66,11 +66,11 @@ void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandP
     vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
 }
 
-uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties) 
+uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
-    
+
     for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
         if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
@@ -139,7 +139,7 @@ void CommandBuffer::create_vertex_buffer(Device& device, std::vector<Vertex>& ve
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         buffer_size,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        staging_buffer, 
+        staging_buffer,
         staging_buffer_memory
     );
 
@@ -153,7 +153,7 @@ void CommandBuffer::create_vertex_buffer(Device& device, std::vector<Vertex>& ve
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         buffer_size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        vertex_buffer, 
+        vertex_buffer,
         vertex_buffer_memory
     );
 
@@ -175,7 +175,7 @@ void CommandBuffer::create_index_buffer(Device& device, std::vector<uint32_t>& i
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         buffer_size,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        staging_buffer, 
+        staging_buffer,
         staging_buffer_memory
     );
 
@@ -189,7 +189,7 @@ void CommandBuffer::create_index_buffer(Device& device, std::vector<uint32_t>& i
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         buffer_size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        index_buffer, 
+        index_buffer,
         index_buffer_memory
     );
 
@@ -206,7 +206,7 @@ void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = 0; // Optional
     begin_info.pInheritanceInfo = nullptr; // Optional
-    
+
 
     VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
     if(result != VK_SUCCESS){
@@ -239,7 +239,7 @@ VkCommandPool CommandBuffer::create_command_pool(Device& device, VkSurfaceKHR su
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
+    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.number;
 
     VkResult result = vkCreateCommandPool(device.virtual_device, &poolInfo, nullptr, &command_pool);
     if(result != VK_SUCCESS){

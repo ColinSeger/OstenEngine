@@ -66,7 +66,7 @@ struct UniformBufferObject {
 struct Vertex {
     Vector3 position{};
     Vector3 color{};
-    Vector2 texture_cord{}; 
+    Vector2 texture_cord{};
 };
 
 struct VertexAtributes{
@@ -85,7 +85,7 @@ namespace CommandBuffer
     void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer);
 
     void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool);
-    
+
     void create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
 
     void create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool);

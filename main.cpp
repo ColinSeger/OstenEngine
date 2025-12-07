@@ -1,13 +1,13 @@
-#include <iosfwd>
 #define STB_IMAGE_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "external/math_3d.h"
+
 
 #include "src/application.h"
+#define MATH_3D_IMPLEMENTATION
 
 int main()
-{   
+{
     const char* name = "Vulkan Window";
 
     Application app = Application(800, 600, name);
@@ -17,6 +17,6 @@ int main()
     // std::string result;
     std::cout << "Hello World \n";
     // std::cin >> result;
-    
+
     return 0;
 }

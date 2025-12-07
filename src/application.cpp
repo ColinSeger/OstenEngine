@@ -35,7 +35,7 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     ImGui::CreateContext();
 
     float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-    
+
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
     style.ScaleAllSizes(main_scale);
@@ -50,14 +50,14 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
     // io.WantCaptureMouse = true;
-    
+
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
-    
+
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = render_pipeline->instance;
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->surface).graphics_family.value();
+    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->surface).graphics_family.number;
 
     init_info.Queue = render_pipeline->device.graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
@@ -83,7 +83,7 @@ Application::Application(const int width, const int height, const char* name) : 
 
     file_explorer = init_file_explorer();
 /**/
-    
+
 }
 
 Application::~Application()
@@ -108,11 +108,11 @@ void Application::imgui_hierarchy_pop_up()
                         break;
                     }
                 }
-                
+
             }else{
                 EntityManager::add_entity(Entity{}, "GameObject");
             }
-            
+
         }
         ImGui::EndPopup();
     }
@@ -128,7 +128,7 @@ void Application::imgui_hierarchy(bool& open)
         if(ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)){
             ImGui::OpenPopup("hierarchy_pop_up");
         }
-        
+
         if(ImGui::TreeNode("Thing"))
         {
             auto entities = EntityManager::get_all_entities();
@@ -145,7 +145,7 @@ void Application::imgui_hierarchy(bool& open)
                 }
             }
 
-            
+
             ImGui::TreePop();
         }
     ImGui::End();
@@ -190,7 +190,7 @@ void Application::main_game_loop()
     cop.transform = rt;
     init_system(sys, &cop, 50);
     //add_action(sys, &print_transform);
-    
+
     sys.run_system = debug;
     for (size_t i = 0; i < 5; i ++)
     {
@@ -202,7 +202,7 @@ void Application::main_game_loop()
     // sys.run_system(sys);
 
     // systems.push_back(sys);
-    
+
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
@@ -215,12 +215,12 @@ void Application::main_game_loop()
         {
             system.run_system(system);
         }
-        
+
         if(frame_time > 1)
         {
             fps = frames / frame_time;
             start_time = current_time;
-            frames = 0;             
+            frames = 0;
         }
 
         if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
@@ -228,7 +228,7 @@ void Application::main_game_loop()
             ImGui_ImplGlfw_Sleep(10);
             continue;
         }
-        
+
         /**/
         // Start the Dear ImGui frame
         ImGui_ImplVulkan_NewFrame();
@@ -260,7 +260,7 @@ void Application::main_game_loop()
             {
                 EntityManager::print_entities();
             }
-            
+
             for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
             {
                 ImGui::PushID(i);
@@ -284,7 +284,7 @@ void Application::main_game_loop()
                 {
                     ImGui::Text("(%s)", logs[i]);
                 }
-                
+
             ImGui::EndChild();
         ImGui::End();
 
@@ -310,7 +310,7 @@ void Application::main_game_loop()
             }else{
                 image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
             }
-            
+
             VkImageView image_view;//TODO Temporary way to access image
             VkSampler texture_sampler;//TODO Temporary way to access sampler
 

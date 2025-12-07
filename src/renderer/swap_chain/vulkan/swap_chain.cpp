@@ -12,7 +12,7 @@ uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
 }
 
 VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities, GLFWwindow* window) {
-    
+
     if (surface_capabilities.currentExtent.width != UINT32_MAX) {
         return surface_capabilities.currentExtent;
     } else {
@@ -89,9 +89,9 @@ SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR sur
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndicies indices = find_queue_families(device->physical_device, surface);
-    uint32_t queue_family_indices[] = { indices.graphics_family.value(), indices.present_family.value()};
+    uint32_t queue_family_indices[] = { indices.graphics_family.number, indices.present_family.number};
 
-    if (indices.graphics_family != indices.present_family) {
+    if (indices.graphics_family.number != indices.present_family.number) {
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
         create_info.pQueueFamilyIndices = queue_family_indices;
@@ -152,7 +152,7 @@ void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKH
 
 void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
     swap_images.swap_chain_image_view.resize(swap_images.swap_chain_images.size());
-    
+
     for (size_t i = 0; i < swap_images.swap_chain_images.size(); i++)
     {
         VkImageViewCreateInfo create_info{};
@@ -193,7 +193,7 @@ void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device,
         VkFramebufferCreateInfo framebuffer_info{};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_info.renderPass = render_pass;
-        framebuffer_info.attachmentCount = sizeof(attachments) / sizeof(attachments[1]);
+        framebuffer_info.attachmentCount = sizeof(attachments) / sizeof(VkImageView);
         framebuffer_info.pAttachments = attachments;
         framebuffer_info.width = extent.width;
         framebuffer_info.height = extent.height;
@@ -243,7 +243,7 @@ void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExten
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
 //draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
-    
+
 }
 
 void RenderPass::end_render_pass(VkCommandBuffer& command_buffer)
