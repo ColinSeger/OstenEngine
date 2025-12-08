@@ -1,6 +1,5 @@
 #pragma once
 #include "../common_includes.h"
-#include <GLFW/glfw3.h>
 #include <cassert>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
@@ -24,9 +23,9 @@ class RenderPipeline
 {
 public:
     //Window to render to
-    GLFWwindow* main_window = nullptr;
+    // GLFWwindow* main_window = nullptr;
     //The Vulkan instance
-    VkInstance instance = VK_NULL_HANDLE;
+    VkInstance my_instance = VK_NULL_HANDLE;
     //Device manager
     Device device;
 
@@ -39,7 +38,7 @@ public:
 
     VkPipeline graphics_pipeline;
 
-    VkSurfaceKHR surface;
+    VkSurfaceKHR my_surface;
 
     //TODO check if these even need to be vector
     std::vector<VkSemaphore> image_available_semaphores;
@@ -72,16 +71,16 @@ public:
 
     void create_sync_objects();
 
-    void restart_swap_chain();
+    void restart_swap_chain(int32_t width, int32_t height);
 
     void create_uniform_buffers();
 
     void update_uniform_buffer(uint8_t current_image);
 
-    RenderPipeline(const int width, const int height, const char* application_name);
+    RenderPipeline(const int width, const int height, const char* application_name, VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*> validation_layers);
     ~RenderPipeline();
 
-    void draw_frame();
+    int32_t draw_frame();
 
     void cleanup();
 

@@ -15,57 +15,27 @@ void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, V
     }
 }
 
-RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name)
+RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name, VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*> validation_layers)
 {
-    Debug::log((char*)"sHIT");
-    glfwSetErrorCallback([](int code, const char* desc) {
-        printf("GLFW ERROR %d: %s\n", code, desc);
-    });
-    if(!glfwInit()){
-        puts("glfwInit failed");
-        assert(false && "GLFW Failed to open");
-    }
-
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
-
-    #ifdef NDEBUG
-        const std::vector<const char*> validation_layers = {};
-    #else
-        const std::vector<const char*> validation_layers = {
-            "VK_LAYER_KHRONOS_validation"
-        };
-    #endif
-
-    instance = Instance::create_instance(application_name, validation_layers);
-
-    VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
-
-    if(result != VK_SUCCESS){
-        assert(false && "Failed to create surface");
-    }
-
+    my_instance = instance;
+    my_surface = surface;
     create_device(device, instance, surface, validation_layers);
-
-
 
     // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
 
     // ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
 
-    restart_swap_chain();
+    restart_swap_chain(width, height);
 
     ModelLoader::parse_obj(model_location, vertices, indices);
     models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
     vertices.clear();
     indices.clear();
 
-    ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
-    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    vertices.clear();
-    indices.clear();
+    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+    // vertices.clear();
+    // indices.clear();
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -108,32 +78,29 @@ void RenderPipeline::cleanup()
         vkDestroySemaphore(device.virtual_device, render_finished_semaphores[i], nullptr);
         vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
     }
-    glfwDestroyWindow(main_window);
+    // glfwDestroyWindow(main_window);
 
     vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
     vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
-    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroySurfaceKHR(my_instance, my_surface, nullptr);
 
     destroy_device(device);
 
-    vkDestroyInstance(instance, nullptr);
+    vkDestroyInstance(my_instance, nullptr);
 
-    glfwTerminate();
+    // glfwTerminate();
 }
 
-void RenderPipeline::draw_frame()
+int32_t RenderPipeline::draw_frame()
 {
     vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        restart_swap_chain();
-        return;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swap chain image!");
+    
+    if (result != VK_SUCCESS) {
+        return result;
     }
 
     update_uniform_buffer(current_frame);
@@ -186,7 +153,7 @@ void RenderPipeline::draw_frame()
 
     if(queue_result != VK_SUCCESS)
     {
-        assert(false);
+        return queue_result;
     }
 
     VkSwapchainKHR swap_chains[] = {swap_chain.swap_chain};
@@ -202,14 +169,9 @@ void RenderPipeline::draw_frame()
 
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        restart_swap_chain();
-    } else if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to present swap chain image!");
-    }
-
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    
+    return result;
 }
 
 void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
@@ -290,14 +252,9 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
     }
 }
 
-void RenderPipeline::restart_swap_chain()
+void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
 {
-    int32_t width = 0, height = 0;
-    glfwGetFramebufferSize(main_window, &width, &height);
-    while (width <= 0 || height <= 0) {
-        glfwGetFramebufferSize(main_window, &width, &height);
-        glfwWaitEvents();
-    }
+    
     vkDeviceWaitIdle(device.virtual_device);
 
     if(swap_chain_images.swap_chain_images.size() > 0){
@@ -307,15 +264,15 @@ void RenderPipeline::restart_swap_chain()
 
         vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
 
-        create_swap_chain({width, height}, &device, surface, swap_chain);
-        create_swap_chain_images(swap_chain, &device, surface, swap_chain_images);
+        create_swap_chain({width, height}, &device, my_surface, swap_chain);
+        create_swap_chain_images(swap_chain, &device, my_surface, swap_chain_images);
 
     }else{
-        create_swap_chain({width, height}, &device, surface, swap_chain);
-        create_swap_chain_images(swap_chain, &device, surface, swap_chain_images);
+        create_swap_chain({width, height}, &device, my_surface, swap_chain);
+        create_swap_chain_images(swap_chain, &device, my_surface, swap_chain_images);
         create_render_pass();
     }
-    command_pool = CommandBuffer::create_command_pool(device, surface);
+    command_pool = CommandBuffer::create_command_pool(device, my_surface);
 
     swap_chain_images.depth_image_view = create_depth_resources(&device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
 

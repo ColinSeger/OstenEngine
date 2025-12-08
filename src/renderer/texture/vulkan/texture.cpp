@@ -114,7 +114,7 @@ void Texture::create_image( Device& device,
     vkBindImageMemory(device.virtual_device, image, image_memory, 0);
 }
 
-void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool)
+static void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
@@ -167,7 +167,7 @@ void Texture::transition_image_layout(VkImage image, VkFormat format, VkImageLay
     CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
 }
 
-void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
+static void Texture::copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
 {
     VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
@@ -262,7 +262,7 @@ VkFormat Texture::find_depth_formats(VkPhysicalDevice physical_device) {
     );
 }
 
-VkFormat Texture::find_supported_texture_formats(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
+static VkFormat Texture::find_supported_texture_formats(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;

@@ -1,6 +1,6 @@
 #include "instance.h"
 
-VkInstance Instance::create_instance(const char* name, const std::vector<const char*>& validation_layers)
+VkInstance Instance::create_instance(const char* name, uint32_t window_extention_count, const char** window_extensions, const std::vector<const char*>& validation_layers)
 {
     VkInstance instance = VK_NULL_HANDLE;
     uint16_t layer_size = validation_layers.size();
@@ -27,14 +27,14 @@ VkInstance Instance::create_instance(const char* name, const std::vector<const c
     create_info.pApplicationInfo = &app_info;
     create_info.flags = VkInstanceCreateFlags(0);
 
-    uint32_t glfw_extention_count = 0;
+    // uint32_t glfw_extention_count = 0;
     
-    //Gets critical extensions
-    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
-    assert(glfw_extensions != NULL);
+    // //Gets critical extensions
+    // const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
+    assert(window_extensions != NULL);
 
-    create_info.enabledExtensionCount = glfw_extention_count;
-    create_info.ppEnabledExtensionNames = glfw_extensions;
+    create_info.enabledExtensionCount = window_extention_count;
+    create_info.ppEnabledExtensionNames = window_extensions;
 
     if(layer_size > 0){
         create_info.enabledLayerCount = static_cast<uint32_t>(layer_size);
@@ -50,7 +50,7 @@ VkInstance Instance::create_instance(const char* name, const std::vector<const c
     return instance;
 }
 
-bool Instance::check_validation_layer_support(const std::vector<const char*>& validation_layers)
+static bool Instance::check_validation_layer_support(const std::vector<const char*>& validation_layers)
 {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);

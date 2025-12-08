@@ -54,16 +54,16 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
 
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = render_pipeline->instance;
+    init_info.Instance = render_pipeline->my_instance;
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->surface).graphics_family.number;
+    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->my_surface).graphics_family.number;
 
     init_info.Queue = render_pipeline->device.graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->surface).surface_capabilities.minImageCount + 1;
+    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->my_surface).surface_capabilities.minImageCount + 1;
     init_info.Allocator = nullptr;
     init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
@@ -75,9 +75,39 @@ static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 
 Application::Application(const int width, const int height, const char* name) : application_name { name }
 {
-    render_pipeline = new RenderPipeline(width, height, application_name);
+    if(!glfwInit()){
+        puts("glfwInit failed");
+        assert(false && "GLFW Failed to open");
+    }
 
-    main_window = render_pipeline->main_window;
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
+    glfwSetWindowUserPointer(main_window, this);
+    glfwSetFramebufferSizeCallback(main_window, resize_callback);
+
+    #ifdef NDEBUG
+        const std::vector<const char*> validation_layers = {};
+    #else
+        const std::vector<const char*> validation_layers = {
+            "VK_LAYER_KHRONOS_validation"
+        };
+    #endif
+    uint32_t glfw_extention_count = 0;
+    
+    // //Gets critical extensions
+    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
+
+    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers);
+    VkSurfaceKHR surface;
+
+    VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
+
+    if(result != VK_SUCCESS){
+        assert(false && "Failed to create surface");
+    }
+
+    render_pipeline = new RenderPipeline(width, height, application_name, instance, surface, validation_layers);
 
     init_imgui(main_window, render_pipeline);
 
@@ -292,7 +322,18 @@ void Application::main_game_loop()
 
         // ImDrawData* main_draw_data = ImGui::GetDrawData();
         move_camera(delta_time);
-        render_pipeline->draw_frame();
+        int32_t result = render_pipeline->draw_frame();
+
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
+            resized = false;
+            int32_t width = 0, height = 0;
+            glfwGetFramebufferSize(main_window, &width, &height);
+            while (width <= 0 || height <= 0) {
+                glfwGetFramebufferSize(main_window, &width, &height);
+                glfwWaitEvents();
+            }
+            render_pipeline->restart_swap_chain(width, height);
+        }
 
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();

@@ -19,14 +19,12 @@ static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentMode
 
 struct SwapChain
 {
-    VkSwapchainKHR swap_chain;
-
     VkExtent2D screen_extent;
+    
+    VkSwapchainKHR swap_chain;
 
     VkFormat swap_chain_image_format;
 };
-
-
 
 SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain);
 
@@ -34,9 +32,9 @@ struct SwapChainImages
 {
     VkImage depth_image;
 
-    VkDeviceMemory  depth_image_memory;
+    VkDeviceMemory depth_image_memory;
 
-    VkImageView     depth_image_view;
+    VkImageView depth_image_view;
 
     std::vector<VkImage> swap_chain_images;
 

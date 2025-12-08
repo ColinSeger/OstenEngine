@@ -1,6 +1,6 @@
 #pragma once
-#include <GLFW/glfw3.h>
 #include "common_includes.h"
+#include <GLFW/glfw3.h>
 #include <chrono>
 #include <string>
 #include <unordered_map>
@@ -21,10 +21,12 @@ static void check_vk_result(VkResult err)
         abort();
 }
 
+
+
 class Application
 {
-    const char* application_name = nullptr;
     GLFWwindow* main_window = nullptr;
+    const char* application_name = nullptr;
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
@@ -33,6 +35,11 @@ class Application
 
     FileExplorer file_explorer;
 
+    bool resized = false;
+    static void resize_callback(GLFWwindow* main_window, int width, int height) {
+        auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(main_window));
+        app->resized = true;
+    }
 public:
 
     Application(const int width, const int height, const char* name);
