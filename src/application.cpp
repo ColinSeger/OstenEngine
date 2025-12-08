@@ -296,9 +296,9 @@ void Application::main_game_loop()
                 ImGui::PushID(i);
 
                 ImGui::Text("Transform");
-                ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 1.f);
+                ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 0.1f);
                 ImGui::DragFloat3("Rotation",  &render_pipeline->to_render[i].transform.rotation.x, 0.1f);
-                ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    1.f);
+                ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    0.1f);
                 ImGui::Spacing();
 
                 ImGui::PopID();

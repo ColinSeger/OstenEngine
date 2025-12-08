@@ -1,5 +1,5 @@
 #pragma once
-//#include "../../external/math_3d.h"
+// #include "../../external/math_3d.h"
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
 #include "../renderer/render_data/vulkan/render_data.h"
@@ -14,6 +14,8 @@ struct Transform
 namespace Transformations
 {
     glm::mat4 get_model_matrix(Transform transform);
+
+    mat4_t  get_model_matrix2(Transform transform);
 
     Vector3 forward_vector(Transform transform);
 

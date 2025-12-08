@@ -11,6 +11,17 @@ glm::mat4 Transformations::get_model_matrix(Transform transform)//This should be
     return model;
 }
 
+mat4_t Transformations::get_model_matrix2(Transform transform)//This should be a for loop inside renderer probably
+{
+    mat4_t model = m4_identity();
+    model = m4_mul(model, m4_translation({transform.position.x, transform.position.y, transform.position.z}));
+    model = m4_mul(model, m4_rotation_x(transform.rotation.x));
+    model = m4_mul(model, m4_rotation_y(transform.rotation.y));
+    model = m4_mul(model, m4_rotation_z(transform.rotation.z));
+    model = m4_mul(model, m4_scaling({transform.scale.x, transform.scale.y, transform.scale.z}));
+    return model;
+}
+
 
 Vector3 Transformations::forward_vector(Transform transform)
 {

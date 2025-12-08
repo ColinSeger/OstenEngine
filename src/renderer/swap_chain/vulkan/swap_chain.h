@@ -26,7 +26,7 @@ struct SwapChain
     VkFormat swap_chain_image_format;
 };
 
-SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain);
+
 
 struct SwapChainImages
 {
@@ -42,20 +42,21 @@ struct SwapChainImages
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
 };
+void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain);
 
 int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images);
 
 static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
 
-void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKHR surface, SwapChainImages& swap_images);
+void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_image);
 
 void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
 
 void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
 
-int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
+// int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
 
-VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image);
+VkImageView create_depth_resources(Device& device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image);
 
 namespace RenderPass
 {

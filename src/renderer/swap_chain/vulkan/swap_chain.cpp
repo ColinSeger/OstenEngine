@@ -31,13 +31,13 @@ static VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surfa
     }
 }
 
-VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image)
+VkImageView create_depth_resources(Device& device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image)
 {
-    VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
+    VkFormat depth_formating = Texture::find_depth_formats(device.physical_device);
 
-    Texture::create_image(*device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
+    Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
 
-    return Texture::create_image_view(device->virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
+    return Texture::create_image_view(device.virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
@@ -61,16 +61,13 @@ static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentMode
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain){
-    VkSwapchainKHR khr_swap_chain;
-    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface);
+void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain){
+    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
     VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
 
     VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
-
-    VkFormat swap_chain_image_format = surface_format.format;
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
@@ -88,7 +85,7 @@ SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surf
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndicies indices = find_queue_families(device->physical_device, surface);
+    QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
     uint32_t queue_family_indices[] = { indices.graphics_family.number, indices.present_family.number};
 
     if (indices.graphics_family.number != indices.present_family.number) {
@@ -108,16 +105,13 @@ SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surf
 
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VkResult result = vkCreateSwapchainKHR(device->virtual_device, &create_info, nullptr, &khr_swap_chain);
+    VkResult result = vkCreateSwapchainKHR(device.virtual_device, &create_info, nullptr, &swap_chain.swap_chain);
 
     if(result != VK_SUCCESS){
         assert(false && "Failed to create swap chain");
     }
-    swap_chain.swap_chain = khr_swap_chain;
     swap_chain.screen_extent = screen_extent;
-    swap_chain.swap_chain_image_format = swap_chain_image_format;
-
-    return swap_chain;
+    swap_chain.swap_chain_image_format = surface_format.format;
 }
 
 int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images)
@@ -138,16 +132,16 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     return 1;
 }
 
-void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKHR surface, SwapChainImages& swap_images)
+void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images)
 {
-    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface);
+    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
     swap_images.swap_chain_images.resize(image_amount);
-    vkGetSwapchainImagesKHR(device->virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images.data());
+    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images.data());
 
-    create_image_views(swap_images, device->virtual_device, swap_chain.swap_chain_image_format);
+    create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format);
 }
 
 static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){

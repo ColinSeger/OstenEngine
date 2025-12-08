@@ -97,16 +97,16 @@ v1.0  2016-02-15  Initial release
 //
 
 typedef struct { float x, y, z; } vec3_t;
-static inline vec3_t vec3(float x, float y, float z)        { return (vec3_t){ x, y, z }; }
+static inline vec3_t vec3(float x, float y, float z)        { return { x, y, z }; }
 
-static inline vec3_t v3_add   (vec3_t a, vec3_t b)          { return (vec3_t){ a.x + b.x, a.y + b.y, a.z + b.z }; }
-static inline vec3_t v3_adds  (vec3_t a, float s)           { return (vec3_t){ a.x + s,   a.y + s,   a.z + s   }; }
-static inline vec3_t v3_sub   (vec3_t a, vec3_t b)          { return (vec3_t){ a.x - b.x, a.y - b.y, a.z - b.z }; }
-static inline vec3_t v3_subs  (vec3_t a, float s)           { return (vec3_t){ a.x - s,   a.y - s,   a.z - s   }; }
-static inline vec3_t v3_mul   (vec3_t a, vec3_t b)          { return (vec3_t){ a.x * b.x, a.y * b.y, a.z * b.z }; }
-static inline vec3_t v3_muls  (vec3_t a, float s)           { return (vec3_t){ a.x * s,   a.y * s,   a.z * s   }; }
-static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { return (vec3_t){ a.x / b.x, a.y / b.y, a.z / b.z }; }
-static inline vec3_t v3_divs  (vec3_t a, float s)           { return (vec3_t){ a.x / s,   a.y / s,   a.z / s   }; }
+static inline vec3_t v3_add   (vec3_t a, vec3_t b)          { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
+static inline vec3_t v3_adds  (vec3_t a, float s)           { return { a.x + s,   a.y + s,   a.z + s   }; }
+static inline vec3_t v3_sub   (vec3_t a, vec3_t b)          { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3_t v3_subs  (vec3_t a, float s)           { return { a.x - s,   a.y - s,   a.z - s   }; }
+static inline vec3_t v3_mul   (vec3_t a, vec3_t b)          { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
+static inline vec3_t v3_muls  (vec3_t a, float s)           { return { a.x * s,   a.y * s,   a.z * s   }; }
+static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
+static inline vec3_t v3_divs  (vec3_t a, float s)           { return { a.x / s,   a.y / s,   a.z / s   }; }
 static inline float  v3_length(vec3_t v)                    { return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);          }
 static inline vec3_t v3_norm  (vec3_t v);
 static inline float  v3_dot   (vec3_t a, vec3_t b)          { return a.x*b.x + a.y*b.y + a.z*b.z;                 }
@@ -206,9 +206,9 @@ static inline mat4_t m4_mul          (mat4_t a, mat4_t b);
 static inline vec3_t v3_norm(vec3_t v) {
 	float len = v3_length(v);
 	if (len > 0)
-		return (vec3_t){ v.x / len, v.y / len, v.z / len };
+		return { v.x / len, v.y / len, v.z / len };
 	else
-		return (vec3_t){ 0, 0, 0};
+		return { 0, 0, 0};
 }
 
 static inline vec3_t v3_proj(vec3_t v, vec3_t onto) {
@@ -216,7 +216,7 @@ static inline vec3_t v3_proj(vec3_t v, vec3_t onto) {
 }
 
 static inline vec3_t v3_cross(vec3_t a, vec3_t b) {
-	return (vec3_t){
+	return {
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x
@@ -238,11 +238,11 @@ static inline mat4_t mat4(
 	float m02, float m12, float m22, float m32,
 	float m03, float m13, float m23, float m33
 ) {
-	return (mat4_t){
-		.m[0][0] = m00, .m[1][0] = m10, .m[2][0] = m20, .m[3][0] = m30,
-		.m[0][1] = m01, .m[1][1] = m11, .m[2][1] = m21, .m[3][1] = m31,
-		.m[0][2] = m02, .m[1][2] = m12, .m[2][2] = m22, .m[3][2] = m32,
-		.m[0][3] = m03, .m[1][3] = m13, .m[2][3] = m23, .m[3][3] = m33
+	return mat4_t{
+		m00, m10, m20, m30,
+		m01, m11, m21, m31,
+		m02, m12, m22, m32,
+		m03, m13, m23, m33
 	};
 }
 

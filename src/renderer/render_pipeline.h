@@ -63,7 +63,7 @@ public:
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
-    Transform camera_location{};
+    Transform camera_location{2, 0, 0};
 
     void shader();
 

@@ -68,7 +68,7 @@ struct UniformBufferObject {
 
 struct Vertex {
     Vector3 position{};
-    Vector3 color{};
+    vec3_t color{};
     Vector2 texture_cord{};
 };
 

@@ -182,19 +182,18 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     // glm::vec3 forward = glm::fo
     Vector3 test = camera_location.position + Transformations::forward_vector(camera_location);
     Vector3 up = Transformations::up_vector(camera_location);
-    glm::vec3 pos = {camera_location.position.x ,camera_location.position.x ,camera_location.position.x};
+    glm::vec3 pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};
 
     glm::mat4 view = glm::lookAt(pos, {test.x, test.y, test.z}, {0, 0, 1});
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 0.1f, 2000.0f);
+
+    // m4_invert_affine(proj);
     proj[1][1] *= -1;
     // time = 1;
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        glm::mat4 inital_rotation = glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        glm::mat4 model = Transformations::get_model_matrix(to_render[render_index].transform) * inital_rotation;
-
-        Matrix model2 {};
+        glm::mat4 model = Transformations::get_model_matrix(to_render[render_index].transform);
+        mat4_t model2 = Transformations::get_model_matrix2(to_render[render_index].transform);
 
         UniformBufferObject ubo{
             ubo.model = model,
@@ -264,17 +263,17 @@ void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
 
         vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
 
-        create_swap_chain({width, height}, &device, my_surface, swap_chain);
-        create_swap_chain_images(swap_chain, &device, my_surface, swap_chain_images);
+        create_swap_chain(device, {width, height}, my_surface, swap_chain);
+        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
 
     }else{
-        create_swap_chain({width, height}, &device, my_surface, swap_chain);
-        create_swap_chain_images(swap_chain, &device, my_surface, swap_chain_images);
+        create_swap_chain(device, {width, height}, my_surface, swap_chain);
+        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
         create_render_pass();
     }
     command_pool = CommandBuffer::create_command_pool(device, my_surface);
 
-    swap_chain_images.depth_image_view = create_depth_resources(&device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
+    swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
 
     create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
 
