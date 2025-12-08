@@ -107,7 +107,7 @@ void destroy_device(Device& device)
     vkDestroyDevice(device.virtual_device, nullptr);
 }
 
-bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
+static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
 {
     QueueFamilyIndicies indices = find_queue_families(device, surface);
 
@@ -126,7 +126,7 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can impr
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-bool check_device_extension_support(VkPhysicalDevice device)
+static bool check_device_extension_support(VkPhysicalDevice device)
 {
     uint32_t extension_count;
 
@@ -145,7 +145,7 @@ bool check_device_extension_support(VkPhysicalDevice device)
     return required_extensions.empty();
 }
 
-void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers)
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers)
 {
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
 

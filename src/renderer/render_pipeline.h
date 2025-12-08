@@ -1,11 +1,9 @@
 #pragma once
-#include <vulkan/vulkan.h>
+#include "../common_includes.h"
 #include <GLFW/glfw3.h>
 #include <cassert>
-#include <fstream>
 #include "../../external/glm/glm.hpp"
 #include "../../external/glm/gtc/matrix_transform.hpp"
-#include "../debugger/debugger.h"
 #include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"

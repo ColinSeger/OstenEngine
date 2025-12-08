@@ -1,11 +1,7 @@
 #pragma once
-#include <vulkan/vulkan.h>
+#include "../../../common_includes.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <cassert>
-#include <vector>
-#include <iostream>
-#include <cstring>
 
 namespace Instance
 {

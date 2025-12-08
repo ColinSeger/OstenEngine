@@ -1,10 +1,5 @@
 #pragma once
-#include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
-#include <vector>
-#include <stdint.h>
-#include "../../../../external/imgui_test/imgui_impl_glfw.h"
-#include "../../../../external/imgui_test/imgui_impl_vulkan.h"
+#include "../../../common_includes.h"
 #include "../../device/vulkan/device.h"
 #include "../../texture/vulkan/texture.h"
 
@@ -14,11 +9,11 @@ struct RenderBuffer
     VkBuffer& index_buffer;
 };
 
-VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
+static VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 
-VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
-VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
 
 
 
@@ -33,7 +28,7 @@ struct SwapChain
 
 
 
-SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain);
+SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain);
 
 struct SwapChainImages
 {
@@ -52,7 +47,7 @@ struct SwapChainImages
 
 int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images);
 
-void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
+static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
 
 void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKHR surface, SwapChainImages& swap_images);
 

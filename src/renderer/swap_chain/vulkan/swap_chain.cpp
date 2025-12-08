@@ -1,6 +1,6 @@
 #include "swap_chain.h"
 
-uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
+static uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
 {
     if(value > max){
         return max;
@@ -11,17 +11,17 @@ uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
     return value;
 }
 
-VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities, GLFWwindow* window) {
+static VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilities, WindowSize window) {
 
     if (surface_capabilities.currentExtent.width != UINT32_MAX) {
         return surface_capabilities.currentExtent;
     } else {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        // int width, height;
+        // glfwGetFramebufferSize(window, &width, &height);
 
         VkExtent2D actual_extent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
+            static_cast<uint32_t>(window.x),
+            static_cast<uint32_t>(window.y)
         };
 
         actual_extent.width = simple_clamp(actual_extent.width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
@@ -40,7 +40,7 @@ VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDevi
     return Texture::create_image_view(device->virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
-VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
+static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
 
     for (const auto& available_format : available_formats) {
         if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -51,7 +51,7 @@ VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatK
     return available_formats[0];
 }
 
-VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
+static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
     for (const auto& available_present_mode : available_present_modes) {
         if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return available_present_mode;
@@ -61,7 +61,7 @@ VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& a
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-SwapChain create_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain){
+SwapChain create_swap_chain(WindowSize window, Device* device, VkSurfaceKHR surface, SwapChain& swap_chain){
     VkSwapchainKHR khr_swap_chain;
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface);
 
@@ -150,7 +150,7 @@ void create_swap_chain_images(SwapChain& swap_chain, Device* device, VkSurfaceKH
     create_image_views(swap_images, device->virtual_device, swap_chain.swap_chain_image_format);
 }
 
-void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
+static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
     swap_images.swap_chain_image_view.resize(swap_images.swap_chain_images.size());
 
     for (size_t i = 0; i < swap_images.swap_chain_images.size(); i++)

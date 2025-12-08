@@ -1,10 +1,7 @@
 #pragma once
-#include <cstdint>
-#include <vulkan/vulkan.h>
-#include <vector>
+#include "../../../common_includes.h"
 #include <set>
 #include <string>
-#include "../../../debugger/debugger.h"
 
 struct optional
 {
@@ -41,9 +38,9 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
 
 void destroy_device(Device& device);
 
-bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
-bool check_device_extension_support(VkPhysicalDevice device);
-void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers);
+static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+static bool check_device_extension_support(VkPhysicalDevice device);
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers);
 
 QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface);
 SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface);

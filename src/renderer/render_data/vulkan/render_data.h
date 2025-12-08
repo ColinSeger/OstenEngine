@@ -1,9 +1,7 @@
 #pragma once
-#include <array>
+#include "../../../common_includes.h"
 #include <cassert>
 #include <cstring>
-#include <vulkan/vulkan.h>
-#include "../../../debugger/debugger.h"
 #include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 
@@ -16,6 +14,11 @@ enum Direction : uint8_t{
 struct Vector2{
     float x = 0;
     float y = 0;
+};
+
+struct WindowSize{
+    int32_t x = 0;
+    int32_t y = 0;
 };
 
 struct Vector3{

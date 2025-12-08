@@ -1,7 +1,6 @@
 #pragma once
-#include <vector>
+#include "../../common_includes.h"
 #include <filesystem>
-#include <fstream>
 #include "../render_data/vulkan/render_data.h"
 
 enum class ObjMode : uint8_t

@@ -1,15 +1,9 @@
 #pragma once
-#include <cstdint>
-#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
+#include "common_includes.h"
 #include <chrono>
 #include <string>
 #include <unordered_map>
-#include "../external/imgui_test/imgui.h"
-#include "../external/imgui_test/imgui_internal.h"
-#include "../external/imgui_test/imgui_impl_glfw.h"
-#include "../external/imgui_test/imgui_impl_vulkan.h"
-#include "debugger/debugger.h"
 #include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
 #include "engine/entity_manager/entity_manager.h"

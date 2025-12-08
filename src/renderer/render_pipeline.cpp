@@ -292,9 +292,9 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
 
 void RenderPipeline::restart_swap_chain()
 {
-    int width = 0, height = 0;
+    int32_t width = 0, height = 0;
     glfwGetFramebufferSize(main_window, &width, &height);
-    while (width == 0 || height == 0) {
+    while (width <= 0 || height <= 0) {
         glfwGetFramebufferSize(main_window, &width, &height);
         glfwWaitEvents();
     }
@@ -307,11 +307,11 @@ void RenderPipeline::restart_swap_chain()
 
         vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
 
-        create_swap_chain(main_window, &device, surface, swap_chain);
+        create_swap_chain({width, height}, &device, surface, swap_chain);
         create_swap_chain_images(swap_chain, &device, surface, swap_chain_images);
 
     }else{
-        create_swap_chain(main_window, &device, surface, swap_chain);
+        create_swap_chain({width, height}, &device, surface, swap_chain);
         create_swap_chain_images(swap_chain, &device, surface, swap_chain_images);
         create_render_pass();
     }
