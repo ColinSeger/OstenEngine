@@ -22,8 +22,6 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(external/glfw)
 
-add_subdirectory(external/glm)
-
 # Set where the ImGui files are stored
 set(IMGUI_PATH  "external/imgui")
 
@@ -61,7 +59,6 @@ if (${UNIX})
         PRIVATE
         Vulkan::Vulkan
         glfw
-        glm::glm
         PUBLIC
         imgui
         X11
@@ -72,7 +69,6 @@ target_link_libraries(${PROJECT_NAME}
         PRIVATE
         Vulkan::Vulkan
         glfw
-        glm::glm
         PUBLIC
         imgui
         )

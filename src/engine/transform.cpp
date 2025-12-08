@@ -1,20 +1,13 @@
 #include "transform.h"
 
-glm::mat4 Transformations::get_model_matrix(Transform transform)//This should be a for loop inside renderer probably
-{
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, {transform.position.x, transform.position.y, transform.position.z});
-    model = glm::rotate(model, transform.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, transform.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, transform.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, transform.scale);
-    return model;
-}
-
 mat4_t Transformations::get_model_matrix2(Transform transform)//This should be a for loop inside renderer probably
 {
-    mat4_t model = m4_identity();
-    model = m4_mul(model, m4_translation({transform.position.x, transform.position.y, transform.position.z}));
+    mat4_t model = mat4(
+        1,  0,  0,  0,
+        0,  1,  0,  0,
+        0,  0,  1,  0,
+        transform.position.x,  transform.position.y, transform.position.z,  1
+    );
     model = m4_mul(model, m4_rotation_x(transform.rotation.x));
     model = m4_mul(model, m4_rotation_y(transform.rotation.y));
     model = m4_mul(model, m4_rotation_z(transform.rotation.z));
@@ -46,9 +39,9 @@ Vector3 Transformations::up_vector(Transform transform)
 {
     Vector3 f = forward_vector(transform);
     Vector3 r = right_vector(transform);
-    glm::vec3 forward = {f.x, f.y, f.z};
-    glm::vec3 right = {r.x, r.y, r.z};
-    glm::vec3 res = glm::cross(forward, right);
+    vec3_t forward = {f.x, f.y, f.z};
+    vec3_t right = {r.x, r.y, r.z};
+    vec3_t res = v3_cross(forward, right);
     // return cross(forward_vector(transform), right_vector(transform));
 
     return Vector3{res.x, res.y, res.z};

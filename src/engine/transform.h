@@ -1,20 +1,16 @@
 #pragma once
-// #include "../../external/math_3d.h"
-#include "../../external/glm/glm.hpp"
-#include "../../external/glm/gtc/matrix_transform.hpp"
+#include "../common_includes.h"
 #include "../renderer/render_data/vulkan/render_data.h"
 
 struct Transform
 {
     Vector3 position = {0.0f, 0.0f, 0.0f};
-    glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
-    glm::vec3 scale = {1.0f, 1.0f, 1.0f};
+    Vector3 rotation = {0.0f, 0.0f, 0.0f};
+    Vector3 scale = {1.0f, 1.0f, 1.0f};
 };
 
 namespace Transformations
 {
-    glm::mat4 get_model_matrix(Transform transform);
-
     mat4_t  get_model_matrix2(Transform transform);
 
     Vector3 forward_vector(Transform transform);

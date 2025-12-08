@@ -1,5 +1,6 @@
 #pragma once
 #include "common_includes.h"
+#define COMMON_INCLUDES
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <string>

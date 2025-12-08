@@ -477,15 +477,15 @@ mat4_t m4_perspective(float vertical_field_of_view_in_deg, float aspect_ratio, f
  * multiplications.
  */
 mat4_t m4_look_at(vec3_t from, vec3_t to, vec3_t up) {
-	vec3_t z = v3_muls(v3_norm(v3_sub(to, from)), -1);
-	vec3_t x = v3_norm(v3_cross(up, z));
-	vec3_t y = v3_cross(z, x);
+	vec3_t z = v3_norm(v3_sub(from, to));
+	vec3_t x = v3_norm(v3_cross(z, up));
+	vec3_t y = v3_cross(x, z);
 
 	return mat4(
-		x.x, x.y, x.z, -v3_dot(from, x),
-		y.x, y.y, y.z, -v3_dot(from, y),
-		z.x, z.y, z.z, -v3_dot(from, z),
-		0,   0,   0,    1
+		x.x, y.x, -z.x, 0,
+		x.y, y.y, -z.y, 0,
+		x.z, y.z, -z.z, 0,
+		-v3_dot(x, from), -v3_dot(y, from), v3_dot(z, from),    1
 	);
 }
 

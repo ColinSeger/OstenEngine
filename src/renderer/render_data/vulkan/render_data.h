@@ -2,7 +2,6 @@
 #include "../../../common_includes.h"
 #include <cassert>
 #include <cstring>
-#include "../../../../external/glm/glm.hpp"
 #include "../../device/vulkan/device.h"
 
 enum Direction : uint8_t{
@@ -60,9 +59,9 @@ struct Matrix {
 };
 
 struct UniformBufferObject {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    mat4_t model;
+    mat4_t view;
+    mat4_t proj;
 };
 
 

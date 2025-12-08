@@ -1,8 +1,7 @@
 #pragma once
-#include <vulkan/vulkan.h>
+#include "../../common_includes.h"
 #include "../renderable.h"
 #include "../device/vulkan/device.h"
-#include "../../../external/imgui_test/imgui_impl_vulkan.h"
 
 static uint8_t FRAMES = 2;
 

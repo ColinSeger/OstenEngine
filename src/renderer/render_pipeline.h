@@ -1,8 +1,6 @@
 #pragma once
 #include "../common_includes.h"
 #include <cassert>
-#include "../../external/glm/glm.hpp"
-#include "../../external/glm/gtc/matrix_transform.hpp"
 #include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"

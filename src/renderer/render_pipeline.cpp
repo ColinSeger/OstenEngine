@@ -173,6 +173,18 @@ int32_t RenderPipeline::draw_frame()
     
     return result;
 }
+mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
+{
+    float fov_in_rad = fov / 180 * M_PI;
+	float half_fov = tanf(fov_in_rad / 2.0f);
+
+    return mat4(
+        1.f / (aspect * half_fov),  0,  0,  0,
+        0,  -1.f / half_fov,  0,  0,
+        0,  0,  -(zFar + zNear)/(zFar - zNear),  -1,
+        0,  0, -(zFar * zNear) / (zFar - zNear),  0
+    );
+}
 
 void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
@@ -180,20 +192,16 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     auto current_time = std::chrono::high_resolution_clock::now();
     // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
     // glm::vec3 forward = glm::fo
-    Vector3 test = camera_location.position + Transformations::forward_vector(camera_location);
+    Vector3 forward_vector = camera_location.position + Transformations::forward_vector(camera_location);
     Vector3 up = Transformations::up_vector(camera_location);
-    glm::vec3 pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};
+    vec3_t pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};
 
-    glm::mat4 view = glm::lookAt(pos, {test.x, test.y, test.z}, {0, 0, 1});
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 0.1f, 2000.0f);
+    mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
+    mat4_t proj = perspective_matrix(45.0f, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
 
-    // m4_invert_affine(proj);
-    proj[1][1] *= -1;
-    // time = 1;
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        glm::mat4 model = Transformations::get_model_matrix(to_render[render_index].transform);
-        mat4_t model2 = Transformations::get_model_matrix2(to_render[render_index].transform);
+        mat4_t model = Transformations::get_model_matrix2(to_render[render_index].transform);
 
         UniformBufferObject ubo{
             ubo.model = model,
