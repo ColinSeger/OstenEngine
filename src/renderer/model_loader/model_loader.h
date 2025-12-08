@@ -1,6 +1,5 @@
 #pragma once
 #include "../../common_includes.h"
-#include <filesystem>
 #include "../render_data/vulkan/render_data.h"
 
 enum class ObjMode : uint8_t

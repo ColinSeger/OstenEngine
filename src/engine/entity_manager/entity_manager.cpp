@@ -69,7 +69,7 @@ void EntityManager::print_entities()
 
 void rename_entity(std::string current_name, std::string new_name)
 {
-    if(entity_names.contains(current_name)){
+    if(auto contains = entity_names.find(current_name); contains != EntityManager::get_entity_names().end()){
         uint32_t id = entity_names[current_name];
         entity_names.erase(current_name);
         entity_names[new_name] = id;

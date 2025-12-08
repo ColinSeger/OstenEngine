@@ -1,12 +1,8 @@
 #pragma once
 #include "../../../common_includes.h"
-#include <filesystem>
-#include <stdexcept>
 #include "../../device/vulkan/device.h"
 #include "../../render_data/vulkan/render_data.h"
 #include "../../../../external/image_loader/stb_image.h"
-
-#include <iostream>//Remove
 
 struct TextureImage
 {

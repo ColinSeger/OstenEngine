@@ -32,10 +32,10 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     vertices.clear();
     indices.clear();
 
-    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
-    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    // vertices.clear();
-    // indices.clear();
+    ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+    vertices.clear();
+    indices.clear();
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -190,8 +190,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
 
     static auto start_time = std::chrono::high_resolution_clock::now();
     auto current_time = std::chrono::high_resolution_clock::now();
-    // float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-    // glm::vec3 forward = glm::fo
+
     Vector3 forward_vector = camera_location.position + Transformations::forward_vector(camera_location);
     Vector3 up = Transformations::up_vector(camera_location);
     vec3_t pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};

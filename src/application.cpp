@@ -126,12 +126,12 @@ void Application::imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            if(EntityManager::get_entity_names().contains("GameObject"))
+            if(auto contains = EntityManager::get_entity_names().find("GameObject"); contains != EntityManager::get_entity_names().end())
             {
                 std::string name ("GameObject");
                 for (size_t i = 0; i < 9; i++)
                 {
-                    if(EntityManager::get_entity_names().contains(name)){
+                    if(auto contains = EntityManager::get_entity_names().find(name); contains != EntityManager::get_entity_names().end()){
                         name.push_back('A');
                     }else{
                         EntityManager::add_entity(Entity{}, name);
