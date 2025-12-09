@@ -2,10 +2,6 @@
 #include "common_includes.h"
 #define COMMON_INCLUDES
 #include <GLFW/glfw3.h>
-#include <chrono>
-#include <string>
-#include <unordered_map>
-#include "renderer/texture/vulkan/texture.h"
 #include "renderer/render_pipeline.h"
 #include "engine/entity_manager/entity_manager.h"
 #include "editor/file_explorer/file_explorer.h"
@@ -20,7 +16,7 @@ struct OstenEngine
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
-    
+
     std::vector<System> systems;
 
     FileExplorer file_explorer;
@@ -64,7 +60,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
         };
     #endif
     uint32_t glfw_extention_count = 0;
-    
+
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
@@ -113,7 +109,7 @@ void OstenEngine::main_game_loop()
     int entity_to_delete = 0;
 
     double fps = 0;
-    
+
     auto last_tick = std::chrono::high_resolution_clock::now();
     inspecting = Entity{};
     inspecting.components.push_back({0, 0});
@@ -140,14 +136,14 @@ void OstenEngine::main_game_loop()
             start_time = current_time;
             frames = 0;
         }
-        
+
         begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 
         end_file_explorer();
 
-        
+
 
         // ImGui::ShowDemoWindow(&test);
 
@@ -159,7 +155,7 @@ void OstenEngine::main_game_loop()
         {
             result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
         }
-        
+
 
         if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
             resized = false;
