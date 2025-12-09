@@ -28,9 +28,8 @@ uint16_t get_component_size_by_type(uint16_t type){
 
 void* get_component_by_id(ComponentSystem* component_system, uint16_t id)
 {
-    uint16_t type = static_cast<Component*>(component_system->components)->id;
     char* comp = (char*)component_system->components;
-    uint16_t size = get_component_size_by_type(type);
+    uint16_t size = get_component_size_by_type(component_system->type);
     uint32_t size_offset = size * id;
     comp += size_offset;
     return comp;
@@ -54,8 +53,9 @@ ComponentSystem* get_component_system(uint8_t system_id)
 
 void create_camera_system(uint8_t camera_amount){
     ComponentSystem* component_sys = get_component_system(0);
-    component_sys->components = malloc(sizeof(CameraComponent) * camera_amount);
+    component_sys->components = (Component*)malloc(sizeof(CameraComponent) * camera_amount);
     component_sys->amount = camera_amount;
+    component_sys->type = 0;
     for (size_t i = 0; i < camera_amount; i++)
     {
         CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
@@ -64,12 +64,15 @@ void create_camera_system(uint8_t camera_amount){
 }
 
 void create_transform_system(uint8_t transform_amount){
+    TransformComponent test {};
     ComponentSystem* component_sys = get_component_system(1);
-    component_sys->components = malloc(sizeof(TransformComponent) * transform_amount);
+    component_sys->components = (Component*)malloc(sizeof(TransformComponent) * transform_amount);
+    component_sys->type = 1;
     for (size_t i = 0; i < transform_amount; i++)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
-        *comp = TransformComponent{};
+        comp->id;
+        comp->transform = Transform{};
     }
 }
 

@@ -162,9 +162,9 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
 
     for (size_t i = 0; i < cameras.amount; i++)
     {
-        ImGui::DragFloat3("Camera Position", &static_cast<CameraComponent*>(cameras.components)[i].transform.position.x, 0.1f);
-        ImGui::DragFloat3("Camera Rotation", &static_cast<CameraComponent*>(cameras.components)[i].transform.rotation.x, 0.1f);
-        ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(cameras.components)[i].fov, 0.1f);
+        ImGui::DragFloat3("Camera Position", &static_cast<CameraComponent*>((void*)cameras.components)[i].transform.position.x, 0.1f);
+        ImGui::DragFloat3("Camera Rotation", &static_cast<CameraComponent*>((void*)cameras.components)[i].transform.rotation.x, 0.1f);
+        ImGui::DragFloat("Fov", &static_cast<CameraComponent*>((void*)cameras.components)[i].fov, 0.1f);
     }
 
     imgui_hierarchy(test, inspecting);

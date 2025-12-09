@@ -153,11 +153,11 @@ void OstenEngine::main_game_loop()
 
         // ImDrawData* main_draw_data = ImGui::GetDrawData();
         move_camera(delta_time);
-        ComponentSystem cameras = *get_component_system(0);
+        ComponentSystem* cameras = get_component_system(0);
         int32_t result = 0;
-        for (size_t i = 0; i < cameras.amount; i++)
+        for (size_t i = 0; i < cameras->amount; i++)
         {
-            result = render_pipeline->draw_frame(static_cast<CameraComponent*>(cameras.components)[i]);
+            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
         }
         
 

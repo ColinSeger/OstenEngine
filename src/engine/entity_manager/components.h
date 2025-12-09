@@ -12,12 +12,12 @@ enum class Type : uint8_t{
 };
 
 
-struct Component
+typedef struct Component
 {
     const uint16_t id = 0; 
-};
+} Component;
 
-struct TransformComponent
+typedef struct TransformComponent
 {
     const uint16_t id = 1;
     Transform transform {};
@@ -25,14 +25,14 @@ struct TransformComponent
         this->transform = transform.transform;
         return *this;
     }
-};
+} TransComponent;
 
 struct RenderComponent
 {
     const uint16_t id = 2;
 };
 
-struct CameraComponent
+typedef struct CameraComponent
 {
     const uint16_t id = 3;
     Transform transform;
@@ -43,13 +43,14 @@ struct CameraComponent
         this->fov = camera.fov;
         return *this;
     }
-};
+} CamComponent;
 
 struct ComponentSystem
 {
-    void* components;
+    Component* components;
     uint16_t amount = 0;
     uint16_t capacity = 10;
+    uint8_t type = 0;
 };
 
 uint16_t get_component_size_by_type(uint16_t type);

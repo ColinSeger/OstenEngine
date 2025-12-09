@@ -188,9 +188,6 @@ mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
 
 void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t current_image) {
 
-    static auto start_time = std::chrono::high_resolution_clock::now();
-    auto current_time = std::chrono::high_resolution_clock::now();
-
     Vector3 forward_vector = camera.transform.position + Transformations::forward_vector(camera.transform);
     Vector3 up = Transformations::up_vector(camera.transform);
     vec3_t pos = {camera.transform.position.x ,camera.transform.position.y ,camera.transform.position.z};

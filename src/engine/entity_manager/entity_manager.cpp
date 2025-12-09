@@ -16,6 +16,20 @@ void test(){
 
 void EntityManager::add_entity(Entity entity, std::string name)
 {
+    if(auto contains = entity_names.find(name); contains != EntityManager::get_entity_names().end())
+    {
+        for (size_t i = 0; i < 9; i++)
+        {
+            if(auto contains = entity_names.find(name); contains != EntityManager::get_entity_names().end()){
+                name.push_back('A');
+            }else{
+                EntityManager::add_entity(Entity{}, name);
+                break;
+            }
+        }
+
+    }
+
     entity.id = entities.size();
     
     if(entities.size() > 2){
