@@ -4,7 +4,7 @@
 
 struct Renderable
 {
-    Transform transform;
+    uint16_t index;
 
     std::vector<VkDescriptorSet> descriptor_sets;
 

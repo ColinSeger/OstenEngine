@@ -11,7 +11,7 @@ struct Transform
 
 namespace Transformations
 {
-    mat4_t  get_model_matrix2(Transform transform);
+    mat4_t  get_model_matrix(Transform transform);
 
     Vector3 forward_vector(Transform transform);
 

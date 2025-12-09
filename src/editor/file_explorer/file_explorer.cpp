@@ -1,10 +1,9 @@
 #include "file_explorer.h"
 
 static void create_entity(RenderPipeline* render_pipeline){
+    uint16_t id = add_transform();
     Renderable first_obj;
-    first_obj.transform.position =  { 0.0f, 0.0f, 0.0f};
-    first_obj.transform.rotation =  { 0.0f, 0.0f, 0.0f};
-    first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
+    first_obj.index = id;
     render_pipeline->create_uniform_buffer(first_obj);
     VkImage image_test;
     if(render_pipeline->to_render.size() < 2){
@@ -24,6 +23,9 @@ static void create_entity(RenderPipeline* render_pipeline){
     render_pipeline->to_render.push_back(first_obj);
     vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
     vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
+    Entity entity{};
+    entity.components.push_back({id, 1});
+    EntityManager::add_entity(entity, "Test");
 }
 
 void get_folders(const char* folder_to_look, std::vector<std::string>& result)

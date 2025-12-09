@@ -104,7 +104,7 @@ static void imgui_hierarchy_pop_up()
     }
 }
 
-static void imgui_hierarchy(bool& open)
+static void imgui_hierarchy(bool& open, Entity* inspecting)
 {
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
@@ -124,7 +124,9 @@ static void imgui_hierarchy(bool& open)
                 {
                     ImGui::PushID(name.second);
 
-                    ImGui::Text("%s", name.first.c_str());
+                    if(ImGui::Button(name.first.c_str())){
+                        *inspecting = EntityManager::get_all_entities()[name.second];
+                    }
                     ImGui::Spacing();
 
                     ImGui::PopID();
@@ -137,7 +139,7 @@ static void imgui_hierarchy(bool& open)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& test, float fps, std::vector<char*>& logs)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& test, float fps, std::vector<char*>& logs, Entity* inspecting)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -156,12 +158,18 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Spacing();
 
     ImGui::Text("(%f)", ((float)fps));
+    ComponentSystem cameras = *get_component_system(0);
 
-    ImGui::DragFloat3("camera_position", &render_pipeline->camera_location.position.x, 0.1f);
-    ImGui::DragFloat3("camera_rotation", &render_pipeline->camera_location.rotation.x, 0.1f);
-    ImGui::DragFloat("Fov", &render_pipeline->fov);
+    for (size_t i = 0; i < cameras.amount; i++)
+    {
+        ImGui::DragFloat3("Camera Position", &static_cast<CameraComponent*>(cameras.components)[i].transform.position.x, 0.1f);
+        ImGui::DragFloat3("Camera Rotation", &static_cast<CameraComponent*>(cameras.components)[i].transform.rotation.x, 0.1f);
+        ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(cameras.components)[i].fov, 0.1f);
+    }
 
-    imgui_hierarchy(test);
+    imgui_hierarchy(test, inspecting);
+
+    
 
     if(ImGui::Button("Call Entity"))
     {
@@ -173,14 +181,25 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::PushID(i);
 
         ImGui::Text("Transform");
-        ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 0.1f);
-        ImGui::DragFloat3("Rotation",  &render_pipeline->to_render[i].transform.rotation.x, 0.1f);
-        ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    0.1f);
+        // ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 0.1f);
+        // ImGui::DragFloat3("Rotation",  &render_pipeline->to_render[i].transform.rotation.x, 0.1f);
+        // ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    0.1f);
         ImGui::Spacing();
 
         ImGui::PopID();
     }
 
+    ImGui::End();
+
+    ImGui::Begin("Inspector");
+        
+        for(TempID id : inspecting->components){
+            ImGui::PushID(id.type);
+            inspect(id.type, id.index);
+            ImGui::Spacing();
+            ImGui::PopID();
+        }
+        
     ImGui::End();
 
 

@@ -1,6 +1,6 @@
 #include "transform.h"
 
-mat4_t Transformations::get_model_matrix2(Transform transform)//This should be a for loop inside renderer probably
+mat4_t Transformations::get_model_matrix(Transform transform)//This should be a for loop inside renderer probably
 {
     mat4_t model = mat4(
         1,  0,  0,  0,

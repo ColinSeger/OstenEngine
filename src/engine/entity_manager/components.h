@@ -1,10 +1,10 @@
 #pragma once
-#include <vector>
+#include "../../common_includes.h"
 #include "../transform.h"
 #include "../../renderer/camera/camera.h"
 
 
-enum class Type : uint16_t{
+enum class Type : uint8_t{
     Component = 0,
     Transform = 1,
     Render = 2,
@@ -21,6 +21,10 @@ struct TransformComponent
 {
     const uint16_t id = 1;
     Transform transform {};
+    TransformComponent operator=(TransformComponent transform){
+        this->transform = transform.transform;
+        return *this;
+    }
 };
 
 struct RenderComponent
@@ -31,17 +35,33 @@ struct RenderComponent
 struct CameraComponent
 {
     const uint16_t id = 3;
-    Camera camera;
+    Transform transform;
+    float fov = 45.f;
+
+    CameraComponent operator=(CameraComponent camera){
+        this->transform = camera.transform;
+        this->fov = camera.fov;
+        return *this;
+    }
+};
+
+struct ComponentSystem
+{
+    void* components;
+    uint16_t amount = 0;
+    uint16_t capacity = 10;
 };
 
 uint16_t get_component_size_by_type(uint16_t type);
 
-// union Components
-// {
-//     Component component;
-//     TransformComponent transform;
-//     RenderComponent renderable;
-//     CameraComponent camera;
-// };
+ComponentSystem* get_component_system(uint8_t system_id);
 
-// Component* get_component_by_index(Type index);
+void create_camera_system(uint8_t camera_amount);
+
+void create_transform_system(uint8_t transform_amount);
+
+uint16_t add_transform();
+
+void inspect(uint8_t type, uint16_t id);
+
+void* get_component_by_id(ComponentSystem* component_system, uint16_t id);

@@ -4,6 +4,7 @@
 #include <string>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../renderer/render_pipeline.h"
+#include "../../engine/entity_manager/entity_manager.h"
 
 struct FileExplorer
 {

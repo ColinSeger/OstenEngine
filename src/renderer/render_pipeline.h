@@ -10,6 +10,7 @@
 #include "renderable.h"
 #include "camera/camera.h"
 #include "descriptors/descriptors.h"
+#include "../engine/entity_manager/components.h"
 
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -61,8 +62,8 @@ public:
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
-    Transform camera_location{2, 0, 0};
-    float fov = 45.f;
+    // Transform camera_location{2, 0, 0};
+    // float fov = 45.f;
 
     void shader();
 
@@ -74,12 +75,12 @@ public:
 
     void create_uniform_buffers();
 
-    void update_uniform_buffer(uint8_t current_image);
+    void update_uniform_buffer(CameraComponent camera, uint8_t current_image);
 
     RenderPipeline(const int width, const int height, const char* application_name, VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*> validation_layers);
     ~RenderPipeline();
 
-    int32_t draw_frame();
+    int32_t draw_frame(CameraComponent camera);
 
     void cleanup();
 

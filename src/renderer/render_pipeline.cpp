@@ -92,7 +92,7 @@ void RenderPipeline::cleanup()
     // glfwTerminate();
 }
 
-int32_t RenderPipeline::draw_frame()
+int32_t RenderPipeline::draw_frame(CameraComponent camera)
 {
     vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
@@ -103,7 +103,7 @@ int32_t RenderPipeline::draw_frame()
         return result;
     }
 
-    update_uniform_buffer(current_frame);
+    update_uniform_buffer(camera, current_frame);
 
     vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
 
@@ -186,21 +186,24 @@ mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
     );
 }
 
-void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
+void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t current_image) {
 
     static auto start_time = std::chrono::high_resolution_clock::now();
     auto current_time = std::chrono::high_resolution_clock::now();
 
-    Vector3 forward_vector = camera_location.position + Transformations::forward_vector(camera_location);
-    Vector3 up = Transformations::up_vector(camera_location);
-    vec3_t pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};
+    Vector3 forward_vector = camera.transform.position + Transformations::forward_vector(camera.transform);
+    Vector3 up = Transformations::up_vector(camera.transform);
+    vec3_t pos = {camera.transform.position.x ,camera.transform.position.y ,camera.transform.position.z};
 
     mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
-    mat4_t proj = perspective_matrix(fov, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
+    mat4_t proj = perspective_matrix(camera.fov, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
+
+    ComponentSystem* system = get_component_system(1);
 
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        mat4_t model = Transformations::get_model_matrix2(to_render[render_index].transform);
+        
+        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(system, to_render[render_index].index))->transform);
 
         UniformBufferObject ubo{
             ubo.model = model,

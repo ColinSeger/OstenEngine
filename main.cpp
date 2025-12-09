@@ -20,7 +20,7 @@ int main()
     
     const char* name = "Vulkan Window";
 
-    Application app = Application(800, 600, name);
+    OstenEngine app = OstenEngine(800, 600, name);
 
     app.main_game_loop();
 
