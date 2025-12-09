@@ -1,12 +1,26 @@
 #pragma once
+#include <vector>
 #include <cstdint>
+#include "../entity_manager/entity_manager.h"
+#include "../../renderer/model_loader/model_loader.h"
+
+enum class MessageType : uint8_t
+{
+    None,
+    Load
+};
 
 struct Message
 {
-    const uint8_t type = 0;
+    uint32_t size;
+    MessageType type = MessageType::None;
+    void* value;
 };
 
-struct GetSystem
+struct MessageSystem
 {
-    const uint8_t type = 0;
+    std::vector<Message> messages;
 };
+void add_message(MessageSystem& system, Message message);
+
+void handle_message(MessageSystem& system);

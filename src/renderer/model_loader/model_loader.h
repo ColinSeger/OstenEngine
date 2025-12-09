@@ -35,5 +35,7 @@ namespace ModelLoader
     void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
 
     Model create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+
+    Model load_model(Device& device, VkCommandPool command_pool, std::string filename);
 }/**/
 

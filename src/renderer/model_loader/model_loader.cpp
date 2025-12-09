@@ -1,6 +1,27 @@
 #include "model_loader.h"
 
 
+Model ModelLoader::load_model(Device& device, VkCommandPool command_pool, std::string filename)
+{
+    Model model;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+    char extention[3];
+    extention[0] = filename[filename.length() -2];
+    extention[1] = filename[filename.length() -1];
+    extention[2] = filename[filename.length() -0];
+
+    if(extention == "obj"){
+        parse_obj(filename.c_str(), vertices, indices);
+    }else if(extention == "bin"){
+        de_serialize(filename.c_str(), vertices, indices);
+    }
+
+    model = create_model(device, command_pool, vertices, indices);
+
+    return model;
+}
+
 bool ModelLoader::is_valid_char(char c)
 {
     for(char valid : valid_chars)
@@ -192,7 +213,7 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
     size_t vertex_done = index_start;
 
-    //Allocate chunk of memory for vertxes and indexes
+    //Allocate chunk of memory for vertices and indexes
     Vertex* vertex_ptr = (Vertex*)calloc(vertex_done / sizeof(Vertex), sizeof(Vertex));
     uint32_t* index_ptr = (uint32_t*)malloc(file_size - (index_start +1));
 
