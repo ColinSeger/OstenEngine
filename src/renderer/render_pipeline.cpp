@@ -27,15 +27,15 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     restart_swap_chain(width, height);
 
-    ModelLoader::parse_obj(model_location, vertices, indices);
-    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    vertices.clear();
-    indices.clear();
+    // ModelLoader::parse_obj(model_location, vertices, indices);
+    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+    // vertices.clear();
+    // indices.clear();
 
-    ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
-    models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    vertices.clear();
-    indices.clear();
+    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
+    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
+    // vertices.clear();
+    // indices.clear();
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -196,7 +196,7 @@ void RenderPipeline::update_uniform_buffer(uint8_t current_image) {
     vec3_t pos = {camera_location.position.x ,camera_location.position.y ,camera_location.position.z};
 
     mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
-    mat4_t proj = perspective_matrix(45.0f, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
+    mat4_t proj = perspective_matrix(fov, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
 
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
@@ -283,11 +283,6 @@ void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
     swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
 
     create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
-
-    VkImage image_test = Texture::create_texture_image(device, texture_location, command_pool);
-
-    image_view = Texture::create_image_view(device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    texture_sampler = Texture::create_texture_sampler(device);
 
     CommandBuffer::create_command_buffers(command_buffers, device.virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }

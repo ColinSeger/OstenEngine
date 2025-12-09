@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include "../../../external/imgui_test/imgui.h"
+#include "../../renderer/render_pipeline.h"
 
 struct FileExplorer
 {
@@ -19,7 +20,7 @@ void get_folders(FileExplorer& file_explorer);
 
 FileExplorer init_file_explorer();
 
-void start_file_explorer(FileExplorer& file_explorer);
+void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render);
 
 void end_file_explorer();
 

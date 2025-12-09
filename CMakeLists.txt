@@ -38,7 +38,6 @@ add_executable(${PROJECT_NAME}
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_vulkan.cpp
     src/debugger/debugger.cpp
-    src/application.cpp
     src/renderer/instance/vulkan/instance.cpp
     src/renderer/device/vulkan/device.cpp
     src/renderer/swap_chain/vulkan/swap_chain.cpp

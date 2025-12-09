@@ -1,5 +1,30 @@
 #include "file_explorer.h"
 
+static void create_entity(RenderPipeline* render_pipeline){
+    Renderable first_obj;
+    first_obj.transform.position =  { 0.0f, 0.0f, 0.0f};
+    first_obj.transform.rotation =  { 0.0f, 0.0f, 0.0f};
+    first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
+    render_pipeline->create_uniform_buffer(first_obj);
+    VkImage image_test;
+    if(render_pipeline->to_render.size() < 2){
+        image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
+    }else{
+        image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
+    }
+
+    VkImageView image_view;//TODO Temporary way to access image
+    VkSampler texture_sampler;//TODO Temporary way to access sampler
+
+
+    image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
+
+    create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, image_view, texture_sampler);
+    render_pipeline->to_render.push_back(first_obj);
+    vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
+    vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
+}
 
 void get_folders(const char* folder_to_look, std::vector<std::string>& result)
 {
@@ -43,7 +68,7 @@ FileExplorer init_file_explorer()
     return result;
 }
 
-void start_file_explorer(FileExplorer& file_explorer)//TODO Optimize as it's very slow
+void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pipeline)//TODO Optimize as it's very slow
 {
 
     ImGui::Begin("FolderView");
@@ -66,7 +91,14 @@ void start_file_explorer(FileExplorer& file_explorer)//TODO Optimize as it's ver
     for (size_t i = 0; i < file_explorer.files.size(); i++)
     {
         ImGui::PushID(i);
-        ImGui::Text(file_explorer.files[i].c_str());          
+        ImGui::Text(file_explorer.files[i].c_str());  
+        if(ImGui::Button(file_explorer.files[i].c_str())){
+            // ModelLoader::parse_obj(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
+            ModelLoader::de_serialize(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
+            render_pipeline->models.emplace_back(ModelLoader::create_model(render_pipeline->device, render_pipeline->command_pool, render_pipeline->vertices, render_pipeline->indices));
+
+            create_entity(render_pipeline);
+        }        
         
         ImGui::Spacing();
 

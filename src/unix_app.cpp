@@ -1,78 +1,50 @@
-#include "application.h"
+#pragma once
+#include "common_includes.h"
+#define COMMON_INCLUDES
+#include <GLFW/glfw3.h>
+#include <chrono>
+#include <string>
+#include <unordered_map>
+#include "renderer/texture/vulkan/texture.h"
+#include "renderer/render_pipeline.h"
+#include "engine/entity_manager/entity_manager.h"
+#include "editor/file_explorer/file_explorer.h"
+#include "engine/entity_manager/entity_system.h"
+#include "engine/entity_manager/components.h"
+#include "editor/UI/imgui.cpp"
 
-
-static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
+class Application
 {
-    VkDescriptorPool imgui_pool;
+    GLFWwindow* main_window = nullptr;
+    const char* application_name = nullptr;
+    RenderPipeline* render_pipeline = nullptr;
 
-    VkDescriptorPoolSize pool_sizes[] = {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
-    };
+    std::vector<char*> logs;
+    
+    std::vector<System> systems;
 
-    VkDescriptorPoolCreateInfo pool_info{};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000;
-    pool_info.poolSizeCount = std::size(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
+    FileExplorer file_explorer;
 
-    vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &imgui_pool);
-    return imgui_pool;
-}
+    bool resized = false;
+    static void resize_callback(GLFWwindow* main_window, int width, int height) {
+        auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(main_window));
+        app->resized = true;
+    }
+public:
 
-static void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
-{
-    VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
-    VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
-    VkDevice virtual_device = render_pipeline->device.virtual_device;
+    Application(const int width, const int height, const char* name);
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ~Application();
+    void main_game_loop();
 
-    float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+    void move_camera(double delta_time);
 
-    ImGui::StyleColorsDark();
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(main_scale);
-    style.FontScaleDpi = main_scale;
+    void imgui_hierarchy_pop_up();
 
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    io.ConfigDpiScaleFonts = true;
-    io.ConfigDpiScaleViewports = true;
-    // io.WantCaptureMouse = true;
+    void imgui_hierarchy(bool& open);
 
-    ImGui_ImplGlfw_InitForVulkan(main_window, true);
-
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = render_pipeline->my_instance;
-    init_info.PhysicalDevice = physical_device;
-    init_info.Device = virtual_device;
-    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->my_surface).graphics_family.number;
-
-    init_info.Queue = render_pipeline->device.graphics_queue;
-    init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = imgui_descriptor_pool;
-    init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->my_surface).surface_capabilities.minImageCount + 1;
-    init_info.Allocator = nullptr;
-    init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
-    init_info.PipelineInfoMain.Subpass = 0;
-    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.CheckVkResultFn = check_vk_result;
-
-    ImGui_ImplVulkan_Init(&init_info);
-}
-
+    void cleanup();
+};
 Application::Application(const int width, const int height, const char* name) : application_name { name }
 {
     if(!glfwInit()){
@@ -168,7 +140,7 @@ void Application::imgui_hierarchy(bool& open)
                 {
                     ImGui::PushID(name.second);
 
-                    ImGui::Text("(%s)", name.first.c_str());
+                    ImGui::Text("%s", name.first.c_str());
                     ImGui::Spacing();
 
                     ImGui::PopID();
@@ -265,7 +237,7 @@ void Application::main_game_loop()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         //ImGui::DockSpaceOverViewport();
-        start_file_explorer(file_explorer);
+        start_file_explorer(file_explorer, render_pipeline);
 
         end_file_explorer();
 
@@ -277,6 +249,7 @@ void Application::main_game_loop()
 
             ImGui::DragFloat3("camera_position", &render_pipeline->camera_location.position.x, 0.1f);
             ImGui::DragFloat3("camera_rotation", &render_pipeline->camera_location.rotation.x, 0.1f);
+            ImGui::DragFloat("Fov", &render_pipeline->fov);
 
             imgui_hierarchy(test);
             ImGui::InputInt("Entity To Delete", &entity_to_delete, sizeof(uint32_t));
@@ -340,29 +313,7 @@ void Application::main_game_loop()
         frames +=1;
 
         if(EntityManager::get_entity_amount() > render_pipeline->to_render.size()){
-            Renderable first_obj;
-            first_obj.transform.position =  { -1.0f, 0.0f, 0.0f};
-            first_obj.transform.rotation =  { 0.0f, 0.0f, -90.0f};
-            first_obj.transform.scale    =  { 1.0f, 1.0f, 1.0f};
-            render_pipeline->create_uniform_buffer(first_obj);
-            VkImage image_test;
-            if(render_pipeline->to_render.size() < 2){
-                image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
-            }else{
-                image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
-            }
-
-            VkImageView image_view;//TODO Temporary way to access image
-            VkSampler texture_sampler;//TODO Temporary way to access sampler
-
-
-            image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-            texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
-
-            create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, image_view, texture_sampler);
-            render_pipeline->to_render.push_back(first_obj);
-            vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
-            vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
+            
         }
         last_tick = std::chrono::high_resolution_clock::now();
     }

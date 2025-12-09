@@ -62,6 +62,7 @@ public:
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
     Transform camera_location{2, 0, 0};
+    float fov = 45.f;
 
     void shader();
 
