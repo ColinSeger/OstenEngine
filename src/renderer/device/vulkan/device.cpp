@@ -15,7 +15,7 @@ namespace DeviceHelperFunctions
 }
 QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface){
     QueueFamilyIndicies indices;
-    // Logic to find queue family indices to populate struct with
+    // Logic to find queue family indices to populate struct
     uint32_t queue_family_amount = 0;
 
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, nullptr);
@@ -136,7 +136,7 @@ static bool check_device_extension_support(VkPhysicalDevice device)
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
 
-    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+    std::set<const char*> required_extensions(device_extensions.begin(), device_extensions.end());
 
     for (const auto& extension : available_extensions) {
         required_extensions.erase(extension.extensionName);

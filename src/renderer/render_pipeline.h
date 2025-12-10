@@ -1,7 +1,6 @@
 #pragma once
 #include "../common_includes.h"
 #include <cassert>
-#include "instance/vulkan/instance.h"
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"
 #include "render_data/vulkan/render_data.h"
@@ -18,11 +17,8 @@ const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 static const char* model_location = "assets/debug_assets/viking.obj";
 static const char* texture_location = "assets/debug_assets/viking_room.png";
 
-class RenderPipeline
+struct RenderPipeline
 {
-public:
-    //Window to render to
-    // GLFWwindow* main_window = nullptr;
     //The Vulkan instance
     VkInstance my_instance = VK_NULL_HANDLE;
     //Device manager

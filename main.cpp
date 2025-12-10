@@ -2,7 +2,7 @@
 #define GLFW_INCLUDE_NONE
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-#include <crtdbg.h>
+// #include <crtdbg.h>
 #define MATH_3D_IMPLEMENTATION
 #include "external/math_3d.h"
 
@@ -16,13 +16,13 @@ int main()
     #ifdef _DEBUG
         _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
         _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
-    #endif 
-    
-    const char* name = "Vulkan Window";
+    #endif
 
-    OstenEngine app = OstenEngine(800, 600, name);
+    const char* name = "Osten Engine";
 
-    app.main_game_loop();
+    OstenEngine engine = start(1920, 1080, name);
+
+    run(engine);
 
     // std::string result;
     std::cout << "Hello World \n";

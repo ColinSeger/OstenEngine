@@ -1,10 +1,9 @@
 #pragma once
-#include <vulkan/vulkan.h>
-#include "../engine/transform.h"
+#include "../common_includes.h"
 
 struct Renderable
 {
-    uint16_t index;
+    uint16_t transform_index;
 
     std::vector<VkDescriptorSet> descriptor_sets;
 

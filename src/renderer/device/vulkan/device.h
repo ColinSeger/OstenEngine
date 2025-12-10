@@ -1,7 +1,6 @@
 #pragma once
 #include "../../../common_includes.h"
 #include <set>
-#include <string>
 
 struct optional
 {

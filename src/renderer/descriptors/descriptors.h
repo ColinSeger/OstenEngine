@@ -1,5 +1,6 @@
 #pragma once
 #include "../../common_includes.h"
+#include "../render_data/vulkan/render_data.h"
 #include "../renderable.h"
 #include "../device/vulkan/device.h"
 

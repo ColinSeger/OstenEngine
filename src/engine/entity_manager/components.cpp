@@ -10,8 +10,8 @@ uint16_t get_component_size_by_type(uint16_t type){
     {
     case Type::Component:
         return sizeof(Component);
-        
-    case Type::Transform: 
+
+    case Type::Transform:
         return sizeof(TransformComponent);
 
     case Type::Render:
@@ -19,7 +19,7 @@ uint16_t get_component_size_by_type(uint16_t type){
 
     case Type::Camera:
         return sizeof(CameraComponent);
-        
+
     default:
         return 0;
         break;
@@ -45,8 +45,9 @@ ComponentSystem* get_component_system(uint8_t system_id)
     case 1:
         return &transforms;
         break;
-    
+
     default:
+        return nullptr;
         break;
     }
 }
@@ -103,7 +104,7 @@ void inspect(uint8_t type, uint16_t id)
         ImGui::DragFloat3("Rotation", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.rotation.x, 0.1f);
         ImGui::DragFloat3("Scale", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.scale.x, 0.1f);
         break;
-    
+
     default:
         break;
     }
@@ -113,7 +114,3 @@ void loop_over_component(ComponentSystem* system)
 {
 
 }
-
-
-
-

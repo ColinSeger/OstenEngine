@@ -1,11 +1,8 @@
 #pragma once
 #include <cstdint>
-#include <iostream>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "../transform.h"
-#include "../../renderer/renderable.h"
 #include "components.h"
 #include "entity_system.h"
 
@@ -29,7 +26,7 @@ namespace EntityManager
     std::unordered_map<std::string, uint32_t>& get_entity_names();
 
     void add_entity(Entity entity, std::string name);
-    
+
     void add_component(uint32_t entity_id, Type component, System& system);
 
     void remove_entity(Entity entity);

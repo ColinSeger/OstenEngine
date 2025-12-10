@@ -31,115 +31,109 @@
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/main.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/main.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/main.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/main.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/main.cpp",
   "output": "CMakeFiles/OstenEngine.dir/main.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/model_loader/model_loader.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/model_loader/model_loader.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/model_loader/model_loader.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/model_loader/model_loader.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/model_loader/model_loader.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/model_loader/model_loader.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_glfw.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_glfw.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_glfw.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_glfw.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_glfw.cpp",
   "output": "CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_glfw.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_vulkan.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_vulkan.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_vulkan.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_vulkan.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/external/imgui/backends/imgui_impl_vulkan.cpp",
   "output": "CMakeFiles/OstenEngine.dir/external/imgui/backends/imgui_impl_vulkan.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/debugger/debugger.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/debugger/debugger.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/debugger/debugger.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/debugger/debugger.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/debugger/debugger.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/debugger/debugger.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/application.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/application.cpp",
-  "file": "/home/deck/Documents/GameEngine/GameEngine/src/application.cpp",
-  "output": "CMakeFiles/OstenEngine.dir/src/application.cpp.o"
-},
-{
-  "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/instance/vulkan/instance.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/instance/vulkan/instance.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/instance/vulkan/instance.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/instance/vulkan/instance.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/instance/vulkan/instance.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/instance/vulkan/instance.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/device/vulkan/device.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/device/vulkan/device.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/device/vulkan/device.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/device/vulkan/device.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/device/vulkan/device.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/device/vulkan/device.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/swap_chain/vulkan/swap_chain.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/swap_chain/vulkan/swap_chain.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/swap_chain/vulkan/swap_chain.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/swap_chain/vulkan/swap_chain.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/swap_chain/vulkan/swap_chain.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/swap_chain/vulkan/swap_chain.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/render_data/vulkan/render_data.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/render_data/vulkan/render_data.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/render_data/vulkan/render_data.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/render_data/vulkan/render_data.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/render_data/vulkan/render_data.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/render_data/vulkan/render_data.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/descriptors/descriptors.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/descriptors/descriptors.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/descriptors/descriptors.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/descriptors/descriptors.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/descriptors/descriptors.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/descriptors/descriptors.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/render_pipeline.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/render_pipeline.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/render_pipeline.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/render_pipeline.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/render_pipeline.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/render_pipeline.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/texture/vulkan/texture.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/texture/vulkan/texture.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/texture/vulkan/texture.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/texture/vulkan/texture.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/texture/vulkan/texture.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/texture/vulkan/texture.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/camera/camera.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/camera/camera.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/renderer/camera/camera.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/renderer/camera/camera.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/renderer/camera/camera.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/renderer/camera/camera.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/components.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/components.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/components.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/components.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/components.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/engine/entity_manager/components.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_manager.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_manager.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_manager.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_manager.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_manager.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_manager.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_system.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_system.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_system.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_system.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/engine/entity_manager/entity_system.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/engine/entity_manager/entity_system.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/transform.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/transform.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/engine/transform.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/engine/transform.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/engine/transform.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/engine/transform.cpp.o"
 },
 {
   "directory": "/home/deck/Documents/GameEngine/GameEngine",
-  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/editor/file_explorer/file_explorer.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/editor/file_explorer/file_explorer.cpp",
+  "command": "/usr/bin/c++  -I/home/deck/Documents/GameEngine/GameEngine/external/glfw/include -I/home/deck/Documents/GameEngine/GameEngine/external/imgui -std=gnu++20 -o CMakeFiles/OstenEngine.dir/src/editor/file_explorer/file_explorer.cpp.o -c /home/deck/Documents/GameEngine/GameEngine/src/editor/file_explorer/file_explorer.cpp",
   "file": "/home/deck/Documents/GameEngine/GameEngine/src/editor/file_explorer/file_explorer.cpp",
   "output": "CMakeFiles/OstenEngine.dir/src/editor/file_explorer/file_explorer.cpp.o"
 },

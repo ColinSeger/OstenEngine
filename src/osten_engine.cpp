@@ -2,10 +2,7 @@
 #include "common_includes.h"
 #define COMMON_INCLUDES
 #include <GLFW/glfw3.h>
-#include <chrono>
-#include <string>
-#include <unordered_map>
-#include "renderer/texture/vulkan/texture.h"
+#include "renderer/instance/vulkan/instance.h"
 #include "renderer/render_pipeline.h"
 #include "engine/entity_manager/entity_manager.h"
 #include "editor/file_explorer/file_explorer.h"
@@ -20,10 +17,11 @@ struct OstenEngine
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
-    
+
     std::vector<System> systems;
 
     FileExplorer file_explorer;
+    Entity inspecting;
 
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {
@@ -63,7 +61,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
         };
     #endif
     uint32_t glfw_extention_count = 0;
-    
+
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
@@ -92,13 +90,13 @@ OstenEngine::~OstenEngine()
 
 void OstenEngine::move_camera(double delta_time)
 {
-    float camera_speed = 500;
-    if(ImGui::IsKeyDown(ImGuiKey_W)){
-        render_pipeline->camera_location.position -= Transformations::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
-    }
-    if(ImGui::IsKeyDown(ImGuiKey_S)){
-        render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
-    }
+    // float camera_speed = 500;
+    // if(ImGui::IsKeyDown(ImGuiKey_W)){
+    //     render_pipeline->camera_location.position -= Transformations::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
+    // }
+    // if(ImGui::IsKeyDown(ImGuiKey_S)){
+    //     render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
+    // }
 }
 
 void OstenEngine::main_game_loop()
@@ -112,25 +110,14 @@ void OstenEngine::main_game_loop()
     int entity_to_delete = 0;
 
     double fps = 0;
-    
+
     auto last_tick = std::chrono::high_resolution_clock::now();
+    inspecting = Entity{};
+    inspecting.components.push_back({0, 0});
 
-    System sys{};
-    Transform rt{};
-    TransformComponent cop;
-    sys.type = cop.id;
-    cop.transform = rt;
-    init_system(sys, &cop, 50);
-    //add_action(sys, &print_transform);
-
-    sys.run_system = debug;
-    for (size_t i = 0; i < 5; i ++)
-    {
-        TransformComponent component {};
-
-        component.transform.position.x = i;
-        add_component(sys, &component);
-    }
+    create_camera_system(1);
+    create_transform_system(10);
+    inspecting.components.push_back(TempID{add_transform(), 1});
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
@@ -150,20 +137,26 @@ void OstenEngine::main_game_loop()
             start_time = current_time;
             frames = 0;
         }
-        
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs);
+
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 
         end_file_explorer();
 
-        
+
 
         // ImGui::ShowDemoWindow(&test);
 
         // ImDrawData* main_draw_data = ImGui::GetDrawData();
         move_camera(delta_time);
-        int32_t result = render_pipeline->draw_frame();
+        ComponentSystem* cameras = get_component_system(0);
+        int32_t result = 0;
+        for (size_t i = 0; i < cameras->amount; i++)
+        {
+            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
+        }
+
 
         if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
             resized = false;

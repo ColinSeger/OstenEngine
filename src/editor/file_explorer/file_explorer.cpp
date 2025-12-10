@@ -1,9 +1,12 @@
 #include "file_explorer.h"
 
+VkImageView image_view;//TODO Temporary way to access image
+VkSampler texture_sampler;//TODO Temporary way to access sampler
+
 static void create_entity(RenderPipeline* render_pipeline){
     uint16_t id = add_transform();
     Renderable first_obj;
-    first_obj.index = id;
+    first_obj.transform_index = id;
     render_pipeline->create_uniform_buffer(first_obj);
     VkImage image_test;
     if(render_pipeline->to_render.size() < 2){
@@ -12,17 +15,13 @@ static void create_entity(RenderPipeline* render_pipeline){
         image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
     }
 
-    VkImageView image_view;//TODO Temporary way to access image
-    VkSampler texture_sampler;//TODO Temporary way to access sampler
-
-
     image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
 
     create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, image_view, texture_sampler);
     render_pipeline->to_render.push_back(first_obj);
-    vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
-    vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
+    // vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
+    // vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
     Entity entity{};
     entity.components.push_back({id, 1});
     EntityManager::add_entity(entity, "Test");
@@ -83,7 +82,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
         if(ImGui::Button(file_explorer.folders[i].c_str()))
         {
             // ImGui::Text(file_explorer.folders[i].c_str());
-            file_explorer.current_directory = file_explorer.folders[i];          
+            file_explorer.current_directory = file_explorer.folders[i];
         }
         ImGui::Spacing();
 
@@ -93,15 +92,15 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
     for (size_t i = 0; i < file_explorer.files.size(); i++)
     {
         ImGui::PushID(i);
-        ImGui::Text(file_explorer.files[i].c_str());  
+        ImGui::Text(file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
             // ModelLoader::parse_obj(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
             ModelLoader::de_serialize(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
             render_pipeline->models.emplace_back(ModelLoader::create_model(render_pipeline->device, render_pipeline->command_pool, render_pipeline->vertices, render_pipeline->indices));
 
             create_entity(render_pipeline);
-        }        
-        
+        }
+
         ImGui::Spacing();
 
         ImGui::PopID();
@@ -110,7 +109,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
     if(current_dir != file_explorer.current_directory){
         file_explorer.folders.clear();
 
-        get_folders(file_explorer);        
+        get_folders(file_explorer);
     }
 }
 

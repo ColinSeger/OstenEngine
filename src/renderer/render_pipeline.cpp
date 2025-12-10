@@ -21,28 +21,12 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
     my_surface = surface;
     create_device(device, instance, surface, validation_layers);
 
-    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
-
-    // ModelLoader::de_serialize("assets/debug_assets/napoleon.bin", vertices, indices);
-
     restart_swap_chain(width, height);
-
-    // ModelLoader::parse_obj(model_location, vertices, indices);
-    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    // vertices.clear();
-    // indices.clear();
-
-    // ModelLoader::parse_obj("assets/debug_assets/napoleon.obj", vertices, indices);
-    // models.emplace_back(ModelLoader::create_model(device, command_pool, vertices, indices));
-    // vertices.clear();
-    // indices.clear();
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
     create_uniform_buffers();
     create_descriptor_pool(descriptor_pool, device.virtual_device);
-    create_descriptor_sets(descriptor_pool, device.virtual_device, descriptor_set_layout, image_view, texture_sampler, to_render);
-
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -98,7 +82,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
-    
+
     if (result != VK_SUCCESS) {
         return result;
     }
@@ -170,7 +154,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-    
+
     return result;
 }
 mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
@@ -199,8 +183,8 @@ void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t curre
 
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        
-        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(system, to_render[render_index].index))->transform);
+
+        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(system, to_render[render_index].transform_index))->transform);
 
         UniformBufferObject ubo{
             ubo.model = model,
@@ -260,7 +244,7 @@ void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
 
 void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
 {
-    
+
     vkDeviceWaitIdle(device.virtual_device);
 
     if(swap_chain_images.swap_chain_images.size() > 0){
