@@ -1,10 +1,15 @@
 #pragma once
 #include "../../common_includes.h"
-#include "../render_data/vulkan/render_data.h"
 #include "../renderable.h"
 #include "../device/vulkan/device.h"
 
 static uint8_t FRAMES = 2;
+
+struct UniformBufferObject {
+    mat4_t model;
+    mat4_t view;
+    mat4_t proj;
+};
 
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device);
 

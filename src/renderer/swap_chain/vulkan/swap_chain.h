@@ -3,6 +3,11 @@
 #include "../../device/vulkan/device.h"
 #include "../../texture/vulkan/texture.h"
 
+struct WindowSize{
+    int32_t x = 0;
+    int32_t y = 0;
+};
+
 struct RenderBuffer
 {
     VkBuffer& vertex_buffer;
@@ -20,7 +25,7 @@ static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentMode
 struct SwapChain
 {
     VkExtent2D screen_extent;
-    
+
     VkSwapchainKHR swap_chain;
 
     VkFormat swap_chain_image_format;

@@ -7,6 +7,8 @@
 struct TextureImage
 {
     VkImage texture_image;
+    VkImageView image_view;
+    VkSampler texture_sampler;
     VkDeviceMemory texture_image_memory;
 };
 namespace Texture
@@ -15,13 +17,13 @@ namespace Texture
 
     void create_image
     (
-        Device& device, 
-        VkExtent2D& image_size, 
-        VkFormat format, 
-        VkImageTiling image_tiling, 
-        VkImageUsageFlags usage_flags, 
-        VkMemoryPropertyFlags property_flags, 
-        VkImage& image, 
+        Device& device,
+        VkExtent2D& image_size,
+        VkFormat format,
+        VkImageTiling image_tiling,
+        VkImageUsageFlags usage_flags,
+        VkMemoryPropertyFlags property_flags,
+        VkImage& image,
         VkDeviceMemory& image_memory
     );
 

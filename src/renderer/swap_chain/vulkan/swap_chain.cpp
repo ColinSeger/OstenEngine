@@ -116,6 +116,7 @@ void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, 
 
 int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images)
 {
+    vkDeviceWaitIdle(virtual_device);
     vkDestroyImageView(virtual_device, swap_chain_images.depth_image_view, nullptr);
     vkDestroyImage(virtual_device, swap_chain_images.depth_image, nullptr);
     vkFreeMemory(virtual_device, swap_chain_images.depth_image_memory, nullptr);
@@ -129,6 +130,7 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     }
 
     vkDestroySwapchainKHR(virtual_device, swap_chain.swap_chain, nullptr);
+    vkDeviceWaitIdle(virtual_device);
     return 1;
 }
 

@@ -1,4 +1,5 @@
 #include "device.h"
+#include <string>
 
 
 namespace DeviceHelperFunctions
@@ -136,7 +137,7 @@ static bool check_device_extension_support(VkPhysicalDevice device)
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
 
-    std::set<const char*> required_extensions(device_extensions.begin(), device_extensions.end());
+    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
 
     for (const auto& extension : available_extensions) {
         required_extensions.erase(extension.extensionName);

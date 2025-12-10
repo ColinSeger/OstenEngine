@@ -15,11 +15,6 @@ struct Vector2{
     float y = 0;
 };
 
-struct WindowSize{
-    int32_t x = 0;
-    int32_t y = 0;
-};
-
 struct Vector3{
     float x = 0;
     float y = 0;
@@ -51,19 +46,6 @@ struct Vector3{
         return *this;
     }
 };
-
-struct Matrix {
-    float translation[4];
-    float rotation[4];
-    float scale[4];
-};
-
-struct UniformBufferObject {
-    mat4_t model;
-    mat4_t view;
-    mat4_t proj;
-};
-
 
 struct Vertex {
     Vector3 position{};

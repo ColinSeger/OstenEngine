@@ -1,4 +1,7 @@
 #include "render_pipeline.h"
+#include "model_loader/model_loader.h"
+#include "swap_chain/vulkan/swap_chain.h"
+#include <vulkan/vulkan_core.h>
 
 void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
 {
@@ -52,28 +55,34 @@ RenderPipeline::~RenderPipeline()
 void RenderPipeline::cleanup()
 {
     vkDeviceWaitIdle(device.virtual_device);
+    clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
+    vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
 
     vkDestroyDescriptorPool(device.virtual_device, descriptor_pool, nullptr);
 
+
     vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
+
+    for(Model model : models){
+        vkDestroyBuffer(device.virtual_device, model.index_buffer, nullptr);
+        vkDestroyBuffer(device.virtual_device, model.vertex_buffer, nullptr);
+    }
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(device.virtual_device, image_available_semaphores[i], nullptr);
         vkDestroySemaphore(device.virtual_device, render_finished_semaphores[i], nullptr);
         vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
     }
-    // glfwDestroyWindow(main_window);
 
-    vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
     vkDestroySurfaceKHR(my_instance, my_surface, nullptr);
 
+    vkDeviceWaitIdle(device.virtual_device);
     destroy_device(device);
 
     vkDestroyInstance(my_instance, nullptr);
-
-    // glfwTerminate();
 }
 
 int32_t RenderPipeline::draw_frame(CameraComponent camera)

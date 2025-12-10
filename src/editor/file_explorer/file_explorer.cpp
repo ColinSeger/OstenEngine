@@ -1,8 +1,5 @@
 #include "file_explorer.h"
 
-VkImageView image_view;//TODO Temporary way to access image
-VkSampler texture_sampler;//TODO Temporary way to access sampler
-
 static void create_entity(RenderPipeline* render_pipeline){
     uint16_t id = add_transform();
     Renderable first_obj;
@@ -14,11 +11,11 @@ static void create_entity(RenderPipeline* render_pipeline){
     }else{
         image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
     }
+    TextureImage texture {};
+    texture.image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    texture.texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
 
-    image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
-
-    create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, image_view, texture_sampler);
+    create_descriptor_set(render_pipeline->device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
     render_pipeline->to_render.push_back(first_obj);
     // vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
     // vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
