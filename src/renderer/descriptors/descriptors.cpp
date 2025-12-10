@@ -1,5 +1,16 @@
+#ifndef DESCRIPTORSETS
 #include "descriptors.h"
+// #include "../renderable.h"
+// #include "../device/vulkan/device.h"
+// #include <cstdint>
 
+// const uint8_t FRAMES = 2;
+
+// struct UniformBufferObject {
+//     mat4_t model;
+//     mat4_t view;
+//     mat4_t proj;
+// };
 
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
@@ -30,7 +41,6 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 }
 
 void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
-
     std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -38,7 +48,7 @@ void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptor
     allocInfo.descriptorPool = descriptor_pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(FRAMES);
     allocInfo.pSetLayouts = layouts.data();
-    
+
     render_this.descriptor_sets.resize(FRAMES);
 
     if(vkAllocateDescriptorSets(device.virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
@@ -122,7 +132,7 @@ void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_
         allocInfo.descriptorPool = descriptor_pool;
         allocInfo.descriptorSetCount = static_cast<uint32_t>(FRAMES);
         allocInfo.pSetLayouts = layouts.data();
-        
+
         render_this.descriptor_sets.resize(FRAMES);
 
         if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
@@ -164,3 +174,6 @@ void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_
         }
     }
 }
+
+#endif
+#define  DESCRIPTORSETS

@@ -1,7 +1,4 @@
 #include "render_pipeline.h"
-#include "model_loader/model_loader.h"
-#include "swap_chain/vulkan/swap_chain.h"
-#include <vulkan/vulkan_core.h>
 
 void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
 {

@@ -2,8 +2,8 @@
 #include "common_includes.h"
 #define COMMON_INCLUDES
 #include <GLFW/glfw3.h>
-#include "renderer/instance/vulkan/instance.h"
-#include "renderer/render_pipeline.h"
+#include "renderer/instance/vulkan/instance.cpp"
+// #include "renderer/renderer.cpp"
 #include "engine/entity_manager/entity_manager.h"
 #include "editor/file_explorer/file_explorer.h"
 #include "engine/entity_manager/entity_system.h"

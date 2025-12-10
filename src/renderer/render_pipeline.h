@@ -1,5 +1,7 @@
 #pragma once
 #include "../common_includes.h"
+#include <vulkan/vulkan_core.h>
+#include "descriptors/descriptors.h"
 #include <cassert>
 #include "device/vulkan/device.h"
 #include "swap_chain/vulkan/swap_chain.h"
@@ -8,7 +10,6 @@
 #include "model_loader/model_loader.h"
 #include "renderable.h"
 #include "camera/camera.h"
-#include "descriptors/descriptors.h"
 #include "../engine/entity_manager/components.h"
 
 
