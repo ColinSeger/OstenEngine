@@ -126,11 +126,8 @@ void OstenEngine::main_game_loop(long (*profile)())
 
     std::vector<long> mem_usage{};
 
-
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
-        mem_usage.push_back(profile());
-        while(mem_usage.size() > 1000) shift(mem_usage);
 
         auto current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
@@ -143,6 +140,8 @@ void OstenEngine::main_game_loop(long (*profile)())
 
         if(frame_time > 1)
         {
+            mem_usage.push_back(profile());
+            while(mem_usage.size() > 1000) shift(mem_usage);
             fps = frames / frame_time;
             start_time = current_time;
             frames = 0;
