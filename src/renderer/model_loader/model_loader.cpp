@@ -1,5 +1,49 @@
-#include "model_loader.h"
+// #include "model_loader.h"
+#pragma once
+#include <fstream>
+#include <filesystem>
+#include <vulkan/vulkan.h>
+#include <vector>
+#include "../device/vulkan/device.cpp"
+#include "../render_data/vulkan/render_data.h"
 
+enum class ObjMode : uint8_t
+{
+    Vertex,
+    Normal,
+    TextureCord,
+    Face,
+    None,
+    Comment
+};
+
+struct Model
+{
+    uint32_t index_amount = 0;
+    VkBuffer vertex_buffer;
+    VkDeviceMemory vertex_buffer_memory;
+
+    VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
+    VkDeviceMemory index_buffer_memory;
+};
+
+
+namespace ModelLoader
+{
+    const char valid_chars[14] = "0123456789.-/";
+
+    bool is_valid_char(char c);
+
+    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+
+    void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+
+    void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+
+    Model create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+
+    Model load_model(Device& device, VkCommandPool command_pool, std::string filename);
+}/**/
 
 Model ModelLoader::load_model(Device& device, VkCommandPool command_pool, std::string filename)
 {
@@ -11,9 +55,9 @@ Model ModelLoader::load_model(Device& device, VkCommandPool command_pool, std::s
     extention[1] = filename[filename.length() -1];
     extention[2] = filename[filename.length() -0];
 
-    if(extention == "obj"){
+    if(extention[0] == 'o' || extention[0] == 'O'){
         parse_obj(filename.c_str(), vertices, indices);
-    }else if(extention == "bin"){
+    }else if(extention[0] == 'b' || extention[0] == 'B'){
         de_serialize(filename.c_str(), vertices, indices);
     }
 
@@ -113,10 +157,10 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
                 continue;
             break;
             case ObjMode::Comment:
-                
+
             break;
             case ObjMode::Vertex:
-                
+
                 new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
                 vertex.emplace_back(new_vertex);
             break;
@@ -155,7 +199,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
         if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
 
         if(value == ' ' && values[0].length() > 0){
-            char_index++;                    
+            char_index++;
             continue;
         }
         else if (is_valid_char(value)){
@@ -170,9 +214,9 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
     {
         vertices.emplace_back(vertex[i]);
     }
-    
+
     free(file);
-    
+
 }
 
 void ModelLoader::serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
@@ -207,7 +251,7 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
     file.seekg (0, std::ios::end);
     size_t file_size = file.tellg();
     file.seekg(0);
-    
+
     size_t index_start = 0;//represents where vertexes end and indices start
 
     file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
@@ -228,12 +272,12 @@ void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertic
         vertices.emplace_back(*read_this);
         read_this++;
     }
-    
+
     for(size_t index = vertex_done; index <= file_size; index += sizeof(uint32_t)){
         indices.emplace_back(*read_index);
         read_index++;
     }
-    
+
     free(vertex_ptr);
     free(index_ptr);
 }

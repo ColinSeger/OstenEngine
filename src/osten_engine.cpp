@@ -1,14 +1,18 @@
 #pragma once
-#include "common_includes.h"
 #define COMMON_INCLUDES
+#include <vector>
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include "renderer/instance/vulkan/instance.cpp"
+#include "renderer/render_pipeline.cpp"
+#include "editor/UI/imgui.cpp"
+#define MATH_3D_IMPLEMENTATION
+#include "../external/math_3d.h"
 // #include "renderer/renderer.cpp"
 #include "engine/entity_manager/entity_manager.h"
-#include "editor/file_explorer/file_explorer.h"
+#include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/entity_system.h"
 #include "engine/entity_manager/components.h"
-#include "editor/UI/imgui.cpp"
 
 struct OstenEngine
 {
@@ -138,9 +142,9 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting);
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs);
         //ImGui::DockSpaceOverViewport();
-        start_file_explorer(file_explorer, render_pipeline);
+        start_file_explorer(file_explorer);
 
         end_file_explorer();
 
@@ -178,8 +182,6 @@ void OstenEngine::main_game_loop()
 
 void OstenEngine::cleanup()
 {
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    clean_imgui();
     render_pipeline->cleanup();
 }

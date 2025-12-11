@@ -1,4 +1,42 @@
-#include "swap_chain.h"
+//#include "swap_chain.h"
+#pragma once
+#include "../../device/vulkan/device.h"
+#include "../../texture/vulkan/texture.cpp"
+
+struct WindowSize{
+    int32_t x = 0;
+    int32_t y = 0;
+};
+
+struct RenderBuffer
+{
+    VkBuffer& vertex_buffer;
+    VkBuffer& index_buffer;
+};
+
+struct SwapChain
+{
+    VkExtent2D screen_extent;
+
+    VkSwapchainKHR swap_chain;
+
+    VkFormat swap_chain_image_format;
+};
+
+struct SwapChainImages
+{
+    VkImage depth_image;
+
+    VkDeviceMemory depth_image_memory;
+
+    VkImageView depth_image_view;
+
+    std::vector<VkImage> swap_chain_images;
+
+    std::vector<VkImageView> swap_chain_image_view;
+
+    std::vector<VkFramebuffer> swap_chain_framebuffers;
+};
 
 static uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
 {
@@ -108,7 +146,7 @@ void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, 
     VkResult result = vkCreateSwapchainKHR(device.virtual_device, &create_info, nullptr, &swap_chain.swap_chain);
 
     if(result != VK_SUCCESS){
-        assert(false && "Failed to create swap chain");
+        throw("Failed to create swap chain");
     }
     swap_chain.screen_extent = screen_extent;
     swap_chain.swap_chain_image_format = surface_format.format;
@@ -134,17 +172,6 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     return 1;
 }
 
-void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images)
-{
-    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
-
-    uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
-
-    swap_images.swap_chain_images.resize(image_amount);
-    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images.data());
-
-    create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format);
-}
 
 static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
     swap_images.swap_chain_image_view.resize(swap_images.swap_chain_images.size());
@@ -171,9 +198,21 @@ static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_de
 
 
         if(vkCreateImageView(virtual_device, &create_info, nullptr, &swap_images.swap_chain_image_view[i]) != VK_SUCCESS){
-            assert(false);
+            throw("Failed to create image views");
         }
     }
+}
+
+void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images)
+{
+    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
+
+    uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
+
+    swap_images.swap_chain_images.resize(image_amount);
+    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images.data());
+
+    create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format);
 }
 
 void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent)
@@ -196,11 +235,15 @@ void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device,
         framebuffer_info.layers = 1;
 
         if(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_images.swap_chain_framebuffers[i]) != VK_SUCCESS){
-            assert(false);
+            throw("Failed to create frame buffers");
         }
     }
 }
-
+namespace RenderPass
+{
+    void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent);
+    void end_render_pass(VkCommandBuffer& command_buffer);
+}
 void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
 {
     //Begining of render pass
@@ -245,6 +288,6 @@ void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExten
 void RenderPass::end_render_pass(VkCommandBuffer& command_buffer)
 {
     if(vkEndCommandBuffer(command_buffer) != VK_SUCCESS){
-        assert(false);
+        throw("Failed to end render pass");
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../../common_includes.h"
-#include "../device/vulkan/device.h"
+#include "../device/vulkan/device.cpp"
 #include "../render_data/vulkan/render_data.h"
 
 enum class ObjMode : uint8_t

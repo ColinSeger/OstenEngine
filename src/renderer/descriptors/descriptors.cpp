@@ -1,17 +1,17 @@
-#include <vulkan/vulkan_core.h>
 #ifndef DESCRIPTORSETS
-#include "descriptors.h"
-// #include "../renderable.h"
-// #include "../device/vulkan/device.h"
-// #include <cstdint>
+#include <vulkan/vulkan_core.h>
+#include "../renderable.h"
+#include <cstdint>
+#include "../../external/imgui_test/imgui_impl_vulkan.h"
+#include "../../external/math_3d.h"
 
-// const uint8_t FRAMES = 2;
+const uint8_t FRAMES = 2;
 
-// struct UniformBufferObject {
-//     mat4_t model;
-//     mat4_t view;
-//     mat4_t proj;
-// };
+struct UniformBufferObject {
+     mat4_t model;
+     mat4_t view;
+     mat4_t proj;
+};
 
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
@@ -37,7 +37,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 
     if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
-        assert(false && "Descriptor fail");
+        throw("Descriptor fail");
     }
 }
 
@@ -53,7 +53,7 @@ void create_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkD
     render_this.descriptor_sets.resize(FRAMES);
 
     if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
-        assert(false);
+        throw("Failed to create descriptor sets");
     }
 
     for (size_t i = 0; i < FRAMES; i++) {
@@ -117,7 +117,7 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     VkResult result = vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout);
     if(result != VK_SUCCESS)
     {
-        assert(false);
+        throw("Failed to create descriptor layout");
     }
 }
 
@@ -137,7 +137,7 @@ void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_
         render_this.descriptor_sets.resize(FRAMES);
 
         if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
-            assert(false);
+            throw("Failed to allocate descriptor sets");
         }
 
         for (size_t i = 0; i < FRAMES; i++) {

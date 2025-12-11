@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <iostream>
 #include "components.h"
 #include "entity_system.h"
 

@@ -1,7 +1,6 @@
 #pragma once
 #include "../../common_includes.h"
 #include "../transform.h"
-#include "../../renderer/camera/camera.h"
 
 
 enum class Type : uint8_t{
@@ -14,7 +13,7 @@ enum class Type : uint8_t{
 
 typedef struct Component
 {
-    const uint16_t id = 0; 
+    const uint16_t id = 0;
 } Component;
 
 typedef struct TransformComponent

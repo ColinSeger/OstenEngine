@@ -1,7 +1,5 @@
 #pragma once
-#include "../../../common_includes.h"
-#include <cassert>
-#include <cstring>
+#include <cstdint>
 
 enum Direction : uint8_t{
     X = 0,
@@ -45,16 +43,3 @@ struct Vector3{
         return *this;
     }
 };
-
-struct Vertex {
-    Vector3 position{};
-    vec3_t color{};
-    Vector2 texture_cord{};
-};
-
-struct VertexAtributes{
-    VkVertexInputAttributeDescription array[3];
-};
-
-VkVertexInputBindingDescription get_binding_description();
-VertexAtributes get_attribute_descriptions();

@@ -11,7 +11,6 @@
     #include "../external/imgui_test/imgui_internal.h"
     #include "../external/imgui_test/imgui_impl_glfw.h"
     #include "../external/imgui_test/imgui_impl_vulkan.h"
-    #include "debugger/debugger.h"
     #ifndef MATH_3D_IMPLEMENTATION
         #include "../external/math_3d.h"
 

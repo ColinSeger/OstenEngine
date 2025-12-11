@@ -1,28 +1,42 @@
-#include "file_explorer.h"
+//#include "file_explorer.h"
+#pragma once
+#include <filesystem>
+#include <vector>
+#include <string>
+#include "../../../external/imgui_test/imgui.h"
+// #include "../../engine/entity_manager/entity_manager.h"
+// #include "../../renderer/texture/vulkan/texture.cpp"
 
-static void create_entity(RenderPipeline* render_pipeline){
-    uint16_t id = add_transform();
-    Renderable first_obj;
-    first_obj.transform_index = id;
-    render_pipeline->create_uniform_buffer(first_obj);
-    VkImage image_test;
-    if(render_pipeline->to_render.size() < 2){
-        image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
-    }else{
-        image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
-    }
-    TextureImage texture {};
-    texture.image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    texture.texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
+struct FileExplorer
+{
+    std::vector<std::string> folders;
+    std::vector<std::string> files;
+    std::string current_directory;
+};
 
-    create_descriptor_set(render_pipeline->device.virtual_device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
-    render_pipeline->to_render.push_back(first_obj);
-    // vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
-    // vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
-    Entity entity{};
-    entity.components.push_back({id, 1});
-    EntityManager::add_entity(entity, "Test");
-}
+// static void create_entity(RenderPipeline* render_pipeline){
+//     uint16_t id = add_transform();
+//     Renderable first_obj;
+//     first_obj.transform_index = id;
+//     render_pipeline->create_uniform_buffer(first_obj);
+//     VkImage image_test;
+//     if(render_pipeline->to_render.size() < 2){
+//         image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
+//     }else{
+//         image_test = Texture::create_texture_image(render_pipeline->device, "assets/debug_assets/napoleon_texture.png", render_pipeline->command_pool);
+//     }
+//     TextureImage texture {};
+//     texture.image_view = Texture::create_image_view(render_pipeline->device.virtual_device, image_test , VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+//     texture.texture_sampler = Texture::create_texture_sampler(render_pipeline->device);
+
+//     create_descriptor_set(render_pipeline->device.virtual_device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
+//     render_pipeline->to_render.push_back(first_obj);
+//     // vkDestroyImageView(render_pipeline->device.virtual_device, image_view, nullptr);
+//     // vkDestroySampler(render_pipeline->device.virtual_device, texture_sampler, nullptr);
+//     Entity entity{};
+//     entity.components.push_back({id, 1});
+//     EntityManager::add_entity(entity, "Test");
+// }
 
 void get_folders(const char* folder_to_look, std::vector<std::string>& result)
 {
@@ -66,7 +80,7 @@ FileExplorer init_file_explorer()
     return result;
 }
 
-void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pipeline)//TODO Optimize as it's very slow
+void start_file_explorer(FileExplorer& file_explorer)//TODO Optimize as it's very slow
 {
 
     ImGui::Begin("FolderView");
@@ -92,10 +106,10 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
         ImGui::Text(file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
             // ModelLoader::parse_obj(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
-            ModelLoader::de_serialize(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
-            render_pipeline->models.emplace_back(ModelLoader::create_model(render_pipeline->device, render_pipeline->command_pool, render_pipeline->vertices, render_pipeline->indices));
+            // ModelLoader::de_serialize(file_explorer.files[i].c_str(), render_pipeline->vertices, render_pipeline->indices);
+            // render_pipeline->models.emplace_back(ModelLoader::create_model(render_pipeline->device, render_pipeline->command_pool, render_pipeline->vertices, render_pipeline->indices));
 
-            create_entity(render_pipeline);
+            // create_entity(render_pipeline);
         }
 
         ImGui::Spacing();

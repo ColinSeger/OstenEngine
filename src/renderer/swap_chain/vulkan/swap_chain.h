@@ -1,67 +1,64 @@
 #pragma once
 #include "../../../common_includes.h"
 #include "../../device/vulkan/device.h"
-#include "../../texture/vulkan/texture.h"
+// #include "../../texture/vulkan/texture.cpp"
 
-struct WindowSize{
-    int32_t x = 0;
-    int32_t y = 0;
-};
+// struct WindowSize{
+//     int32_t x = 0;
+//     int32_t y = 0;
+// };
 
-struct RenderBuffer
-{
-    VkBuffer& vertex_buffer;
-    VkBuffer& index_buffer;
-};
+// struct RenderBuffer
+// {
+//     VkBuffer& vertex_buffer;
+//     VkBuffer& index_buffer;
+// };
 
-static VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
+// struct SwapChain
+// {
+//     VkExtent2D screen_extent;
 
-static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+//     VkSwapchainKHR swap_chain;
 
-static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+//     VkFormat swap_chain_image_format;
+// };
 
+// struct SwapChainImages
+// {
+//     VkImage depth_image;
 
+//     VkDeviceMemory depth_image_memory;
 
-struct SwapChain
-{
-    VkExtent2D screen_extent;
+//     VkImageView depth_image_view;
 
-    VkSwapchainKHR swap_chain;
+//     std::vector<VkImage> swap_chain_images;
 
-    VkFormat swap_chain_image_format;
-};
+//     std::vector<VkImageView> swap_chain_image_view;
 
+//     std::vector<VkFramebuffer> swap_chain_framebuffers;
+// };
 
+// static VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR& surface_capabilites, GLFWwindow* window);
 
-struct SwapChainImages
-{
-    VkImage depth_image;
+// static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
-    VkDeviceMemory depth_image_memory;
+// static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
 
-    VkImageView depth_image_view;
+// void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain);
 
-    std::vector<VkImage> swap_chain_images;
+// int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images);
 
-    std::vector<VkImageView> swap_chain_image_view;
+// static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
 
-    std::vector<VkFramebuffer> swap_chain_framebuffers;
-};
-void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain);
+// void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_image);
 
-int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images);
+// void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
 
-static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format);
+// void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
 
-void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_image);
+// // int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
 
-void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent);
-
-void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent);
-
-// int recreate_swap_chain(GLFWwindow* window, Device* device, VkSurfaceKHR surface_reference, SwapChainImages* swap_chain);
-
-VkImageView create_depth_resources(Device& device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image);
+// VkImageView create_depth_resources(Device& device, VkExtent2D image_size, VkDeviceMemory& depth_image_memory, VkImage& depth_image);
 
 namespace RenderPass
 {

@@ -3,8 +3,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 // #include <crtdbg.h>
-#define MATH_3D_IMPLEMENTATION
-#include "external/math_3d.h"
+#include <iostream>
 
 #ifdef WIN32
 #include "src/win32_app.cpp"

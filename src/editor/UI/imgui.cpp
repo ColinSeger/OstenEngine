@@ -1,8 +1,12 @@
-#include "../../common_includes.h"
+#pragma once
 #include <GLFW/glfw3.h>
-#include "../../renderer/device/vulkan/device.h"
-#include "../../renderer/render_pipeline.h"
-#include "../../engine/entity_manager/entity_manager.h"
+#include "../../../external/imgui_test/imgui.h"
+#include "../../../external/imgui_test/imgui_impl_glfw.h"
+#include "../../../external/imgui_test/imgui_impl_vulkan.h"
+// #include "../../debugger/debugger.cpp"
+#include "../../renderer/device/vulkan/device.cpp"
+#include "../../renderer/render_pipeline.cpp"
+// #include "../../engine/entity_manager/entity_manager.h"
 
 static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
 {
@@ -82,64 +86,64 @@ static void imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            if(auto contains = EntityManager::get_entity_names().find("GameObject"); contains != EntityManager::get_entity_names().end())
-            {
-                std::string name ("GameObject");
-                for (size_t i = 0; i < 9; i++)
-                {
-                    if(auto contains = EntityManager::get_entity_names().find(name); contains != EntityManager::get_entity_names().end()){
-                        name.push_back('A');
-                    }else{
-                        EntityManager::add_entity(Entity{}, name);
-                        break;
-                    }
-                }
+            // if(auto contains = EntityManager::get_entity_names().find("GameObject"); contains != EntityManager::get_entity_names().end())
+            // {
+            //     std::string name ("GameObject");
+            //     for (size_t i = 0; i < 9; i++)
+            //     {
+            //         if(auto contains = EntityManager::get_entity_names().find(name); contains != EntityManager::get_entity_names().end()){
+            //             name.push_back('A');
+            //         }else{
+            //             EntityManager::add_entity(Entity{}, name);
+            //             break;
+            //         }
+            //     }
 
-            }else{
-                EntityManager::add_entity(Entity{}, "GameObject");
-            }
+            // }else{
+            //     EntityManager::add_entity(Entity{}, "GameObject");
+            // }
 
         }
         ImGui::EndPopup();
     }
 }
 
-static void imgui_hierarchy(bool& open, Entity* inspecting)
-{
-    ImGui::Begin("Hierarchy", &open);
-        imgui_hierarchy_pop_up();
-        ImGui::Text("Hierarchy!");
-        ImGui::Spacing();
+// static void imgui_hierarchy(bool& open, Entity* inspecting)
+// {
+//     ImGui::Begin("Hierarchy", &open);
+//         imgui_hierarchy_pop_up();
+//         ImGui::Text("Hierarchy!");
+//         ImGui::Spacing();
 
-        if(ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)){
-            ImGui::OpenPopup("hierarchy_pop_up");
-        }
+//         if(ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)){
+//             ImGui::OpenPopup("hierarchy_pop_up");
+//         }
 
-        if(ImGui::TreeNode("Thing"))
-        {
-            auto entities = EntityManager::get_all_entities();
-            if(EntityManager::get_all_entities().size() > 0)
-            {
-                for (auto& name : EntityManager::get_entity_names())
-                {
-                    ImGui::PushID(name.second);
+//         if(ImGui::TreeNode("Thing"))
+//         {
+//             // auto entities = EntityManager::get_all_entities();
+//             // if(EntityManager::get_all_entities().size() > 0)
+//             // {
+//             //     for (auto& name : EntityManager::get_entity_names())
+//             //     {
+//             //         ImGui::PushID(name.second);
 
-                    if(ImGui::Button(name.first.c_str())){
-                        *inspecting = EntityManager::get_all_entities()[name.second];
-                    }
-                    ImGui::Spacing();
+//             //         if(ImGui::Button(name.first.c_str())){
+//             //             *inspecting = EntityManager::get_all_entities()[name.second];
+//             //         }
+//             //         ImGui::Spacing();
 
-                    ImGui::PopID();
-                }
-            }
+//             //         ImGui::PopID();
+//             //     }
+//             // }
 
 
-            ImGui::TreePop();
-        }
-    ImGui::End();
-}
+//             ImGui::TreePop();
+//         }
+//     ImGui::End();
+// }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& logs, Entity* inspecting)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -167,7 +171,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::DragFloat("Fov", &static_cast<CameraComponent*>((void*)cameras.components)[i].fov, 0.1f);
     }
 
-    imgui_hierarchy(is_open, inspecting);
+    // imgui_hierarchy(is_open, inspecting);
 
     for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
     {
@@ -183,22 +187,22 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
 
     ImGui::Begin("Inspector");
 
-        for(TempID id : inspecting->components){
-            ImGui::PushID(id.type);
-            inspect(id.type, id.index);
-            ImGui::Spacing();
-            ImGui::PopID();
-        }
+        // for(TempID id : inspecting->components){
+        //     ImGui::PushID(id.type);
+        //     inspect(id.type, id.index);
+        //     ImGui::Spacing();
+        //     ImGui::PopID();
+        // }
 
     ImGui::End();
 
 
     ImGui::Begin("Console");
-        Debug::get_all_logs(logs);
+        Debug::get_all_logs(editor_logs);
         ImGui::BeginChild("Logs");
-            for (size_t i = 0; i <  logs.size(); i++)
+            for (size_t i = 0; i <  editor_logs.size(); i++)
             {
-                ImGui::Text("(%s)", logs[i]);
+                ImGui::Text("(%s)", editor_logs[i]);
             }
 
         ImGui::EndChild();
@@ -209,4 +213,11 @@ void end_imgui_editor_poll()
 {
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
+}
+
+void clean_imgui()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }

@@ -1,5 +1,7 @@
 #pragma once
-#include "../common_includes.h"
+#include <cstdint>
+#include <vector>
+#include <vulkan/vulkan.h>
 
 struct Renderable
 {

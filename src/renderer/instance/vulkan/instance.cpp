@@ -1,4 +1,10 @@
-#include "../../../common_includes.h"
+#pragma once
+#include <vulkan/vulkan.h>
+#include <cstdint>
+#include <vector>
+#include <stdint.h>
+#include <cstring>
+
 namespace Instance
 {
     static bool check_validation_layer_support(const std::vector<const char*>& validation_layers)
@@ -32,7 +38,7 @@ namespace Instance
         uint16_t layer_size = validation_layers.size();
         if(layer_size > 0){
             if(check_validation_layer_support(validation_layers) != true){
-                assert(false && "Validation layers requested but could not be found");
+                throw("Validation layers requested but could not be found");
             }
         }
 
@@ -57,7 +63,7 @@ namespace Instance
 
         // //Gets critical extensions
         // const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
-        assert(window_extensions != NULL);
+        if(window_extensions == NULL) throw;
 
         create_info.enabledExtensionCount = window_extention_count;
         create_info.ppEnabledExtensionNames = window_extensions;
@@ -69,7 +75,7 @@ namespace Instance
             create_info.enabledLayerCount = 0;
         }
         if(vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS){
-            assert(false && "Failed to create instance");
+            throw("Failed to create instance");
         }
 
 

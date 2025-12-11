@@ -1,5 +1,51 @@
-#include "device.h"
-#include <string>
+// #include "device.h"
+#pragma once
+#include <vulkan/vulkan.h>
+#include <string.h>
+#include <set>
+#include <vector>
+#include "../../../external/math_3d.h"
+#include "../../../debugger/debugger.cpp"
+#include "../../render_data/vulkan/render_data.h"
+
+struct Vertex {
+    Vector3 position{};
+    vec3_t color{};
+    Vector2 texture_cord{};
+};
+
+struct VertexAtributes{
+    VkVertexInputAttributeDescription array[3];
+};
+
+struct optional
+{
+    uint32_t number;
+    bool has_value = false;
+};
+
+struct QueueFamilyIndicies{
+    optional graphics_family;
+    optional present_family;
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    std::vector<VkPresentModeKHR> surface_present_modes;
+};
+struct Device
+{
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice virtual_device = VK_NULL_HANDLE;
+
+    VkQueue graphics_queue;
+    VkQueue present_queue;
+};
+
+static const std::vector<const char*> device_extensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
 
 
 namespace DeviceHelperFunctions
@@ -14,6 +60,36 @@ namespace DeviceHelperFunctions
         return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
     }
 }
+
+VkVertexInputBindingDescription get_binding_description() {
+    VkVertexInputBindingDescription binding_description{};
+    binding_description.binding = 0;
+    binding_description.stride = sizeof(Vertex);
+    binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    return binding_description;
+}
+
+VertexAtributes get_attribute_descriptions() {
+    VertexAtributes attribute_descriptions{};
+    attribute_descriptions.array[0].binding = 0;
+    attribute_descriptions.array[0].location = 0;
+    attribute_descriptions.array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attribute_descriptions.array[0].offset = offsetof(Vertex, position);
+
+    attribute_descriptions.array[1].binding = 0;
+    attribute_descriptions.array[1].location = 1;
+    attribute_descriptions.array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attribute_descriptions.array[1].offset = offsetof(Vertex, color);
+
+    attribute_descriptions.array[2].binding = 0;
+    attribute_descriptions.array[2].location = 2;
+    attribute_descriptions.array[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attribute_descriptions.array[2].offset = offsetof(Vertex, texture_cord);
+
+    return attribute_descriptions;
+}
+
 QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface){
     QueueFamilyIndicies indices;
     // Logic to find queue family indices to populate struct
@@ -73,39 +149,23 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     return swap_chain_details;
 }
 
-
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers)
+static bool check_device_extension_support(VkPhysicalDevice device)
 {
-    uint32_t device_amount = 0;
+    uint32_t extension_count;
 
-    vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
-    if(device_amount <= 0){
-        throw "There is no device that supports vulkan on this computer";
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+
+    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+
+    for (const auto& extension : available_extensions) {
+        required_extensions.erase(extension.extensionName);
     }
 
-    std::vector<VkPhysicalDevice> devices(device_amount);
-    vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
-
-
-    for (const VkPhysicalDevice& device_physical : devices) {
-        if (is_device_suitable(device_physical, surface_reference)) {
-            device.physical_device = device_physical;
-            break;
-        }
-    }
-
-    if(device.physical_device == VK_NULL_HANDLE){
-        throw "No vulkan supported graphics found";
-    }
-
-    create_virtual_device(device, surface_reference, validation_layers);
-
-}
-
-void destroy_device(Device& device)
-{
-    vkDestroyDevice(device.virtual_device, nullptr);
+    return required_extensions.empty();
 }
 
 static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
@@ -127,24 +187,6 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//C
     return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-static bool check_device_extension_support(VkPhysicalDevice device)
-{
-    uint32_t extension_count;
-
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
-
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
-
-    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
-
-    for (const auto& extension : available_extensions) {
-        required_extensions.erase(extension.extensionName);
-    }
-
-    return required_extensions.empty();
-}
 
 static void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers)
 {
@@ -201,8 +243,62 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const st
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers)
+{
+    uint32_t device_amount = 0;
+
+    vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
+
+    if(device_amount <= 0){
+        throw "There is no device that supports vulkan on this computer";
+    }
+
+    std::vector<VkPhysicalDevice> devices(device_amount);
+    vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
 
 
+    for (const VkPhysicalDevice& device_physical : devices) {
+        if (is_device_suitable(device_physical, surface_reference)) {
+            device.physical_device = device_physical;
+            break;
+        }
+    }
+
+    if(device.physical_device == VK_NULL_HANDLE){
+        throw "No vulkan supported graphics found";
+    }
+
+    create_virtual_device(device, surface_reference, validation_layers);
+
+}
+
+void destroy_device(Device& device)
+{
+    vkDestroyDevice(device.virtual_device, nullptr);
+}
+
+namespace CommandBuffer
+{
+    uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties);
+
+    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool);
+
+    void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer);
+
+    void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool);
+
+    void create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
+
+    void create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool);
+
+    void create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool);
+
+    void record_command_buffer(VkCommandBuffer& command_buffer);
+
+    void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT);
+
+    VkCommandPool create_command_pool(Device& device, VkSurfaceKHR surface);
+}
 VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
 {
     VkCommandBufferAllocateInfo alloc_info{};
@@ -249,8 +345,8 @@ uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint3
         }
     }
     Debug::log((char*)"Failed to find memory");
-    assert(false && "failed to find suitable memory type!");
-    return 1;
+    throw("failed to find suitable memory type!");
+    return 0;
 }
 
 void CommandBuffer::copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
@@ -279,7 +375,7 @@ void CommandBuffer::create_buffer(Device& device, VkBufferUsageFlags usage, VkDe
     VkResult result = vkCreateBuffer(device.virtual_device, &buffer_info, nullptr, &buffer);
 
     if(result != VK_SUCCESS){
-        assert(false && "Failed to create buffer");
+        throw("Failed to create buffer");
     }
 
     VkMemoryRequirements memory_requirements;
@@ -293,7 +389,7 @@ void CommandBuffer::create_buffer(Device& device, VkBufferUsageFlags usage, VkDe
     result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &buffer_memory);
 
     if(result != VK_SUCCESS){
-        assert(false && "Buffer Memory Allocation Failed");
+        throw("Buffer Memory Allocation Failed");
     }
 
     vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
@@ -317,7 +413,7 @@ void CommandBuffer::create_vertex_buffer(Device& device, std::vector<Vertex>& ve
 
     void* data;
     vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-    std::memcpy(data, vertices.data(), (size_t) buffer_size);
+    memcpy(data, vertices.data(), (size_t) buffer_size);
     vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
     create_buffer(
@@ -353,7 +449,7 @@ void CommandBuffer::create_index_buffer(Device& device, std::vector<uint32_t>& i
 
     void* data;
     vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-    std::memcpy(data, indicies.data(), (size_t) buffer_size);
+    memcpy(data, indicies.data(), (size_t) buffer_size);
     vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
     create_buffer(
@@ -382,7 +478,7 @@ void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
 
     VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
     if(result != VK_SUCCESS){
-        assert(false && "Failed at recording command buffer");
+        throw("Failed at recording command buffer");
     }
 }
 
@@ -399,7 +495,7 @@ void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command
 
     VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
     if(result != VK_SUCCESS){
-        assert(false && "Failed at creating command buffers");
+        throw("Failed at creating command buffers");
     }
 }
 
@@ -415,7 +511,7 @@ VkCommandPool CommandBuffer::create_command_pool(Device& device, VkSurfaceKHR su
 
     VkResult result = vkCreateCommandPool(device.virtual_device, &poolInfo, nullptr, &command_pool);
     if(result != VK_SUCCESS){
-        assert(false && "Failed at Creating command pool");
+        throw("Failed at Creating command pool");
     }
     return command_pool;
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "../common_includes.h"
+#include "../../external/math_3d.h"
 #include "../renderer/render_data/vulkan/render_data.h"
 
 struct Transform
