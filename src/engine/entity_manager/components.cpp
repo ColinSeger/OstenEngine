@@ -1,4 +1,57 @@
-#include "components.h"
+// #include "components.h"
+#pragma once
+#include <cstdint>
+#include "../../../external/imgui_test/imgui.h"
+#include "../transform.cpp"
+
+enum class Type : uint8_t{
+    Component = 0,
+    Transform = 1,
+    Render = 2,
+    Camera = 3
+};
+
+
+typedef struct Component
+{
+    const uint16_t id = 0;
+} Component;
+
+typedef struct TransformComponent
+{
+    const uint16_t id = 1;
+    Transform transform {};
+    TransformComponent operator=(TransformComponent transform){
+        this->transform = transform.transform;
+        return *this;
+    }
+} TransComponent;
+
+struct RenderComponent
+{
+    const uint16_t id = 2;
+};
+
+typedef struct CameraComponent
+{
+    const uint16_t id = 3;
+    Transform transform;
+    float fov = 45.f;
+
+    CameraComponent operator=(CameraComponent camera){
+        this->transform = camera.transform;
+        this->fov = camera.fov;
+        return *this;
+    }
+} CamComponent;
+
+struct ComponentSystem
+{
+    Component* components;
+    uint16_t amount = 0;
+    uint16_t capacity = 10;
+    uint8_t type = 0;
+};
 
 namespace{
     ComponentSystem cameras{};
@@ -72,7 +125,6 @@ void create_transform_system(uint8_t transform_amount){
     for (size_t i = 0; i < transform_amount; i++)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
-        comp->id;
         comp->transform = Transform{};
     }
 }

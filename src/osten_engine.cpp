@@ -9,10 +9,10 @@
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
 // #include "renderer/renderer.cpp"
-#include "engine/entity_manager/entity_manager.h"
+#include "engine/entity_manager/entity_manager.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
-#include "engine/entity_manager/entity_system.h"
-#include "engine/entity_manager/components.h"
+#include "engine/entity_manager/entity_system.cpp"
+#include "engine/entity_manager/components.cpp"
 
 struct OstenEngine
 {

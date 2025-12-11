@@ -1,6 +1,6 @@
 //#include "swap_chain.h"
 #pragma once
-#include "../../device/vulkan/device.h"
+#include "../../device/vulkan/device.cpp"
 #include "../../texture/vulkan/texture.cpp"
 
 struct WindowSize{

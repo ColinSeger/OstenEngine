@@ -1,6 +1,4 @@
-// #include "render_pipeline.h"
 #pragma once
-#include "../common_includes.h"
 #include <vulkan/vulkan_core.h>
 #include "descriptors/descriptors.cpp"
 #include <cassert>
@@ -10,7 +8,7 @@
 #include "render_data/vulkan/render_data.cpp"
 #include "model_loader/model_loader.cpp"
 #include "renderable.h"
-#include "../engine/entity_manager/components.h"
+#include "../engine/entity_manager/components.cpp"
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 

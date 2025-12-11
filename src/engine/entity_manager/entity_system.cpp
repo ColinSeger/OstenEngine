@@ -1,5 +1,18 @@
-#include "entity_system.h"
+// #include "entity_system.h"
+#pragma once
+#include <cstdint>
+#include <cstdlib>
+#include "components.cpp"
 
+struct System
+{
+    uint32_t amount = 0;
+    uint32_t capacity = 0;
+    uint16_t type = 0;
+    Component* components = 0;
+    static uint8_t stub_system(System& system){ return 0;};
+    uint8_t (*run_system)(System&) = &stub_system;
+};
 
 uint8_t init_system(System& system, uint16_t component_size, uint32_t capacity)
 {
@@ -19,7 +32,7 @@ uint8_t init_system(System& system, void* component, uint32_t capacity)
     system.amount = 0;
     system.capacity = capacity;
     system.type = cmp->id;
-    
+
     uint16_t size_of_component = get_component_size_by_type(system.type);
 
     system.components = (Component*)malloc(capacity * size_of_component);
@@ -67,7 +80,7 @@ uint8_t destroy_system(System& system)
     system.amount = 0;
     system.run_system = system.stub_system;
     system.type = 0;
-    
+
     free(system.components);
 
     return 1;
