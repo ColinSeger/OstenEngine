@@ -1,7 +1,44 @@
 // #include "transform.h"
 #pragma once
 #include "../../external/math_3d.h"
-#include "../renderer/render_data/vulkan/render_data.h"
+
+
+struct Vector2{
+    float x = 0;
+    float y = 0;
+};
+
+struct Vector3{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+
+    Vector3 operator+(const Vector3 add){
+        return {
+            x + add.x,
+            y + add.y,
+            z + add.z
+        };
+    }
+    Vector3& operator-=(const Vector3 subtract){
+        x -= subtract.x;
+        y -= subtract.y;
+        z -= subtract.z;
+        return *this;
+    }
+    Vector3& operator+=(const Vector3 add){
+        x += add.x;
+        y += add.y;
+        z += add.z;
+        return *this;
+    }
+    Vector3& operator*(const float mul){
+        x *= mul;
+        y *= mul;
+        z *= mul;
+        return *this;
+    }
+};
 
 struct Transform
 {

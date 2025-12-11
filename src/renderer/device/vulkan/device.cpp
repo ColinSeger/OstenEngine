@@ -6,12 +6,16 @@
 #include <vector>
 #include "../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
-#include "../../render_data/vulkan/render_data.h"
+
+struct TextureCord{
+    float x = 0;
+    float y = 0;
+};
 
 struct Vertex {
-    Vector3 position{};
+    vec3_t position{};
     vec3_t color{};
-    Vector2 texture_cord{};
+    TextureCord texture_cord{};
 };
 
 struct VertexAtributes{

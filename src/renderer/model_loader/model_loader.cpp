@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
-#include "../render_data/vulkan/render_data.h"
 
 enum class ObjMode : uint8_t
 {
@@ -129,7 +128,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
     std::vector<Vertex> vertex;
 
     std::vector<uint32_t> texture_index;
-    std::vector<Vector2> texture_cord;
+    std::vector<TextureCord> texture_cord;
 
     ObjMode current_mode = ObjMode::None;
     std::string values[3];
@@ -180,7 +179,7 @@ void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertic
                 }
             break;
             case ObjMode::TextureCord:
-                texture_cord.emplace_back(Vector2{std::stof(values[0]), 1.f - std::stof(values[1])});
+                texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
             break;
             case ObjMode::Normal:
                 //Todo

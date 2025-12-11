@@ -1,7 +1,7 @@
 #ifndef DESCRIPTORSETS
 #include <vulkan/vulkan_core.h>
-#include "../renderable.h"
 #include <cstdint>
+#include "../render_data.cpp"
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../external/math_3d.h"
 

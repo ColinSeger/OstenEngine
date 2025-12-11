@@ -5,9 +5,8 @@
 #include "device/vulkan/device.cpp"
 #include "texture/vulkan/texture.cpp"
 #include "swap_chain/vulkan/swap_chain.cpp"
-#include "render_data/vulkan/render_data.cpp"
+#include "render_data.cpp"
 #include "model_loader/model_loader.cpp"
-#include "renderable.h"
 #include "../engine/entity_manager/components.cpp"
 
 const uint8_t MAX_FRAMES_IN_FLIGHT = 2;
