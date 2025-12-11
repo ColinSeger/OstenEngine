@@ -1,4 +1,8 @@
-[[Application]]
+[[Unix App]]
+[[Win32 App]]
+
+
+
 Before Unity Build
 real	0m16.081s
 After Unity Build

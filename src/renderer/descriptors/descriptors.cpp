@@ -1,11 +1,22 @@
 #ifndef DESCRIPTORSETS
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
-#include "../render_data.cpp"
+#include <vector>
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../external/math_3d.h"
 
 const uint8_t FRAMES = 2;
+
+struct Renderable
+{
+    uint16_t transform_index;
+
+    std::vector<VkDescriptorSet> descriptor_sets;
+
+    std::vector<VkBuffer> uniform_buffers;
+    std::vector<VkDeviceMemory> uniform_buffers_memory;
+    std::vector<void*> uniform_buffers_mapped;
+};
 
 struct UniformBufferObject {
      mat4_t model;

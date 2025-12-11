@@ -4,37 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "0556753525a9c806",
+        "id": "c2e538d129070bfb",
         "type": "tabs",
         "children": [
           {
-            "id": "333dedc44dcdc05d",
+            "id": "4a16c3b4aab7cbfe",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/Renderer/RenderPipeline.md",
+                "file": "src/Engine/EntityManager/EntitySystem.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "RenderPipeline"
-            }
-          }
-        ]
-      },
-      {
-        "id": "6c145becb2f429f4",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "400170894438d4c2",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "title": "EntitySystem"
             }
           }
         ]
@@ -100,6 +84,22 @@
     "id": "c68e48e0cafd0186",
     "type": "split",
     "children": [
+      {
+        "id": "2b38ddc423579f56",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9573f8a2a8ba4bae",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      },
       {
         "id": "ca5cec104dd4bb84",
         "type": "tabs",
@@ -182,8 +182,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 831.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -196,21 +195,34 @@
       "bases:Create new base": false
     }
   },
-  "active": "400170894438d4c2",
+  "active": "9573f8a2a8ba4bae",
   "lastOpenFiles": [
-    "src/Renderer/RenderPipeline.md",
-    "src/Renderer/Instance/Instance.md",
-    "src/Renderer/Instance",
-    "src/Renderer/Device/Device.md",
-    "src/Renderer/Device",
-    "src/Renderer/ModelLoader/ModelLoader.md",
-    "src/Renderer/ModelLoader",
-    "src/Renderer/Renderable.md",
+    "src/Engine/EntityManager/EntitySystem.md",
+    "src/Engine/EntityManager/EntityManager.md",
+    "src/Engine/EntityManager/Components.md",
+    "src/Debugger/Debugger.md",
+    "src/Engine/EntityManager",
     "FileStructure.md",
-    "src/Application.md",
+    "src/Debugger",
+    "src/Renderer/Descriptors/Descriptors.md",
+    "RenderData.md",
+    "src/Renderer/RenderData.md",
+    "src/Renderer/RenderPipeline.md",
+    "src/Win32 App.md",
+    "src/Renderer/Instance/Instance.md",
+    "src/Renderer/Device/Device.md",
+    "src/Unix App.md",
+    "src/Renderer/Texture/Texture.md",
+    "src/Renderer/Descriptors",
+    "src/Renderer/SwapChain/SwapChain.md",
+    "src/Renderer/Texture",
+    "src/Renderer/SwapChain",
+    "src/Renderer/ModelLoader/ModelLoader.md",
+    "src/Renderer/Instance",
+    "src/Renderer/Device",
+    "src/Renderer/ModelLoader",
     "src/Engine/Transform.md",
     "src/Engine",
-    "src/Renderer",
-    "src"
+    "src/Renderer"
   ]
 }

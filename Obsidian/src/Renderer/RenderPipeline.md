@@ -1,4 +1,7 @@
-[[Renderable]]
+[[RenderData]]
 [[ModelLoader]]
 [[Instance]]
 [[Device]]
+[[Descriptors]]
+[[Texture]]
+[[SwapChain]]

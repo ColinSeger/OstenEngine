@@ -5,7 +5,6 @@
 #include "device/vulkan/device.cpp"
 #include "texture/vulkan/texture.cpp"
 #include "swap_chain/vulkan/swap_chain.cpp"
-#include "render_data.cpp"
 #include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.cpp"
 
