@@ -139,7 +139,7 @@ static void imgui_hierarchy(bool& open, Entity* inspecting)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& test, float fps, std::vector<char*>& logs, Entity* inspecting)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& logs, Entity* inspecting)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -153,7 +153,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("My Thing", &test);
+    ImGui::Begin("My Thing", &is_open);
     ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
     ImGui::Spacing();
 
@@ -167,23 +167,13 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::DragFloat("Fov", &static_cast<CameraComponent*>((void*)cameras.components)[i].fov, 0.1f);
     }
 
-    imgui_hierarchy(test, inspecting);
-
-    
-
-    if(ImGui::Button("Call Entity"))
-    {
-        EntityManager::print_entities();
-    }
+    imgui_hierarchy(is_open, inspecting);
 
     for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
     {
         ImGui::PushID(i);
 
         ImGui::Text("Transform");
-        // ImGui::DragFloat3("Position",  &render_pipeline->to_render[i].transform.position.x, 0.1f);
-        // ImGui::DragFloat3("Rotation",  &render_pipeline->to_render[i].transform.rotation.x, 0.1f);
-        // ImGui::DragFloat3("Scale",     &render_pipeline->to_render[i].transform.scale.x,    0.1f);
         ImGui::Spacing();
 
         ImGui::PopID();
@@ -192,14 +182,14 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::End();
 
     ImGui::Begin("Inspector");
-        
+
         for(TempID id : inspecting->components){
             ImGui::PushID(id.type);
             inspect(id.type, id.index);
             ImGui::Spacing();
             ImGui::PopID();
         }
-        
+
     ImGui::End();
 
 

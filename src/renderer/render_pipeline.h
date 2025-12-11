@@ -9,7 +9,6 @@
 #include "texture/vulkan/texture.h"
 #include "model_loader/model_loader.h"
 #include "renderable.h"
-#include "camera/camera.h"
 #include "../engine/entity_manager/components.h"
 
 

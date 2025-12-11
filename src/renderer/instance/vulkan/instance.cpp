@@ -75,5 +75,4 @@ namespace Instance
 
         return instance;
     }
-
 };

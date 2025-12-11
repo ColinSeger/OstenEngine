@@ -1,3 +1,4 @@
+#include <vulkan/vulkan_core.h>
 #ifndef DESCRIPTORSETS
 #include "descriptors.h"
 // #include "../renderable.h"
@@ -40,7 +41,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     }
 }
 
-void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
+void create_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
     std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -51,7 +52,7 @@ void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptor
 
     render_this.descriptor_sets.resize(FRAMES);
 
-    if(vkAllocateDescriptorSets(device.virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
+    if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
         assert(false);
     }
 
@@ -86,7 +87,7 @@ void create_descriptor_set(Device& device, Renderable& render_this, VkDescriptor
         descriptor_writes[1].descriptorCount = 1;
         descriptor_writes[1].pImageInfo = &image_info;
 
-        vkUpdateDescriptorSets(device.virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
+        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
 }
 

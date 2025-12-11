@@ -1,5 +1,6 @@
 #pragma once
 #include "../../common_includes.h"
+#include "../device/vulkan/device.h"
 #include "../render_data/vulkan/render_data.h"
 
 enum class ObjMode : uint8_t
@@ -38,4 +39,3 @@ namespace ModelLoader
 
     Model load_model(Device& device, VkCommandPool command_pool, std::string filename);
 }/**/
-
