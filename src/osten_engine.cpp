@@ -5,10 +5,9 @@
 #include <GLFW/glfw3.h>
 #include "renderer/instance/vulkan/instance.cpp"
 #include "renderer/render_pipeline.cpp"
-#include "editor/UI/imgui.cpp"
+#include "editor/UI/editor_gui.cpp"
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
-// #include "renderer/renderer.cpp"
 #include "engine/entity_manager/entity_manager.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/entity_system.cpp"
@@ -37,7 +36,7 @@ struct OstenEngine
     OstenEngine(const int width, const int height, const char* name);
 
     ~OstenEngine();
-    void main_game_loop();
+    void main_game_loop(long (*profile)());
 
     void move_camera(double delta_time);
 
@@ -102,16 +101,18 @@ void OstenEngine::move_camera(double delta_time)
     //     render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     // }
 }
+void shift(std::vector<long>& mem_usage){
+    for (int i = 0; i < mem_usage.size() - 1; i++) {
+        mem_usage[i] = mem_usage[i+1];
+    }
+    mem_usage.erase(mem_usage.end());
+}
 
-void OstenEngine::main_game_loop()
+void OstenEngine::main_game_loop(long (*profile)())
 {
     bool test = true;
     static auto start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
-
-    // VkDescriptorSet image = ImGui_ImplVulkan_AddTexture(render_pipeline->texture_sampler, render_pipeline->last_frame, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    int entity_to_delete = 0;
 
     double fps = 0;
 
@@ -123,8 +124,13 @@ void OstenEngine::main_game_loop()
     create_transform_system(10);
     inspecting.components.push_back(TempID{add_transform(), 1});
 
+    std::vector<long> mem_usage{};
+
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
+        mem_usage.push_back(profile());
+        while(mem_usage.size() > 1000) shift(mem_usage);
 
         auto current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
@@ -142,7 +148,7 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting);
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting, mem_usage);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 
@@ -159,18 +165,18 @@ void OstenEngine::main_game_loop()
         for (size_t i = 0; i < cameras->amount; i++)
         {
             result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
-        }
 
-
-        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
-            resized = false;
-            int32_t width = 0, height = 0;
-            glfwGetFramebufferSize(main_window, &width, &height);
-            while (width <= 0 || height <= 0) {
+            if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
+                resized = false;
+                int32_t width = 0, height = 0;
                 glfwGetFramebufferSize(main_window, &width, &height);
-                glfwWaitEvents();
+                while (width <= 0 || height <= 0) {
+                    glfwGetFramebufferSize(main_window, &width, &height);
+                    glfwWaitEvents();
+                }
+                render_pipeline->restart_swap_chain(width, height);
+                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
             }
-            render_pipeline->restart_swap_chain(width, height);
         }
 
         end_imgui_editor_poll();

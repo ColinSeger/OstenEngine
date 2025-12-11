@@ -104,7 +104,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
     for (size_t i = 0; i < file_explorer.files.size(); i++)
     {
         ImGui::PushID(i);
-        ImGui::Text(file_explorer.files[i].c_str());
+        ImGui::Text("%s", file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
             render_pipeline->models.emplace_back(ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, file_explorer.files[i].c_str()));
 

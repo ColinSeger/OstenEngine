@@ -2,7 +2,6 @@
 #pragma once
 #include "../../external/math_3d.h"
 
-
 struct Vector2{
     float x = 0;
     float y = 0;

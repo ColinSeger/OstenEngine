@@ -1,9 +1,9 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <vector>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../external/imgui_test/imgui_impl_vulkan.h"
-// #include "../../debugger/debugger.cpp"
 #include "../../renderer/device/vulkan/device.cpp"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
@@ -81,6 +81,16 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 }
 
 
+static void graph(std::vector<long>& stats)
+{
+    std::vector<float> floats(stats.size());
+    for (int i = 0; i < stats.size(); i++) {
+        float f = stats[i];
+        floats[i] = f;
+    }
+    ImGui::PlotLines("te", floats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
+}
+
 static void imgui_hierarchy_pop_up()
 {
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
@@ -143,7 +153,7 @@ static void imgui_hierarchy(bool& open, Entity* inspecting)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, Entity* inspecting)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, Entity* inspecting, std::vector<long>& mem_stats)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -205,7 +215,9 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
                 ImGui::Text("(%s)", editor_logs[i]);
             }
 
+            graph(mem_stats);
         ImGui::EndChild();
+
     ImGui::End();
 }
 

@@ -55,9 +55,6 @@ struct RenderPipeline
     VkImageView image_view;//TODO Temporary way to access image
     VkSampler texture_sampler;//TODO Temporary way to access sampler
 
-    // Transform camera_location{2, 0, 0};
-    // float fov = 45.f;
-
     void shader();
 
     void create_render_pass();
@@ -190,12 +187,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     // swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
     int test = 0;
     for(Renderable& render : to_render){
+        swap_draw_frame(command_buffer, render, pipeline_layout, models[test], current_frame);
         test++;
-        if(test <= 2){
-            swap_draw_frame(command_buffer, render, pipeline_layout, models[0], current_frame);
-        }else{
-            swap_draw_frame(command_buffer, render, pipeline_layout, models[1], current_frame);
-        }
     }
 
     ImGui::Render();
