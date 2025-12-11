@@ -10,7 +10,7 @@ const uint8_t FRAMES = 2;
 struct UniformBufferObject {
      mat4_t model;
      mat4_t view;
-     mat4_t proj;
+     mat4_t projection;
 };
 
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
@@ -121,7 +121,7 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     }
 }
 
-void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, std::vector<Renderable>& to_render)
+static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, std::vector<Renderable>& to_render)
 {
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {

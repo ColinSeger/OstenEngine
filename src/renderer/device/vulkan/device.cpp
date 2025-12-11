@@ -18,7 +18,7 @@ struct Vertex {
     TextureCord texture_cord{};
 };
 
-struct VertexAtributes{
+struct VertexAttributes{
     VkVertexInputAttributeDescription array[3];
 };
 
@@ -38,6 +38,7 @@ struct SwapChainSupportDetails {
     std::vector<VkSurfaceFormatKHR> surface_formats;
     std::vector<VkPresentModeKHR> surface_present_modes;
 };
+
 struct Device
 {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -74,8 +75,8 @@ VkVertexInputBindingDescription get_binding_description() {
     return binding_description;
 }
 
-VertexAtributes get_attribute_descriptions() {
-    VertexAtributes attribute_descriptions{};
+VertexAttributes get_attribute_descriptions() {
+    VertexAttributes attribute_descriptions{};
     attribute_descriptions.array[0].binding = 0;
     attribute_descriptions.array[0].location = 0;
     attribute_descriptions.array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -273,7 +274,6 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
     }
 
     create_virtual_device(device, surface_reference, validation_layers);
-
 }
 
 void destroy_device(Device& device)
@@ -283,239 +283,220 @@ void destroy_device(Device& device)
 
 namespace CommandBuffer
 {
-    uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties);
+    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
+    {
+        VkCommandBufferAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandPool = command_pool;
+        alloc_info.commandBufferCount = 1;
 
-    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool);
+        VkCommandBuffer command_buffer;
+        vkAllocateCommandBuffers(virtual_device, &alloc_info, &command_buffer);
 
-    void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer);
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool);
+        vkBeginCommandBuffer(command_buffer, &beginInfo);
 
-    void create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
+        return command_buffer;
+    }
 
-    void create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool);
+    void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer)
+    {
+        vkEndCommandBuffer(command_buffer);
 
-    void create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool);
+        VkSubmitInfo submit_info{};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffer;
 
-    void record_command_buffer(VkCommandBuffer& command_buffer);
+        vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphics_queue);
 
-    void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT);
+        vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
+    }
 
-    VkCommandPool create_command_pool(Device& device, VkSurfaceKHR surface);
-}
-VkCommandBuffer CommandBuffer::begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
-{
-    VkCommandBufferAllocateInfo alloc_info{};
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = command_pool;
-    alloc_info.commandBufferCount = 1;
+    uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties mem_properties;
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
 
-    VkCommandBuffer command_buffer;
-    vkAllocateCommandBuffers(virtual_device, &alloc_info, &command_buffer);
+        for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+            if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+        Debug::log((char*)"Failed to find memory");
+        throw("failed to find suitable memory type!");
+        return 0;
+    }
 
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    static void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
+    {
+        VkCommandBuffer command_buffer = begin_single_time_commands(device.virtual_device, command_pool);
 
-    vkBeginCommandBuffer(command_buffer, &beginInfo);
+        VkBufferCopy copy_region{};
+        //Look into merging copied buffers into this using a offset
+        copy_region.srcOffset = 0; // Optional
+        copy_region.dstOffset = 0; // Optional
+        copy_region.size = size;
 
-    return command_buffer;
-}
+        vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
-void CommandBuffer::end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer)
-{
-    vkEndCommandBuffer(command_buffer);
+        end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
+    }
 
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer;
+    void create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
+    {
+        VkBufferCreateInfo buffer_info{};
+        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.size = size;
+        buffer_info.usage = usage;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphics_queue);
+        VkResult result = vkCreateBuffer(device.virtual_device, &buffer_info, nullptr, &buffer);
 
-    vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
-}
+        if(result != VK_SUCCESS){
+            throw("Failed to create buffer");
+        }
 
-uint32_t CommandBuffer::find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
-{
-    VkPhysicalDeviceMemoryProperties mem_properties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
+        VkMemoryRequirements memory_requirements;
+        vkGetBufferMemoryRequirements(device.virtual_device, buffer, &memory_requirements);
 
-    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
-        if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
+        VkMemoryAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = memory_requirements.size;
+        alloc_info.memoryTypeIndex = find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, properties);
+
+        result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &buffer_memory);
+
+        if(result != VK_SUCCESS){
+            throw("Buffer Memory Allocation Failed");
+        }
+
+        vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
+    }
+
+    void create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+    {
+        VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
+
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            staging_buffer,
+            staging_buffer_memory
+        );
+
+        void* data;
+        vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, vertices.data(), (size_t) buffer_size);
+        vkUnmapMemory(device.virtual_device, staging_buffer_memory);
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vertex_buffer,
+            vertex_buffer_memory
+        );
+
+        CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
+
+        vkDestroyBuffer(device.virtual_device,staging_buffer, nullptr);
+        vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
+    }
+
+    void create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+    {
+        VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
+
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            staging_buffer,
+            staging_buffer_memory
+        );
+
+        void* data;
+        vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, indicies.data(), (size_t) buffer_size);
+        vkUnmapMemory(device.virtual_device, staging_buffer_memory);
+
+        create_buffer(
+            device,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            buffer_size,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            index_buffer,
+            index_buffer_memory
+        );
+
+        CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
+
+        vkDestroyBuffer(device.virtual_device, staging_buffer, nullptr);
+        vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
+    }
+
+
+    void record_command_buffer(VkCommandBuffer& command_buffer)
+    {
+        VkCommandBufferBeginInfo begin_info{};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags = 0; // Optional
+        begin_info.pInheritanceInfo = nullptr; // Optional
+
+
+        VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
+        if(result != VK_SUCCESS){
+            throw("Failed at recording command buffer");
         }
     }
-    Debug::log((char*)"Failed to find memory");
-    throw("failed to find suitable memory type!");
-    return 0;
-}
 
-void CommandBuffer::copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool)
-{
-    VkCommandBuffer command_buffer = begin_single_time_commands(device.virtual_device, command_pool);
+    //Can probably make this a array
+    void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT)
+    {
+        command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-    VkBufferCopy copy_region{};
-    //Look into merging copied buffers into this using a offset
-    copy_region.srcOffset = 0; // Optional
-    copy_region.dstOffset = 0; // Optional
-    copy_region.size = size;
+        VkCommandBufferAllocateInfo allocation_info{};
+        allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocation_info.commandPool = command_pool;
+        allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocation_info.commandBufferCount = command_buffers.size();
 
-    vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
-
-    end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
-}
-
-void CommandBuffer::create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
-{
-    VkBufferCreateInfo buffer_info{};
-    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_info.size = size;
-    buffer_info.usage = usage;
-    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkResult result = vkCreateBuffer(device.virtual_device, &buffer_info, nullptr, &buffer);
-
-    if(result != VK_SUCCESS){
-        throw("Failed to create buffer");
+        VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
+        if(result != VK_SUCCESS){
+            throw("Failed at creating command buffers");
+        }
     }
 
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device.virtual_device, buffer, &memory_requirements);
+    VkCommandPool create_command_pool(Device& device, VkSurfaceKHR surface)
+    {
+        VkCommandPool command_pool;
+        QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface);
 
-    VkMemoryAllocateInfo alloc_info{};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.allocationSize = memory_requirements.size;
-    alloc_info.memoryTypeIndex = find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, properties);
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.number;
 
-    result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &buffer_memory);
-
-    if(result != VK_SUCCESS){
-        throw("Buffer Memory Allocation Failed");
+        VkResult result = vkCreateCommandPool(device.virtual_device, &poolInfo, nullptr, &command_pool);
+        if(result != VK_SUCCESS){
+            throw("Failed at Creating command pool");
+        }
+        return command_pool;
     }
-
-    vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
-}
-
-void CommandBuffer::create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
-{
-    VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
-
-    VkBuffer staging_buffer;
-    VkDeviceMemory staging_buffer_memory;
-
-    create_buffer(
-        device,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        buffer_size,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        staging_buffer,
-        staging_buffer_memory
-    );
-
-    void* data;
-    vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-    memcpy(data, vertices.data(), (size_t) buffer_size);
-    vkUnmapMemory(device.virtual_device, staging_buffer_memory);
-
-    create_buffer(
-        device,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        buffer_size,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        vertex_buffer,
-        vertex_buffer_memory
-    );
-
-    CommandBuffer::copy_buffer(device, staging_buffer, vertex_buffer, buffer_size, command_pool);
-
-    vkDestroyBuffer(device.virtual_device,staging_buffer, nullptr);
-    vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
-}
-
-void CommandBuffer::create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
-{
-    VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
-
-    VkBuffer staging_buffer;
-    VkDeviceMemory staging_buffer_memory;
-
-    create_buffer(
-        device,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        buffer_size,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        staging_buffer,
-        staging_buffer_memory
-    );
-
-    void* data;
-    vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-    memcpy(data, indicies.data(), (size_t) buffer_size);
-    vkUnmapMemory(device.virtual_device, staging_buffer_memory);
-
-    create_buffer(
-        device,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        buffer_size,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        index_buffer,
-        index_buffer_memory
-    );
-
-    CommandBuffer::copy_buffer(device, staging_buffer, index_buffer, buffer_size, command_pool);
-
-    vkDestroyBuffer(device.virtual_device, staging_buffer, nullptr);
-    vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
-}
-
-
-void CommandBuffer::record_command_buffer(VkCommandBuffer& command_buffer)
-{
-    VkCommandBufferBeginInfo begin_info{};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags = 0; // Optional
-    begin_info.pInheritanceInfo = nullptr; // Optional
-
-
-    VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
-    if(result != VK_SUCCESS){
-        throw("Failed at recording command buffer");
-    }
-}
-
-//Can probably make this a array
-void CommandBuffer::create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT)
-{
-    command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    VkCommandBufferAllocateInfo allocation_info{};
-    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocation_info.commandPool = command_pool;
-    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocation_info.commandBufferCount = command_buffers.size();
-
-    VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
-    if(result != VK_SUCCESS){
-        throw("Failed at creating command buffers");
-    }
-}
-
-VkCommandPool CommandBuffer::create_command_pool(Device& device, VkSurfaceKHR surface)
-{
-    VkCommandPool command_pool;
-    QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface);
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.number;
-
-    VkResult result = vkCreateCommandPool(device.virtual_device, &poolInfo, nullptr, &command_pool);
-    if(result != VK_SUCCESS){
-        throw("Failed at Creating command pool");
-    }
-    return command_pool;
 }

@@ -2,7 +2,6 @@
 #define GLFW_INCLUDE_NONE
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-// #include <crtdbg.h>
 #include <iostream>
 
 #ifdef WIN32

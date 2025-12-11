@@ -8,4 +8,5 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 
 uint8_t run(OstenEngine& engine){
     engine.main_game_loop();
+    return 0;
 }

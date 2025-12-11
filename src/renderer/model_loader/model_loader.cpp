@@ -50,9 +50,9 @@ Model ModelLoader::load_model(Device& device, VkCommandPool command_pool, std::s
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     char extention[3];
-    extention[0] = filename[filename.length() -2];
-    extention[1] = filename[filename.length() -1];
-    extention[2] = filename[filename.length() -0];
+    extention[0] = filename[filename.length() -3];
+    extention[1] = filename[filename.length() -2];
+    extention[2] = filename[filename.length() -1];
 
     if(extention[0] == 'o' || extention[0] == 'O'){
         parse_obj(filename.c_str(), vertices, indices);

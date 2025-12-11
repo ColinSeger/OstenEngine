@@ -48,7 +48,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
 {
     if(!glfwInit()){
         puts("glfwInit failed");
-        assert(false && "GLFW Failed to open");
+        throw("GLFW Failed to open");
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -75,7 +75,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
     if(result != VK_SUCCESS){
-        assert(false && "Failed to create surface");
+        throw("Failed to create surface");
     }
 
     render_pipeline = new RenderPipeline(width, height, application_name, instance, surface, validation_layers);
@@ -142,9 +142,9 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs);
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting);
         //ImGui::DockSpaceOverViewport();
-        start_file_explorer(file_explorer);
+        start_file_explorer(file_explorer, render_pipeline);
 
         end_file_explorer();
 
