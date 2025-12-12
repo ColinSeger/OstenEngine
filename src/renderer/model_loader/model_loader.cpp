@@ -1,7 +1,10 @@
 // #include "model_loader.h"
 #pragma once
+#include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <filesystem>
+#include <string>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
@@ -31,263 +34,242 @@ namespace ModelLoader
 {
     const char valid_chars[14] = "0123456789.-/";
 
-    bool is_valid_char(char c);
 
-    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
-
-    void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
-
-    void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
-
-    Model create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
-
-    Model load_model(Device& device, VkCommandPool command_pool, std::string filename);
-}/**/
-
-Model ModelLoader::load_model(Device& device, VkCommandPool command_pool, std::string filename)
-{
-    Model model;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    char extention[3];
-    extention[0] = filename[filename.length() -3];
-    extention[1] = filename[filename.length() -2];
-    extention[2] = filename[filename.length() -1];
-
-    if(extention[0] == 'o' || extention[0] == 'O'){
-        parse_obj(filename.c_str(), vertices, indices);
-    }else if(extention[0] == 'b' || extention[0] == 'B'){
-        de_serialize(filename.c_str(), vertices, indices);
-    }
-
-    model = create_model(device, command_pool, vertices, indices);
-
-    return model;
-}
-
-bool ModelLoader::is_valid_char(char c)
-{
-    for(char valid : valid_chars)
+    static bool is_valid_char(char c)
     {
-        if(c == valid) return true;
-    }
-    return false;
-}
-
-static inline ObjMode select_mode(char* char_to_check)//This is ass
-{
-    if(*char_to_check == '#'){
-        return ObjMode::Comment;
-    }
-    if (*char_to_check == 'v') {
-        char_to_check++;
-        if(*char_to_check == ' '){
-            return ObjMode::Vertex;
+        for(char valid : valid_chars)
+        {
+            if(c == valid) return true;
         }
-        if(*char_to_check == 't'){
-            return ObjMode::TextureCord;
+        return false;
+    }
+
+    static inline ObjMode select_mode(char* char_to_check)//This is ass
+    {
+        if(*char_to_check == '#'){
+            return ObjMode::Comment;
         }
+        if (*char_to_check == 'v') {
+            char_to_check++;
+            if(*char_to_check == ' '){
+                return ObjMode::Vertex;
+            }
+            if(*char_to_check == 't'){
+                return ObjMode::TextureCord;
+            }
+        }
+        if(*char_to_check == 'f'){
+            return ObjMode::Face;
+        }
+        return ObjMode::None;
     }
-    if(*char_to_check == 'f'){
-        return ObjMode::Face;
-    }
-    return ObjMode::None;
-}
 
-void ModelLoader::parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
-{
-    std::ifstream file_stream;
-
-    file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
-
-    size_t index_offset = indices.size();
-
-    if(!file_stream.is_open())
+    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
-        vertices.emplace_back(Vertex{});
-        indices.emplace_back(0);
+        std::ifstream file_stream;
 
-        auto file_path = std::filesystem::current_path();
-        auto filepath_str = file_path.filename().string();
-        std::string error = filepath_str;
-        error.push_back(errno);
+        file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
-        // throw std::runtime_error(error);
-        Debug::log((char*)"Failed to load model");
-        //TODO LOG failed model load
-        return;
-    }
+        size_t index_offset = indices.size();
 
-    size_t file_size = file_stream.tellg();
-    file_stream.seekg(0);
-    char* file = (char*)malloc(sizeof(char) * file_size);
+        if(!file_stream.is_open())
+        {
+            vertices.emplace_back(Vertex{});
+            indices.emplace_back(0);
 
-    file_stream.read(file, file_size);
-    file_stream.close();
+            auto file_path = std::filesystem::current_path();
+            auto filepath_str = file_path.filename().string();
+            std::string error = filepath_str;
+            error.push_back(errno);
 
-    std::vector<Vertex> vertex;
+            // throw std::runtime_error(error);
+            Debug::log((char*)"Failed to load model");
+            //TODO LOG failed model load
+            return;
+        }
 
-    std::vector<uint32_t> texture_index;
-    std::vector<TextureCord> texture_cord;
+        size_t file_size = file_stream.tellg();
+        file_stream.seekg(0);
+        char* file = (char*)malloc(sizeof(char) * file_size);
 
-    ObjMode current_mode = ObjMode::None;
-    std::string values[3];
+        file_stream.read(file, file_size);
+        file_stream.close();
 
-    uint8_t char_index = 0;
-    Vertex new_vertex {};
+        std::vector<Vertex> vertex;
 
-    vertex.reserve(file_size/40);
-    indices.reserve(file_size/60);
-    texture_cord.reserve(file_size/60);
-    texture_index.reserve(file_size/60);
+        std::vector<uint32_t> texture_index;
+        std::vector<TextureCord> texture_cord;
 
-    for (size_t i = 0; i < file_size; i++)
-    {
-        char value = file[i];
+        ObjMode current_mode = ObjMode::None;
+        std::string values[3];
 
-        if(value == '\n' || current_mode == ObjMode::None){
+        uint8_t char_index = 0;
+        Vertex new_vertex {};
 
-            switch (current_mode)
-            {
-            case ObjMode::None:
-                current_mode = select_mode(&file[i]);
-                if(current_mode == ObjMode::TextureCord) i++;//do i even need to?
-                char_index = 0;
-                continue;
-            break;
-            case ObjMode::Comment:
+        vertex.reserve(file_size/40);
+        indices.reserve(file_size/60);
+        texture_cord.reserve(file_size/60);
+        texture_index.reserve(file_size/60);
 
-            break;
-            case ObjMode::Vertex:
+        for (size_t i = 0; i < file_size; i++)
+        {
+            char value = file[i];
 
-                new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
-                vertex.emplace_back(new_vertex);
-            break;
-            case ObjMode::Face:
-                for (std::string& index : values)
+            if(value == '\n' || current_mode == ObjMode::None){
+
+                switch (current_mode)
                 {
-                    if(index.length() <= 0) continue;
-                    indices.push_back(std::stoi(index) -1 + index_offset);
-                    for (size_t i = 0; i < index.size(); i++)
+                case ObjMode::None:
+                    current_mode = select_mode(&file[i]);
+                    if(current_mode == ObjMode::TextureCord) i++;//do i even need to?
+                    char_index = 0;
+                    continue;
+                break;
+                case ObjMode::Comment:
+
+                break;
+                case ObjMode::Vertex:
+
+                    new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
+                    vertex.emplace_back(new_vertex);
+                break;
+                case ObjMode::Face:
+                    for (std::string& index : values)
                     {
-                        if(index[i] == '/')
+                        if(index.length() <= 0) continue;
+                        indices.push_back(std::stoi(index) -1 + index_offset);
+                        for (size_t i = 0; i < index.size(); i++)
                         {
-                            texture_index.push_back(std::stoi(&index[i+1]) -1);
-                            break;
+                            if(index[i] == '/')
+                            {
+                                texture_index.push_back(std::stoi(&index[i+1]) -1);
+                                break;
+                            }
                         }
                     }
-                }
-            break;
-            case ObjMode::TextureCord:
-                texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
-            break;
-            case ObjMode::Normal:
-                //Todo
-            break;
-            default:
                 break;
+                case ObjMode::TextureCord:
+                    texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
+                break;
+                case ObjMode::Normal:
+                    //Todo
+                break;
+                default:
+                    break;
+                }
+                for (std::string& index : values)
+                {
+                    index.clear();
+                }
+                current_mode = ObjMode::None;
+                continue;
             }
-            for (std::string& index : values)
-            {
-                index.clear();
+
+            if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
+
+            if(value == ' ' && values[0].length() > 0){
+                char_index++;
+                continue;
             }
-            current_mode = ObjMode::None;
-            continue;
+            else if (is_valid_char(value)){
+                values[char_index].push_back(value);
+            }
+        }
+        for (size_t i = 0; i < indices.size() - index_offset; i++)
+        {
+            vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
+        }
+        for (size_t i = 0; i < vertex.size(); i++)//Temp solution
+        {
+            vertices.emplace_back(vertex[i]);
         }
 
-        if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
-
-        if(value == ' ' && values[0].length() > 0){
-            char_index++;
-            continue;
-        }
-        else if (is_valid_char(value)){
-            values[char_index].push_back(value);
-        }
+        free(file);
     }
-    for (size_t i = 0; i < indices.size() - index_offset; i++)
+
+    void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
-        vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
+        std::ofstream file(filename, std::ios::binary);
+
+        if(!file.is_open()){
+            abort();
+        }
+        uint32_t index_start = vertices.size() * sizeof(Vertex);
+
+        file.write(reinterpret_cast<const char*>(&index_start), sizeof(uint32_t));
+
+        file.write(reinterpret_cast<char*>(vertices.data()), index_start);
+
+        file.write(reinterpret_cast<char*>(indices.data()),  indices.size() * sizeof(uint32_t));
+
+        /*
+        for(Vertex vertex : vertices){
+            file.write(reinterpret_cast<const char*>(&vertex), sizeof(Vertex));
+        }
+
+        for(uint32_t index : indices){
+            file.write(reinterpret_cast<const char*>(&index), sizeof(uint32_t));
+        }
+
+         */
+        file.close();
     }
-    for (size_t i = 0; i < vertex.size(); i++)//Temp solution
+
+    void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
-        vertices.emplace_back(vertex[i]);
+        std::ifstream file(filename, std::ios::binary);
+
+        if(!file.is_open()){
+            Debug::log((char*)"There was a issue parsing this model");
+            return;
+        }
+
+        //Find out where the file ends
+        file.seekg (0, std::ios::end);
+        size_t file_size = file.tellg();
+        file.seekg(0);
+
+        //Figures out where the vertexes starts/stops
+        size_t index_start = 0;
+        file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
+
+        //Prepare and then load all vertexes into the vertex buffer
+        vertices.resize(index_start / sizeof(Vertex));
+        file.read(reinterpret_cast<char*>(vertices.data()), index_start);
+
+        //Prepare and then load all indicies into the index buffer
+        indices.resize(file_size - index_start);
+        file.read(reinterpret_cast<char*>(indices.data()), file_size - index_start);
+        file.close();
     }
 
-    free(file);
-
-}
-
-void ModelLoader::serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
-{
-    std::ofstream file(filename, std::ios::binary);
-
-    if(!file.is_open()){
-        abort();
-    }
-    uint32_t index_start = vertices.size() * sizeof(Vertex);
-
-    file.write(reinterpret_cast<const char*>(&index_start), sizeof(uint32_t));
-
-    for(Vertex vertex : vertices){
-        file.write(reinterpret_cast<const char*>(&vertex), sizeof(Vertex));
+    static Model create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    {
+        Model result {};
+        result.index_amount = indices.size();
+        CommandBuffer::create_vertex_buffer(device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
+        CommandBuffer::create_index_buffer(device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
+        return result;
     }
 
-    for(uint32_t index : indices){
-        file.write(reinterpret_cast<const char*>(&index), sizeof(uint32_t));
+    Model load_model(Device& device, VkCommandPool command_pool, std::string filename)
+    {
+        Model model;
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+        char extention[3];
+        extention[0] = filename[filename.length() -3];
+        extention[1] = filename[filename.length() -2];
+        extention[2] = filename[filename.length() -1];
+
+        if(extention[0] == 'o' || extention[0] == 'O'){
+            parse_obj(filename.c_str(), vertices, indices);
+        }else if(extention[0] == 'b' || extention[0] == 'B'){
+            de_serialize(filename.c_str(), vertices, indices);
+        }
+
+        model = create_model(device, command_pool, vertices, indices);
+
+        return model;
     }
-
-    file.close();
-}
-
-void ModelLoader::de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
-{
-    std::ifstream file(filename, std::ios::binary);
-
-    if(!file.is_open()){
-        abort();//
-    }
-    file.seekg (0, std::ios::end);
-    size_t file_size = file.tellg();
-    file.seekg(0);
-
-    size_t index_start = 0;//represents where vertexes end and indices start
-
-    file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
-    size_t vertex_done = index_start;
-
-    //Allocate chunk of memory for vertices and indexes
-    Vertex* vertex_ptr = (Vertex*)calloc(vertex_done / sizeof(Vertex), sizeof(Vertex));
-    uint32_t* index_ptr = (uint32_t*)malloc(file_size - (index_start +1));
-
-    Vertex* read_this = vertex_ptr;
-    uint32_t* read_index = index_ptr;
-
-    file.read(reinterpret_cast<char*>(vertex_ptr), vertex_done);
-    file.read(reinterpret_cast<char*>(index_ptr), file_size - vertex_done);
-    file.close();
-
-    for(size_t index = 0; index < vertex_done; index += sizeof(Vertex)){
-        vertices.emplace_back(*read_this);
-        read_this++;
-    }
-
-    for(size_t index = vertex_done; index <= file_size; index += sizeof(uint32_t)){
-        indices.emplace_back(*read_index);
-        read_index++;
-    }
-
-    free(vertex_ptr);
-    free(index_ptr);
-}
-
-Model ModelLoader::create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
-{
-    Model result {};
-    result.index_amount = indices.size();
-    CommandBuffer::create_vertex_buffer(device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
-    CommandBuffer::create_index_buffer(device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
-
-
-    return result;
-}
+}/**/
