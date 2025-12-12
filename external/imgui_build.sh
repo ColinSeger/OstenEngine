@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 SRC="external/imgui_test"
-OUT="libimgui.a"
+OUT="imgui_build/libimgui.a"
 CXXFLAGS="-O2 -std=c++17 -I$SRC -Iexternal/glfw/include/ -Lexternal/built_glfw/ -lglfw3 "
 
 OBJS=""

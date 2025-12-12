@@ -34,23 +34,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
 add_executable(${PROJECT_NAME}
     main.cpp
-    src/renderer/model_loader/model_loader.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_vulkan.cpp
-    src/debugger/debugger.cpp
-    src/renderer/instance/vulkan/instance.cpp
-    src/renderer/device/vulkan/device.cpp
-    src/renderer/swap_chain/vulkan/swap_chain.cpp
-    src/renderer/render_data/vulkan/render_data.cpp
-    src/renderer/descriptors/descriptors.cpp
-    src/renderer/render_pipeline.cpp
-    src/renderer/texture/vulkan/texture.cpp
-    src/renderer/camera/camera.cpp
-    src/engine/entity_manager/components.cpp
-    src/engine/entity_manager/entity_manager.cpp
-    src/engine/entity_manager/entity_system.cpp
-    src/engine/transform.cpp
-    src/editor/file_explorer/file_explorer.cpp
     )
 
 if (${UNIX})
