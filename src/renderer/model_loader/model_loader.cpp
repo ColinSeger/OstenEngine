@@ -1,6 +1,7 @@
 // #include "model_loader.h"
 #pragma once
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <filesystem>
@@ -235,6 +236,7 @@ namespace ModelLoader
 
         //Prepare and then load all vertexes into the vertex buffer
         vertices.resize(index_start / sizeof(Vertex));
+        printf("Vertex amount %zu", vertices.size());
         file.read(reinterpret_cast<char*>(vertices.data()), index_start);
 
         //Prepare and then load all indicies into the index buffer

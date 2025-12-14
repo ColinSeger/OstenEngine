@@ -1,6 +1,7 @@
 // #include "components.h"
 #pragma once
 #include <cstdint>
+#include <cstdlib>
 #include "../../../external/imgui_test/imgui.h"
 #include "../transform.cpp"
 

@@ -76,7 +76,7 @@ struct RenderPipeline
     void create_uniform_buffer(Renderable& render_this);
 };
 
-void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
+static void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
 {
     VkBuffer vertex_buffers[] = {model.vertex_buffer};
     VkDeviceSize offsets[] = {0};
@@ -184,10 +184,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
     // swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
-    int test = 0;
     for(Renderable& render : to_render){
-        swap_draw_frame(command_buffer, render, pipeline_layout, models[test], current_frame);
-        test++;
+        swap_draw_frame(command_buffer, render, pipeline_layout, models[render.model_index], current_frame);
     }
 
     ImGui::Render();

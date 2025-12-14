@@ -1,6 +1,7 @@
 #pragma once
 #define COMMON_INCLUDES
 #include <vector>
+#include <chrono>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include "renderer/instance/vulkan/instance.cpp"
@@ -37,8 +38,6 @@ struct OstenEngine
 
     ~OstenEngine();
     void main_game_loop(float (*profile)());
-
-    void move_camera(double delta_time);
 
     void cleanup();
 };
@@ -91,16 +90,6 @@ OstenEngine::~OstenEngine()
     cleanup();
 }
 
-void OstenEngine::move_camera(double delta_time)
-{
-    // float camera_speed = 500;
-    // if(ImGui::IsKeyDown(ImGuiKey_W)){
-    //     render_pipeline->camera_location.position -= Transformations::forward_vector(render_pipeline->camera_location) * delta_time * camera_speed;
-    // }
-    // if(ImGui::IsKeyDown(ImGuiKey_S)){
-    //     render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
-    // }
-}
 void shift(std::vector<float>& mem_usage){
     for (int i = 0; i < mem_usage.size() - 1; i++) {
         mem_usage[i] = mem_usage[i+1];
@@ -153,12 +142,6 @@ void OstenEngine::main_game_loop(float (*profile)())
 
         end_file_explorer();
 
-
-
-        // ImGui::ShowDemoWindow(&test);
-
-        // ImDrawData* main_draw_data = ImGui::GetDrawData();
-        move_camera(delta_time);
         ComponentSystem* cameras = get_component_system(0);
         int32_t result = 0;
         for (size_t i = 0; i < cameras->amount; i++)

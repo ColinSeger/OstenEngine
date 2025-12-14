@@ -20,6 +20,8 @@ static void create_entity(RenderPipeline* render_pipeline){
     uint16_t id = add_transform();
     Renderable first_obj;
     first_obj.transform_index = id;
+    first_obj.model_index = render_pipeline->models.size() -1;
+
     render_pipeline->create_uniform_buffer(first_obj);
     VkImage image_test;
     if(render_pipeline->to_render.size() < 2){
@@ -107,6 +109,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
         ImGui::PushID(i);
         ImGui::Text("%s", file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
+            Model model = ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, file_explorer.files[i].c_str());
             render_pipeline->models.emplace_back(ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, file_explorer.files[i].c_str()));
 
             create_entity(render_pipeline);

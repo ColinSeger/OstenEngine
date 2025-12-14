@@ -2,14 +2,16 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <vector>
-#include "../../external/imgui_test/imgui_impl_vulkan.h"
-#include "../../external/math_3d.h"
+#include "../../../external/imgui_test/imgui_impl_vulkan.h"
+#include "../../../external/math_3d.h"
 
 const uint8_t FRAMES = 2;
 
 struct Renderable
 {
-    uint16_t transform_index;
+    uint16_t transform_index = 0;
+    uint16_t model_index = 0;
+    uint16_t texture_index = 0;
 
     std::vector<VkDescriptorSet> descriptor_sets;
 
