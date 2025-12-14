@@ -7,6 +7,7 @@
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
 #include "../../renderer/texture/vulkan/texture.cpp"
+#include "../../engine/message_system/message.cpp"
 
 struct FileExplorer
 {

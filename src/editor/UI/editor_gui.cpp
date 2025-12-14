@@ -81,14 +81,9 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
 }
 
 
-static void graph(std::vector<long>& stats)
+static void graph(std::vector<float>& stats)
 {
-    std::vector<float> floats(stats.size());
-    for (int i = 0; i < stats.size(); i++) {
-        float f = stats[i];
-        floats[i] = f;
-    }
-    ImGui::PlotLines("te", floats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
+    ImGui::PlotLines("te", stats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
 }
 
 static void imgui_hierarchy_pop_up()
@@ -153,7 +148,7 @@ static void imgui_hierarchy(bool& open, Entity* inspecting)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, Entity* inspecting, std::vector<long>& mem_stats)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, Entity* inspecting, std::vector<float>& mem_stats)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {

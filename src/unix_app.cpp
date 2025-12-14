@@ -8,25 +8,21 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
     return OstenEngine(width, height, name);
 }
 
-long get_size()
+float get_size()
 {
-    long size, resident, shared, text, lib, data, dirty;
+    long size;
 
     FILE *f = fopen("/proc/self/statm", "r");
     if (f == NULL) return 1;
 
-    fscanf(f, "%ld %ld %ld %ld %ld %ld %ld",
-            &size, &resident, &shared, &text, &lib, &data, &dirty);
+    fscanf(f, "%ld",
+            &size);
     fclose(f);
 
     long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-
-
-    // printf("Virtual memory: %ld MB\n", (size * page_size_kb) / 1024);
-    // printf("Resident Set Size (RSS): %ld MB\n", (resident * page_size_kb) / 1024);
-    // printf("Shared: %ld MB\n", (shared * page_size_kb) / 1024);
-    // printf("Data + Stack: %ld MB\n", (data * page_size_kb) / 1024);
-    return size / 1024;
+    size /= 1024;
+    float result = size;
+    return result;
 }
 
 uint8_t run(OstenEngine& engine){

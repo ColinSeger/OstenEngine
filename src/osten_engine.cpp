@@ -36,7 +36,7 @@ struct OstenEngine
     OstenEngine(const int width, const int height, const char* name);
 
     ~OstenEngine();
-    void main_game_loop(long (*profile)());
+    void main_game_loop(float (*profile)());
 
     void move_camera(double delta_time);
 
@@ -101,14 +101,14 @@ void OstenEngine::move_camera(double delta_time)
     //     render_pipeline->camera_location.position += Transformations::forward_vector(render_pipeline->camera_location)  * delta_time * camera_speed;
     // }
 }
-void shift(std::vector<long>& mem_usage){
+void shift(std::vector<float>& mem_usage){
     for (int i = 0; i < mem_usage.size() - 1; i++) {
         mem_usage[i] = mem_usage[i+1];
     }
     mem_usage.erase(mem_usage.end());
 }
 
-void OstenEngine::main_game_loop(long (*profile)())
+void OstenEngine::main_game_loop(float (*profile)())
 {
     bool test = true;
     static auto start_time = std::chrono::high_resolution_clock::now();
@@ -124,7 +124,7 @@ void OstenEngine::main_game_loop(long (*profile)())
     create_transform_system(10);
     inspecting.components.push_back(TempID{add_transform(), 1});
 
-    std::vector<long> mem_usage{};
+    std::vector<float> mem_usage{};
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
