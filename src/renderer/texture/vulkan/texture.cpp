@@ -1,3 +1,7 @@
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vulkan/vulkan_core.h>
 #ifndef TEXTURE_IMPLEMENTATION
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -12,6 +16,9 @@ struct TextureImage
     VkSampler texture_sampler;
     VkDeviceMemory texture_image_memory;
 };
+
+std::unordered_map<std::string, uint32_t> loaded_textures_index;
+std::vector<TextureImage> loaded_textures;
 
 namespace Texture
 {
@@ -155,7 +162,7 @@ namespace Texture
         VkMemoryAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = memory_requirements.size;
-        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device.physical_device ,memory_requirements.memoryTypeBits, property_flags);
+        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, property_flags);
 
         result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &image_memory);
 
@@ -231,22 +238,32 @@ namespace Texture
         );
     }
 
-    VkImage create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool)
+    TextureImage create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool)
     {
-        int texture_width;
-        int texture_height;
-        int texture_channels;
+        int texture_width = 0;
+        int texture_height = 0;
+        int texture_channels = 0;
 
         stbi_uc* image_pixels = stbi_load(texture_location, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+        VkDeviceSize image_size;
+        VkExtent2D image_sizing;
+        bool error_handle = false;
 
-        VkDeviceSize image_size = texture_width * texture_height * 4;
-
+        constexpr uint8_t image_bit_size = 4;
         if(!image_pixels){
+            error_handle = true;
             std::cout << texture_location << "\n";//TODO REMOVE
-
-            throw std::runtime_error("std::filesystem::current_path()");
+            uint8_t temp[] = {255, 105, 180, 255};//HotPink
+            image_pixels = temp;
+            image_size = image_bit_size;
+            image_sizing.width = 1;
+            image_sizing.height = 1;
+            //throw std::runtime_error("std::filesystem::current_path()");
+        }else{
+            image_size = texture_width * texture_height * image_bit_size;
+            image_sizing.width = texture_width;
+            image_sizing.height = texture_height;
         }
-
 
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
@@ -262,17 +279,13 @@ namespace Texture
 
         void* data;
         vkMapMemory(device.virtual_device, staging_buffer_memory, 0, image_size, 0, &data);
-            memcpy(data, image_pixels, static_cast<size_t>(image_size));
+        memcpy(data, image_pixels, static_cast<size_t>(image_size));
         vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
-        stbi_image_free(image_pixels);
-
-        VkImage texture_image{};
-        VkDeviceMemory texture_image_memory;
-
-        VkExtent2D image_sizing;
-        image_sizing.width = texture_width;
-        image_sizing.height = texture_height;
+        if(!error_handle){
+            stbi_image_free(image_pixels);
+        }
+        TextureImage texture_image{};
 
         create_image
         (
@@ -282,17 +295,32 @@ namespace Texture
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            texture_image,
-            texture_image_memory
+            texture_image.texture_image,
+            texture_image.texture_image_memory
         );
 
-        transition_image_layout(texture_image,  VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, command_pool);
+        transition_image_layout(texture_image.texture_image,  VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, command_pool);
 
-        copy_buffer_to_image(staging_buffer, texture_image, image_sizing, device, command_pool);
+        copy_buffer_to_image(staging_buffer, texture_image.texture_image, image_sizing, device, command_pool);
 
-        transition_image_layout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, command_pool);
+        transition_image_layout(texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, device, command_pool);
 
         return texture_image;
+    }
+
+    uint32_t load_texture(Device& device ,const char* texture_location, VkCommandPool& command_pool)
+    {
+        if(auto contains = loaded_textures_index.find(texture_location); contains != loaded_textures_index.end()){
+            return loaded_textures_index[texture_location];
+        }
+        TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
+        texture_image.image_view = create_image_view(device.virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+        texture_image.texture_sampler = Texture::create_texture_sampler(device);
+
+
+        loaded_textures.emplace_back(texture_image);
+        loaded_textures_index[texture_location] = loaded_textures.size() -1;
+        return loaded_textures_index[texture_location];
     }
 }
 #define TEXTURE_IMPLEMENTATION

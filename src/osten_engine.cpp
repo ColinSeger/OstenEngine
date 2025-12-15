@@ -13,6 +13,7 @@
 #include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/entity_system.cpp"
 #include "engine/entity_manager/components.cpp"
+#include "engine/message_system/message.cpp"
 
 struct OstenEngine
 {
@@ -122,10 +123,7 @@ void OstenEngine::main_game_loop(float (*profile)())
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
-        for (System system : systems)
-        {
-            system.run_system(system);
-        }
+        handle_message(render_pipeline);
 
         if(frame_time > 1)
         {

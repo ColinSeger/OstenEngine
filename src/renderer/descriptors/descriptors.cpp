@@ -104,6 +104,43 @@ void create_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkD
     }
 }
 
+void update_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkImageView image_view, VkSampler sampler)
+{
+    for (size_t i = 0; i < FRAMES; i++) {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = render_this.uniform_buffers[i];
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(UniformBufferObject);
+
+        VkDescriptorImageInfo image_info{};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView = image_view;
+        image_info.sampler = sampler;
+
+        const uint8_t descriptor_size = 2;
+        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &buffer_info;
+        descriptor_writes[0].pImageInfo = nullptr; // Optional
+        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
+
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo = &image_info;
+
+        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
+    }
+}
+
 void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout)
 {
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
