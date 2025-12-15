@@ -7,12 +7,8 @@
 
 const uint8_t FRAMES = 2;
 
-struct Renderable
+struct RenderDescriptors
 {
-    uint16_t transform_index = 0;
-    uint16_t model_index = 0;
-    uint16_t texture_index = 0;
-
     std::vector<VkDescriptorSet> descriptor_sets;
 
     std::vector<VkBuffer> uniform_buffers;
@@ -54,7 +50,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     }
 }
 
-void create_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
+void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
     std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -104,7 +100,7 @@ void create_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkD
     }
 }
 
-void update_descriptor_set(VkDevice virtual_device, Renderable& render_this, VkImageView image_view, VkSampler sampler)
+void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler)
 {
     for (size_t i = 0; i < FRAMES; i++) {
         VkDescriptorBufferInfo buffer_info{};
@@ -171,11 +167,11 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     }
 }
 
-static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, std::vector<Renderable>& to_render)
+static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, std::vector<RenderDescriptors>& to_render)
 {
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
-        Renderable& render_this = to_render[render_index];
+        RenderDescriptors& render_this = to_render[render_index];
 
         std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
         VkDescriptorSetAllocateInfo allocInfo{};

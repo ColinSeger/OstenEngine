@@ -110,9 +110,16 @@ void OstenEngine::main_game_loop(float (*profile)())
     inspecting = Entity{};
     inspecting.components.push_back({0, 0});
 
-    create_camera_system(1);
-    create_transform_system(10);
+    create_transform_system(100);
     inspecting.components.push_back(TempID{add_transform(), 1});
+    create_camera_system(1);
+    create_render_component_system(50);
+    Message default_texture{
+        0,
+        MessageType::LoadTexture,
+        (void*)".."
+    };
+    add_message(default_texture);
 
     std::vector<float> mem_usage{};
 

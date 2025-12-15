@@ -45,7 +45,7 @@ struct RenderPipeline
     VkCommandPool command_pool;
 
     VkDescriptorPool descriptor_pool;
-    std::vector<Renderable> to_render;
+    std::vector<RenderDescriptors> to_render;
     std::vector<Model> models;
 
     uint8_t current_frame = 0;//TODO MOVE
@@ -73,10 +73,10 @@ struct RenderPipeline
 
     void cleanup();
 
-    void create_uniform_buffer(Renderable& render_this);
+    void create_uniform_buffer(RenderDescriptors& render_this);
 };
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, Renderable& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model, uint8_t frame)
 {
     VkBuffer vertex_buffers[] = {model.vertex_buffer};
     VkDeviceSize offsets[] = {0};
@@ -183,10 +183,18 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    // swap_draw_frame(command_buffer, to_render, pipeline_layout, render_buffer, static_cast<uint32_t>(indices.size()), current_frame);
-    for(Renderable& render : to_render){
-        swap_draw_frame(command_buffer, render, pipeline_layout, models[render.model_index], current_frame);
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* render =  get_component_system(RENDER);
+    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+
+    for (int i = 0; i < render->amount; i++) {
+        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
+        swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
     }
+
+    // for(Renderable& render : to_render){
+    //     swap_draw_frame(command_buffer, render, pipeline_layout, models[render.model_index], current_frame);
+    // }
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
@@ -248,19 +256,22 @@ mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
 
 void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t current_image) {
 
-    Vector3 forward_vector = camera.transform.position + Transformations::forward_vector(camera.transform);
-    Vector3 up = Transformations::up_vector(camera.transform);
-    vec3_t pos = {camera.transform.position.x ,camera.transform.position.y ,camera.transform.position.z};
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* render =  get_component_system(RENDER);
+    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+
+    Vector3 forward_vector = camera_transform.position + Transformations::forward_vector(camera_transform);
+    Vector3 up = Transformations::up_vector(camera_transform);
+    vec3_t pos = {camera_transform.position.x ,camera_transform.position.y ,camera_transform.position.z};
 
     mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
-    mat4_t proj = perspective_matrix(camera.fov, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
+    mat4_t proj = perspective_matrix(camera.field_of_view, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
 
-    ComponentSystem* system = get_component_system(1);
-
-    for (size_t render_index = 0; render_index < to_render.size(); render_index++)
+    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+    for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
-
-        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(system, to_render[render_index].transform_index))->transform);
+        RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
+        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
 
         UniformBufferObject ubo{
             model,
@@ -268,7 +279,7 @@ void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t curre
             proj
         };
 
-        memcpy(to_render[render_index].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
+        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
     }
 }
 
@@ -276,7 +287,7 @@ void RenderPipeline::create_uniform_buffers() {
     for (size_t render_index = 0; render_index < to_render.size(); render_index++)
     {
        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-       Renderable& render_this = to_render[render_index];
+       RenderDescriptors& render_this = to_render[render_index];
 
         render_this.uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
         render_this.uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -297,7 +308,7 @@ void RenderPipeline::create_uniform_buffers() {
     }
 }
 
-void RenderPipeline::create_uniform_buffer(Renderable& render_this) {
+void RenderPipeline::create_uniform_buffer(RenderDescriptors& render_this) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
     render_this.uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);

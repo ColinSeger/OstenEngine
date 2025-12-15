@@ -1,5 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <vector>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
@@ -91,29 +92,13 @@ static void imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            if(auto contains = EntityManager::get_entity_names().find("GameObject"); contains != EntityManager::get_entity_names().end())
-            {
-                std::string name ("GameObject");
-                for (size_t i = 0; i < 9; i++)
-                {
-                    if(auto contains = EntityManager::get_entity_names().find(name); contains != EntityManager::get_entity_names().end()){
-                        name.push_back('A');
-                    }else{
-                        EntityManager::add_entity(Entity{}, name);
-                        break;
-                    }
-                }
-
-            }else{
-                EntityManager::add_entity(Entity{}, "GameObject");
-            }
-
+            EntityManager::add_entity(Entity{}, "GameObject");
         }
         ImGui::EndPopup();
     }
 }
 
-static void imgui_hierarchy(bool& open, Entity* inspecting)
+static void imgui_hierarchy(bool& open, Entity& inspecting)
 {
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
@@ -126,7 +111,7 @@ static void imgui_hierarchy(bool& open, Entity* inspecting)
 
         if(ImGui::TreeNode("Thing"))
         {
-            auto entities = EntityManager::get_all_entities();
+            auto& entities = EntityManager::get_all_entities();
             if(EntityManager::get_all_entities().size() > 0)
             {
                 for (auto& name : EntityManager::get_entity_names())
@@ -134,7 +119,7 @@ static void imgui_hierarchy(bool& open, Entity* inspecting)
                     ImGui::PushID(name.second);
 
                     if(ImGui::Button(name.first.c_str())){
-                        *inspecting = EntityManager::get_all_entities()[name.second];
+                        inspecting = EntityManager::get_all_entities()[name.second];
                     }
                     ImGui::Spacing();
 
@@ -171,12 +156,14 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
 
     for (size_t i = 0; i < cameras.amount; i++)
     {
-        ImGui::DragFloat3("Camera Position", &static_cast<CameraComponent*>((void*)cameras.components)[i].transform.position.x, 0.1f);
-        ImGui::DragFloat3("Camera Rotation", &static_cast<CameraComponent*>((void*)cameras.components)[i].transform.rotation.x, 0.1f);
-        ImGui::DragFloat("Fov", &static_cast<CameraComponent*>((void*)cameras.components)[i].fov, 0.1f);
+        ComponentSystem* transform_system = get_component_system(1);
+        Transform& camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[i].transform_id))->transform;
+        ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
+        ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
+        ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
     }
 
-    imgui_hierarchy(is_open, inspecting);
+    imgui_hierarchy(is_open, *inspecting);
 
     for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
     {
@@ -189,14 +176,44 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     }
 
     ImGui::End();
-
     ImGui::Begin("Inspector");
+        for (auto& entity : EntityManager::get_entity_names())
+        {
+            if(entity.second == inspecting->id){
+                char* buffer = (char*)entity.first.c_str();
+                ImGui::InputText("Name" , buffer , 20);
+            }
+        }
 
-        for(TempID id : inspecting->components){
+        for(TempID& id : inspecting->components){
             ImGui::PushID(id.type);
             inspect(id.type, id.index);
             ImGui::Spacing();
             ImGui::PopID();
+        }
+        if(ImGui::BeginPopupContextItem("components_pop_up")){
+            ImGui::Text("Components");
+            if(ImGui::Button("Add Transform")){
+                TempID transform{
+                    static_cast<uint32_t>(add_transform()),
+                    static_cast<uint16_t>(Type::Transform)
+                };
+                EntityManager::get_all_entities()[inspecting->id].components.emplace_back(transform);
+                inspecting = &EntityManager::get_all_entities()[inspecting->id];
+            }
+            if(ImGui::Button("Add Render Component")){
+                TempID render{
+                    static_cast<uint32_t>(add_render_component(render_pipeline->to_render.size()-1)),
+                    static_cast<uint16_t>(RENDER)
+                };
+                EntityManager::get_all_entities()[inspecting->id].components.emplace_back(render);
+                inspecting = &EntityManager::get_all_entities()[inspecting->id];
+            }
+            ImGui::EndPopup();
+        }
+        if(ImGui::Button("Add Component"))
+        {
+            ImGui::OpenPopup("components_pop_up");
         }
 
     ImGui::End();

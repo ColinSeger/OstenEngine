@@ -11,6 +11,9 @@ enum class Type : uint8_t{
     Render = 2,
     Camera = 3
 };
+constexpr uint8_t CAMERA = 0;
+constexpr uint8_t TRANSFORM = 1;
+constexpr uint8_t RENDER = 2;
 
 
 typedef struct Component
@@ -18,7 +21,7 @@ typedef struct Component
     const uint16_t id = 0;
 } Component;
 
-typedef struct TransformComponent
+struct TransformComponent
 {
     const uint16_t id = 1;
     Transform transform {};
@@ -26,29 +29,33 @@ typedef struct TransformComponent
         this->transform = transform.transform;
         return *this;
     }
-} TransComponent;
+};
 
 struct RenderComponent
 {
     const uint16_t id = 2;
+    uint16_t transform_id = 0;
+    uint16_t descriptor_id = 0;
+    uint16_t mesh_id = 0;
+    uint16_t texture_id = 0;
 };
 
-typedef struct CameraComponent
+struct CameraComponent
 {
     const uint16_t id = 3;
-    Transform transform;
-    float fov = 45.f;
+    uint16_t transform_id = 0;
+    float field_of_view = 45.f;
 
     CameraComponent operator=(CameraComponent camera){
-        this->transform = camera.transform;
-        this->fov = camera.fov;
+        this->transform_id = camera.transform_id;
+        this->field_of_view = camera.field_of_view;
         return *this;
     }
-} CamComponent;
+};
 
 struct ComponentSystem
 {
-    Component* components;
+    void* components;
     uint16_t amount = 0;
     uint16_t capacity = 10;
     uint8_t type = 0;
@@ -57,6 +64,7 @@ struct ComponentSystem
 namespace{
     ComponentSystem cameras{};
     ComponentSystem transforms{};
+    ComponentSystem render_components{};
 }
 
 uint16_t get_component_size_by_type(uint16_t type){
@@ -93,46 +101,53 @@ ComponentSystem* get_component_system(uint8_t system_id)
 {
     switch (system_id)
     {
-    case 0:
+    case CAMERA:
         return &cameras;
         break;
-    case 1:
+    case TRANSFORM:
         return &transforms;
         break;
-
+    case RENDER:
+        return &render_components;
+        break;
     default:
         return nullptr;
         break;
     }
 }
+// ComponentSystem* get_component_system(void* system_component)
+// {
+//     uint16_t type = reinterpret_cast<Component*>(system_component)->id;
+//     switch (type)
+//     {
+//     case 0:
+//         return &cameras;
+//         break;
+//     case 1:
+//         return &transforms;
+//         break;
 
-void create_camera_system(uint8_t camera_amount){
-    ComponentSystem* component_sys = get_component_system(0);
-    component_sys->components = (Component*)malloc(sizeof(CameraComponent) * camera_amount);
-    component_sys->amount = camera_amount;
-    component_sys->type = 0;
-    for (size_t i = 0; i < camera_amount; i++)
-    {
-        CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
-        *comp = CameraComponent{};
-    }
-}
+//     default:
+//         return nullptr;
+//         break;
+//     }
+// }
 
 void create_transform_system(uint8_t transform_amount){
-    TransformComponent test {};
-    ComponentSystem* component_sys = get_component_system(1);
-    component_sys->components = (Component*)malloc(sizeof(TransformComponent) * transform_amount);
+    ComponentSystem* component_sys = get_component_system(TRANSFORM);
+    component_sys->components = malloc(sizeof(TransformComponent) * transform_amount);
     component_sys->type = 1;
     for (size_t i = 0; i < transform_amount; i++)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
         comp->transform = Transform{};
     }
+     //Component* test = reinterpret_cast<Component*>(component_sys->components);
 }
 
 uint16_t add_transform()
 {
-    ComponentSystem* component_sys = get_component_system(1);
+    ComponentSystem* component_sys = get_component_system(TRANSFORM);
     char* comp = (char*)component_sys->components;
     uint16_t size = get_component_size_by_type((uint16_t)Type::Transform);
     uint32_t size_offset = size * component_sys->amount;
@@ -141,15 +156,58 @@ uint16_t add_transform()
     return component_sys->amount-1;
 }
 
+void create_render_component_system(uint8_t render_amount){
+    ComponentSystem* component_sys = get_component_system(RENDER);
+    component_sys->components = malloc(sizeof(RenderComponent) * render_amount);
+    component_sys->type = 2;
+    for (size_t i = 0; i < render_amount; i++)
+    {
+        RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
+        comp->transform_id = add_transform();
+        comp->mesh_id = 0;
+        comp->texture_id = 0;
+    }
+     //Component* test = reinterpret_cast<Component*>(component_sys->components);
+}
+
+uint16_t add_render_component(uint16_t descriptor_index)
+{
+    ComponentSystem* component_sys = get_component_system(RENDER);
+    RenderComponent* comp = reinterpret_cast<RenderComponent*>(component_sys->components);
+    // uint16_t size = get_component_size_by_type(RENDER);
+    uint32_t size_offset = component_sys->amount;
+    comp += size_offset;
+    component_sys->amount++;
+    comp->descriptor_id = descriptor_index;
+    return component_sys->amount-1;
+}
+
+void create_camera_system(uint8_t camera_amount){
+    ComponentSystem* component_sys = get_component_system(CAMERA);
+    component_sys->components = malloc(sizeof(CameraComponent) * camera_amount);
+    component_sys->amount = camera_amount;
+    component_sys->type = 0;
+
+    for (size_t i = 0; i < camera_amount; i++)
+    {
+        CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
+        *comp = CameraComponent{};
+        comp->transform_id = add_transform();
+    }
+}
+
 void inspect(uint8_t type, uint16_t id)
 {
     switch (type)
     {
-    case 0:
-        ImGui::Text("Camera");
-        ImGui::DragFloat3("Camera Position", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->transform.position.x, 0.1f);
-        ImGui::DragFloat3("Camera Rotation", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->transform.rotation.x, 0.1f);
-        ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->fov, 0.1f);
+    case 0:{
+            ImGui::Text("Camera");
+            ComponentSystem* transform_system = get_component_system(TRANSFORM);
+            Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[id].transform_id))->transform;
+            ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
+            ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
+            ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->field_of_view, 0.1f);
+        }
         break;
     case 1:
         ImGui::Text("Transform");
@@ -157,7 +215,25 @@ void inspect(uint8_t type, uint16_t id)
         ImGui::DragFloat3("Rotation", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.rotation.x, 0.1f);
         ImGui::DragFloat3("Scale", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.scale.x, 0.1f);
         break;
+    case 2:{
+            ImGui::Text("Render Component");
+            ComponentSystem* transform_system = get_component_system(TRANSFORM);
+            ComponentSystem* render_system = get_component_system(RENDER);
+            RenderComponent* component = (RenderComponent*)get_component_by_id(render_system, id);
+            Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[id].transform_id))->transform;
 
+            ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
+            ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
+            ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
+
+            int mesh_id = component->mesh_id;
+            int texture_id = component->texture_id;
+            ImGui::InputInt("Mesh Index", &mesh_id);
+            ImGui::InputInt("Texture Index", &texture_id);
+            component->mesh_id = mesh_id;
+            component->texture_id = texture_id;
+        }
+    break;
     default:
         break;
     }
