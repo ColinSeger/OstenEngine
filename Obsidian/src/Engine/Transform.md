@@ -1,0 +1,1 @@
+This holds most of the structs I use for math and representing things position in the game

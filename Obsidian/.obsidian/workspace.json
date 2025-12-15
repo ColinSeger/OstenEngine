@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/Engine/EntityManager/Components.md",
+                "file": "src/Renderer/Instance/Instance.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Components"
+              "title": "Instance"
             }
           }
         ]
@@ -110,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "src/Engine/EntityManager/Components.md",
+                "file": "src/Renderer/Instance/Instance.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,7 +120,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Components"
+              "title": "Backlinks for Instance"
             }
           },
           {
@@ -199,9 +199,12 @@
   "active": "4a16c3b4aab7cbfe",
   "lastOpenFiles": [
     "src/Renderer/RenderPipeline.md",
-    "src/Engine/EntityManager/Components.md",
-    "src/Engine/EntityManager/EntityManager.md",
+    "src/Win32 App.md",
+    "src/Unix App.md",
+    "src/Engine/Transform.md",
     "src/Engine/EntityManager/EntitySystem.md",
+    "src/Engine/EntityManager/EntityManager.md",
+    "src/Engine/EntityManager/Components.md",
     "src/Debugger/Debugger.md",
     "src/Engine/EntityManager",
     "FileStructure.md",
@@ -209,10 +212,8 @@
     "src/Renderer/Descriptors/Descriptors.md",
     "RenderData.md",
     "src/Renderer/RenderData.md",
-    "src/Win32 App.md",
     "src/Renderer/Instance/Instance.md",
     "src/Renderer/Device/Device.md",
-    "src/Unix App.md",
     "src/Renderer/Texture/Texture.md",
     "src/Renderer/Descriptors",
     "src/Renderer/SwapChain/SwapChain.md",
@@ -222,7 +223,6 @@
     "src/Renderer/Instance",
     "src/Renderer/Device",
     "src/Renderer/ModelLoader",
-    "src/Engine/Transform.md",
     "src/Engine",
     "src/Renderer"
   ]
