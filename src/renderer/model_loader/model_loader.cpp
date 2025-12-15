@@ -34,7 +34,11 @@ struct Model
 namespace ModelLoader
 {
     const char valid_chars[14] = "0123456789.-/";
-
+    struct Indices{
+        uint32_t vertex_index;
+        uint32_t texture_index;
+        uint32_t normal_index;
+    };
 
     static bool is_valid_char(char c)
     {
@@ -65,27 +69,15 @@ namespace ModelLoader
         return ObjMode::None;
     }
 
-    void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    static void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
-        std::ifstream file_stream;
-
-        file_stream.open(path_of_obj, std::ios_base::in | std::ios_base::ate);
-
-        size_t index_offset = indices.size();
+        std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
         if(!file_stream.is_open())
         {
             vertices.emplace_back(Vertex{});
             indices.emplace_back(0);
-
-            auto file_path = std::filesystem::current_path();
-            auto filepath_str = file_path.filename().string();
-            std::string error = filepath_str;
-            error.push_back(errno);
-
-            // throw std::runtime_error(error);
             Debug::log((char*)"Failed to load model");
-            //TODO LOG failed model load
             return;
         }
 
@@ -97,20 +89,21 @@ namespace ModelLoader
         file_stream.close();
 
         std::vector<Vertex> vertex;
-
-        std::vector<uint32_t> texture_index;
+        std::vector<Indices> indicies;
         std::vector<TextureCord> texture_cord;
 
         ObjMode current_mode = ObjMode::None;
         std::string values[3];
+        union {
+            float vertex_to_add[3];
+            float indicies_to_add[3];
+        };
 
         uint8_t char_index = 0;
-        Vertex new_vertex {};
 
         vertex.reserve(file_size/40);
-        indices.reserve(file_size/60);
         texture_cord.reserve(file_size/60);
-        texture_index.reserve(file_size/60);
+        indicies.reserve(file_size/30);
 
         for (size_t i = 0; i < file_size; i++)
         {
@@ -130,27 +123,28 @@ namespace ModelLoader
 
                 break;
                 case ObjMode::Vertex:
-
-                    new_vertex.position = {std::stof(values[0]), std::stof(values[1]), std::stof(values[2])};
-                    vertex.emplace_back(new_vertex);
+                    vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
                 break;
                 case ObjMode::Face:
                     for (std::string& index : values)
                     {
                         if(index.length() <= 0) continue;
-                        indices.push_back(std::stoi(index) -1 + index_offset);
+                        uint32_t vertex_index = std::stoi(index)-1;
                         for (size_t i = 0; i < index.size(); i++)
                         {
                             if(index[i] == '/')
                             {
-                                texture_index.push_back(std::stoi(&index[i+1]) -1);
+                                Indices indecies;
+                                indecies.vertex_index = vertex_index;
+                                indecies.texture_index = std::stoi(&index[i+1])-1;
+                                indicies.emplace_back(indecies);
                                 break;
                             }
                         }
                     }
                 break;
                 case ObjMode::TextureCord:
-                    texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
+                    //texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
                 break;
                 case ObjMode::Normal:
                     //Todo
@@ -168,27 +162,30 @@ namespace ModelLoader
 
             if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
 
-            if(value == ' ' && values[0].length() > 0){
+            if(value == ' '){
+                if(current_mode == ObjMode::Vertex){
+                    vertex_to_add[char_index] = atof(&file[i+1]);
+                }
                 char_index++;
                 continue;
             }
             else if (is_valid_char(value)){
-                values[char_index].push_back(value);
+
+                //values[char_index].push_back(value);
             }
         }
-        for (size_t i = 0; i < indices.size() - index_offset; i++)
+        indices.reserve(indicies.size());
+        for (size_t i = 0; i < indicies.size(); i++)
         {
-            vertex[indices[i]].texture_cord = texture_cord[texture_index[i]];
+            vertex[indicies[i].vertex_index].texture_cord = texture_cord[indicies[i].texture_index];
+            indices.emplace_back(indicies[i].vertex_index);
         }
-        for (size_t i = 0; i < vertex.size(); i++)//Temp solution
-        {
-            vertices.emplace_back(vertex[i]);
-        }
+        vertices = vertex;
 
         free(file);
     }
 
-    void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    static void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
         std::ofstream file(filename, std::ios::binary);
 
@@ -216,7 +213,7 @@ namespace ModelLoader
         file.close();
     }
 
-    void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    static void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
         std::ifstream file(filename, std::ios::binary);
 
@@ -238,7 +235,7 @@ namespace ModelLoader
         vertices.resize(index_start / sizeof(Vertex));
         file.read(reinterpret_cast<char*>(vertices.data()), index_start);
 
-        //Prepare and then load all indicies into the index buffer
+        //Prepare and then load all indices into the index buffer
         indices.resize(file_size - index_start);
         file.read(reinterpret_cast<char*>(indices.data()), file_size - index_start);
         file.close();
