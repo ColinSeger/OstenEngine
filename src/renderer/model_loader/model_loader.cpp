@@ -1,10 +1,10 @@
 // #include "model_loader.h"
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <filesystem>
 #include <string>
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -69,6 +69,15 @@ namespace ModelLoader
         return ObjMode::None;
     }
 
+    static inline void next_valid(char* file, size_t* current_value, size_t max_value){
+        for (size_t i = *current_value; i < max_value; i++){
+            if (file[i] == '\n' && file[i+1] == 'v'){
+                *current_value = i+1;
+                break;
+            }
+        }
+    }
+
     static void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
     {
         std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
@@ -90,20 +99,90 @@ namespace ModelLoader
 
         std::vector<Vertex> vertex;
         std::vector<Indices> indicies;
-        std::vector<TextureCord> texture_cord;
+        std::vector<TextureCord> texture_cords;
 
         ObjMode current_mode = ObjMode::None;
         std::string values[3];
         union {
             float vertex_to_add[3];
             float indicies_to_add[3];
+            float texture_cord[2];
         };
+        // float vertex_to_add[3];
 
         uint8_t char_index = 0;
 
         vertex.reserve(file_size/40);
-        texture_cord.reserve(file_size/60);
+        texture_cords.reserve(file_size/60);
         indicies.reserve(file_size/30);
+
+        size_t index = 0;
+/*
+
+        next_valid(file, &index, file_size);
+
+        for (size_t i = index; i < file_size; i++){
+            if (file[i] == '\n') {
+                vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
+                char_index = 0;
+                if(file[i+1] != 'v' || file[i+2] != ' '){
+                    index = i;
+                    break;
+                }
+            }
+            if(file[i] == ' '){
+                vertex_to_add[char_index] = atof(&file[i+1]);
+                char_index ++;
+            }
+        }
+
+        next_valid(file, &index, file_size);
+
+        for (size_t i = index; i < file_size; i++){
+            if (file[i] == '\n') {
+                texture_cords.emplace_back(texture_cord[0], texture_cord[1]);
+                if(file[i+1] != 'v' || file[i+2] != 't'){
+                    index = i;
+                    break;
+                }
+            }
+            if(file[i] == ' '){
+                texture_cord[char_index] = atof(&file[i+1]);
+                char_index ++;
+            }
+        }
+
+        next_valid(file, &index, file_size);
+
+        for (size_t i = index; i < file_size; i++){
+            if (file[i] == '\n') {
+                // vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
+                if(file[i+1] != 'v' || file[i+2] != 'n'){
+                    index = i;
+                    break;
+                }
+            }
+            if(file[i] == ' '){
+                // vertex_to_add[char_index] = atof(&file[i+1]);
+                char_index ++;
+            }
+        }
+
+        next_valid(file, &index, file_size);
+
+        for (size_t i = index; i < file_size; i++){
+            if (file[i] == '\n') {
+                // vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
+                if(file[i+1] != 'f' || file[i+2] != ' '){
+                    index = i;
+                    break;
+                }
+            }
+            if(file[i] == '/'){
+                // vertex_to_add[char_index] = atof(&file[i+1]);
+                char_index ++;
+            }
+        }
 
         for (size_t i = 0; i < file_size; i++)
         {
@@ -123,7 +202,7 @@ namespace ModelLoader
 
                 break;
                 case ObjMode::Vertex:
-                    vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
+                    //vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
                 break;
                 case ObjMode::Face:
                     for (std::string& index : values)
@@ -174,10 +253,11 @@ namespace ModelLoader
                 //values[char_index].push_back(value);
             }
         }
+ */
         indices.reserve(indicies.size());
         for (size_t i = 0; i < indicies.size(); i++)
         {
-            vertex[indicies[i].vertex_index].texture_cord = texture_cord[indicies[i].texture_index];
+            vertex[indicies[i].vertex_index].texture_cord = texture_cords[indicies[i].texture_index];
             indices.emplace_back(indicies[i].vertex_index);
         }
         vertices = vertex;

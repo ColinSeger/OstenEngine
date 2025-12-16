@@ -1,6 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
@@ -98,7 +99,7 @@ static void imgui_hierarchy_pop_up()
     }
 }
 
-static void imgui_hierarchy(bool& open, Entity& inspecting)
+static void imgui_hierarchy(bool& open, uint32_t& inspecting)
 {
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
@@ -119,7 +120,7 @@ static void imgui_hierarchy(bool& open, Entity& inspecting)
                     ImGui::PushID(name.second);
 
                     if(ImGui::Button(name.first.c_str())){
-                        inspecting = EntityManager::get_all_entities()[name.second];
+                        inspecting = name.second;
                     }
                     ImGui::Spacing();
 
@@ -133,7 +134,7 @@ static void imgui_hierarchy(bool& open, Entity& inspecting)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, Entity* inspecting, std::vector<float>& mem_stats)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, uint32_t& inspecting, std::vector<float>& mem_stats)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -152,18 +153,18 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Spacing();
 
     ImGui::Text("(%f)", ((float)fps));
-    ComponentSystem cameras = *get_component_system(0);
+    ComponentSystem cameras = *get_component_system(CAMERA);
 
     for (size_t i = 0; i < cameras.amount; i++)
     {
-        ComponentSystem* transform_system = get_component_system(1);
+        ComponentSystem* transform_system = get_component_system(TRANSFORM);
         Transform& camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[i].transform_id))->transform;
         ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
         ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
         ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
     }
 
-    imgui_hierarchy(is_open, *inspecting);
+    imgui_hierarchy(is_open, inspecting);
 
     for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
     {
@@ -179,13 +180,14 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Begin("Inspector");
         for (auto& entity : EntityManager::get_entity_names())
         {
-            if(entity.second == inspecting->id){
+            if(entity.second == EntityManager::get_all_entities()[inspecting].id){
                 char* buffer = (char*)entity.first.c_str();
                 ImGui::InputText("Name" , buffer , 20);
             }
         }
 
-        for(TempID& id : inspecting->components){
+        for(TempID& id : EntityManager::get_all_entities()[inspecting].components){
+            printf("component amount %zu \n", EntityManager::get_all_entities()[inspecting].components.size());
             ImGui::PushID(id.type);
             inspect(id.type, id.index);
             ImGui::Spacing();
@@ -198,16 +200,16 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
                     static_cast<uint32_t>(add_transform()),
                     static_cast<uint16_t>(Type::Transform)
                 };
-                EntityManager::get_all_entities()[inspecting->id].components.emplace_back(transform);
-                inspecting = &EntityManager::get_all_entities()[inspecting->id];
+                EntityManager::get_all_entities()[inspecting].components.emplace_back(transform);
+                // inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
                     static_cast<uint32_t>(add_render_component(render_pipeline->to_render.size()-1)),
                     static_cast<uint16_t>(RENDER)
                 };
-                EntityManager::get_all_entities()[inspecting->id].components.emplace_back(render);
-                inspecting = &EntityManager::get_all_entities()[inspecting->id];
+                EntityManager::get_all_entities()[inspecting].components.emplace_back(render);
+                //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             ImGui::EndPopup();
         }

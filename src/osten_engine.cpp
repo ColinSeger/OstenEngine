@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #define COMMON_INCLUDES
 #include <vector>
 #include <chrono>
@@ -9,7 +10,6 @@
 #include "editor/UI/editor_gui.cpp"
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
-#include "engine/entity_manager/entity_manager.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/entity_system.cpp"
 #include "engine/entity_manager/components.cpp"
@@ -26,7 +26,6 @@ struct OstenEngine
     std::vector<System> systems;
 
     FileExplorer file_explorer;
-    Entity inspecting;
 
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {
@@ -107,13 +106,22 @@ void OstenEngine::main_game_loop(float (*profile)())
     double fps = 0;
 
     auto last_tick = std::chrono::high_resolution_clock::now();
-    inspecting = Entity{};
-    inspecting.components.push_back({0, 0});
+
 
     create_transform_system(100);
-    inspecting.components.push_back(TempID{add_transform(), 1});
     create_camera_system(1);
     create_render_component_system(50);
+
+    Message empty_entity{
+        0,
+        MessageType::CreateEntity,
+        nullptr
+    };
+    add_message(empty_entity);
+    handle_message(render_pipeline);
+
+    uint32_t inspecting = 0;
+
     Message default_texture{
         0,
         MessageType::LoadTexture,
@@ -141,7 +149,7 @@ void OstenEngine::main_game_loop(float (*profile)())
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, &inspecting, mem_usage);
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, inspecting, mem_usage);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 

@@ -19,7 +19,7 @@ struct TempID
 struct Entity{
     uint32_t id;
     std::vector<TempID> components;
-    void (*test)() = stub;
+    // void (*test)() = stub;
 };
 
 namespace EntityManager
@@ -76,11 +76,6 @@ void EntityManager::add_entity(Entity entity, std::string name)
 
     entity.id = entities.size();
 
-    if(entities.size() > 2){
-        entity.test = &hello;
-    }else{
-        entity.test = &test;
-    }
     entities.emplace_back(entity);
     entity_names[name] = entity.id;
 }
@@ -116,14 +111,14 @@ uint32_t EntityManager::get_entity_amount()
     return entities.size();
 }
 
-void EntityManager::print_entities()
-{
-    for (size_t i = 0; i < entities.size(); i++)
-    {
-        entities[i].test();
-    }
+// void EntityManager::print_entities()
+// {
+//     for (size_t i = 0; i < entities.size(); i++)
+//     {
+//         entities[i].test();
+//     }
 
-}
+// }
 
 void rename_entity(std::string current_name, std::string new_name)
 {

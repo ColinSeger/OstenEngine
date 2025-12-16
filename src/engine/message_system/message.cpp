@@ -14,7 +14,7 @@ enum class MessageType : uint8_t
 };
 
 static void create_entity(RenderPipeline* render_pipeline){
-    uint16_t id = add_transform();
+    //uint16_t id = add_transform();
     RenderDescriptors first_obj;
     //first_obj.transform_index = id;
     //first_obj.model_index = render_pipeline->models.size() -1;

@@ -203,7 +203,7 @@ void inspect(uint8_t type, uint16_t id)
     case 0:{
             ImGui::Text("Camera");
             ComponentSystem* transform_system = get_component_system(TRANSFORM);
-            Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[id].transform_id))->transform;
+            Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[0].transform_id))->transform;
             ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
             ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
             ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->field_of_view, 0.1f);
@@ -220,7 +220,7 @@ void inspect(uint8_t type, uint16_t id)
             ComponentSystem* transform_system = get_component_system(TRANSFORM);
             ComponentSystem* render_system = get_component_system(RENDER);
             RenderComponent* component = (RenderComponent*)get_component_by_id(render_system, id);
-            Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[id].transform_id))->transform;
+            Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[0].transform_id))->transform;
 
             ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
             ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
