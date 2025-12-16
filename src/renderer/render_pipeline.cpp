@@ -15,21 +15,10 @@ static const char* texture_location = "assets/debug_assets/viking_room.png";
 
 struct RenderPipeline
 {
-    //The Vulkan instance
-    VkInstance my_instance = VK_NULL_HANDLE;
-    //Device manager
-    Device device;
-
-    SwapChain swap_chain;
-
     SwapChainImages swap_chain_images;
 
-    VkDescriptorSetLayout descriptor_set_layout;
-    VkPipelineLayout pipeline_layout;
-
-    VkPipeline graphics_pipeline;
-
-    VkSurfaceKHR my_surface;
+    //Device manager
+    Device device;
 
     //TODO check if these even need to be vector
     std::vector<VkSemaphore> image_available_semaphores;
@@ -42,17 +31,27 @@ struct RenderPipeline
     std::vector<Vertex>     vertices;//TODO make better
     std::vector<uint32_t>   indices;
 
-    VkCommandPool command_pool;
-
-    VkDescriptorPool descriptor_pool;
     std::vector<RenderDescriptors> to_render;
     std::vector<Model> models;
 
-    uint8_t current_frame = 0;//TODO MOVE
-    VkRenderPass render_pass; //TODO MOVE
+    SwapChain swap_chain;
 
-    VkImageView image_view;//TODO Temporary way to access image
-    VkSampler texture_sampler;//TODO Temporary way to access sampler
+    //The Vulkan instance
+    VkInstance my_instance = VK_NULL_HANDLE;
+
+    VkDescriptorSetLayout descriptor_set_layout;
+    VkPipelineLayout pipeline_layout;
+
+    VkPipeline graphics_pipeline;
+
+    VkSurfaceKHR my_surface;
+
+    VkCommandPool command_pool;
+
+    VkDescriptorPool descriptor_pool;
+
+    VkRenderPass render_pass; //TODO MOVE
+    uint8_t current_frame = 0;//TODO MOVE
 
     void shader();
 
@@ -189,12 +188,11 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
-        swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
-    }
+        if(models.size() > 0){
+            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
 
-    // for(Renderable& render : to_render){
-    //     swap_draw_frame(command_buffer, render, pipeline_layout, models[render.model_index], current_frame);
-    // }
+        }
+    }
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
@@ -241,18 +239,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     return result;
 }
-mat4_t perspective_matrix(float fov, float aspect, float zNear, float zFar)
-{
-    float fov_in_rad = fov / 180 * M_PI;
-	float half_fov = tanf(fov_in_rad / 2.0f);
-
-    return mat4(
-        1.f / (aspect * half_fov),  0,  0,  0,
-        0,  -1.f / half_fov,  0,  0,
-        0,  0,  -(zFar + zNear)/(zFar - zNear),  -1,
-        0,  0, -(zFar * zNear) / (zFar - zNear),  0
-    );
-}
 
 void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t current_image) {
 
@@ -265,7 +251,7 @@ void RenderPipeline::update_uniform_buffer(CameraComponent camera, uint8_t curre
     vec3_t pos = {camera_transform.position.x ,camera_transform.position.y ,camera_transform.position.z};
 
     mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
-    mat4_t proj = perspective_matrix(camera.field_of_view, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
+    mat4_t proj = m4_perspective_matrix(camera.field_of_view, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, 1.f, 2000.0f);
 
     Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
     for (size_t render_index = 0; render_index < render->amount; render_index++)
@@ -335,8 +321,6 @@ void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
     vkDeviceWaitIdle(device.virtual_device);
 
     if(swap_chain_images.swap_chain_images.size() > 0){
-        vkDestroyImageView(device.virtual_device, image_view, nullptr);
-        vkDestroySampler(device.virtual_device, texture_sampler, nullptr);
         clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
 
         vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);

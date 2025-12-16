@@ -5,12 +5,6 @@
 #include "../../../external/imgui_test/imgui.h"
 #include "../transform.cpp"
 
-enum class Type : uint8_t{
-    Component = 0,
-    Transform = 1,
-    Render = 2,
-    Camera = 3
-};
 constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
 constexpr uint8_t RENDER = 2;
@@ -68,18 +62,15 @@ namespace{
 }
 
 uint16_t get_component_size_by_type(uint16_t type){
-    switch ((Type)type)
+    switch ((uint8_t)type)
     {
-    case Type::Component:
-        return sizeof(Component);
-
-    case Type::Transform:
+    case TRANSFORM:
         return sizeof(TransformComponent);
 
-    case Type::Render:
+    case RENDER:
         return sizeof(RenderComponent);
 
-    case Type::Camera:
+    case CAMERA:
         return sizeof(CameraComponent);
 
     default:
@@ -149,7 +140,7 @@ uint16_t add_transform()
 {
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
     char* comp = (char*)component_sys->components;
-    uint16_t size = get_component_size_by_type((uint16_t)Type::Transform);
+    uint16_t size = get_component_size_by_type(TRANSFORM);
     uint32_t size_offset = size * component_sys->amount;
     comp += size_offset;
     component_sys->amount++;

@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <cstdint>
 #include <cstdio>
+#include <string>
 #include <vector>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
@@ -153,6 +154,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Spacing();
 
     ImGui::Text("(%f)", ((float)fps));
+
     ComponentSystem cameras = *get_component_system(CAMERA);
 
     for (size_t i = 0; i < cameras.amount; i++)
@@ -164,30 +166,32 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
     }
 
-    imgui_hierarchy(is_open, inspecting);
-
-    for (uint16_t i = 0; i < render_pipeline->to_render.size(); i++)
-    {
+    for (int i = 0; i < render_pipeline->models.size(); i++) {
         ImGui::PushID(i);
 
-        ImGui::Text("Transform");
+        ImGui::Text("Model %i", i);
         ImGui::Spacing();
 
         ImGui::PopID();
     }
+
+    imgui_hierarchy(is_open, inspecting);
 
     ImGui::End();
     ImGui::Begin("Inspector");
         for (auto& entity : EntityManager::get_entity_names())
         {
             if(entity.second == EntityManager::get_all_entities()[inspecting].id){
-                char* buffer = (char*)entity.first.c_str();
-                ImGui::InputText("Name" , buffer , 20);
+                char buffer[64] = {};
+                for (int i = 0; i < entity.first.length(); i++) {
+                    buffer[i] = entity.first[i];
+                }
+                ImGui::InputText("Name" , buffer , 64, 0);
+                //EntityManager::rename_entity(entity.first, std::string(buffer));
             }
         }
 
         for(TempID& id : EntityManager::get_all_entities()[inspecting].components){
-            printf("component amount %zu \n", EntityManager::get_all_entities()[inspecting].components.size());
             ImGui::PushID(id.type);
             inspect(id.type, id.index);
             ImGui::Spacing();
@@ -198,7 +202,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
             if(ImGui::Button("Add Transform")){
                 TempID transform{
                     static_cast<uint32_t>(add_transform()),
-                    static_cast<uint16_t>(Type::Transform)
+                    static_cast<uint16_t>(TRANSFORM)
                 };
                 EntityManager::get_all_entities()[inspecting].components.emplace_back(transform);
                 // inspecting = &EntityManager::get_all_entities()[inspecting->id];

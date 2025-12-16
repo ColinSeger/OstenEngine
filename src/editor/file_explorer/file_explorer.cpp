@@ -63,6 +63,14 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
     ImGui::Begin("FolderView");
 
     std::string current_dir = file_explorer.current_directory;
+    if(ImGui::Button("Go Back")){
+        auto file_path = std::filesystem::current_path();
+        if(file_path.string() != file_explorer.current_directory){
+            file_explorer.folders.clear();
+            file_explorer.files.clear();
+            file_explorer.current_directory = file_path.string();
+        }
+    }
 
     for (size_t i = 0; i < file_explorer.folders.size(); i++)
     {
@@ -80,7 +88,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
     for (size_t i = 0; i < file_explorer.files.size(); i++)
     {
         ImGui::PushID(i);
-        ImGui::Text("%s", file_explorer.files[i].c_str());
+        // ImGui::Text("%s", file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
             //Model model = ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, file_explorer.files[i].c_str());
             Message load{
@@ -88,15 +96,8 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
                 MessageType::LoadModel,
                 (void*)file_explorer.files[i].c_str()
             };
-            Message create{
-                0,
-                MessageType::CreateEntity,
-                nullptr
-            };
 
             add_message(load);
-
-            add_message(create);
 
             //render_pipeline->models.emplace_back(model);
 

@@ -184,6 +184,7 @@ static inline mat4_t m4_rotation_z   (float angle_in_rad);
 
               mat4_t m4_ortho        (float left, float right, float bottom, float top, float back, float front);
               mat4_t m4_perspective  (float vertical_field_of_view_in_deg, float aspect_ratio, float near_view_distance, float far_view_distance);
+              mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar);//MADE BY ME FOR VULKAN
               mat4_t m4_look_at      (vec3_t from, vec3_t to, vec3_t up);
 
 static inline mat4_t m4_transpose    (mat4_t matrix);
@@ -438,6 +439,19 @@ mat4_t m4_perspective(float vertical_field_of_view_in_deg, float aspect_ratio, f
 		 0,                0,               (fd+nd)/(nd-fd),  (2*fd*nd)/(nd-fd),
 		 0,                0,               -1,                0
 	);
+}
+
+mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//MADE BY ME FOR VULKAN
+{
+    float fov_in_rad = fov / 180 * M_PI;
+	float half_fov = tanf(fov_in_rad / 2.0f);
+
+    return mat4(
+        1.f / (aspect * half_fov),  0,  0,  0,
+        0,  -1.f / half_fov,  0,  0,
+        0,  0,  -(zFar + zNear)/(zFar - zNear),  -1,
+        0,  0, -(zFar * zNear) / (zFar - zNear),  0
+    );
 }
 
 /**

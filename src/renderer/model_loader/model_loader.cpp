@@ -49,43 +49,38 @@ namespace ModelLoader
         return false;
     }
 
-    static inline ObjMode select_mode(char* char_to_check)//This is ass
+    static inline bool select_mode(char* char_to_check)//This is ass
     {
-        if(*char_to_check == '#'){
-            return ObjMode::Comment;
-        }
         if (*char_to_check == 'v') {
             char_to_check++;
-            if(*char_to_check == ' '){
-                return ObjMode::Vertex;
+            if(*char_to_check == ' ' || *char_to_check == 't' || *char_to_check == 'n'){
+                return true;
             }
-            if(*char_to_check == 't'){
-                return ObjMode::TextureCord;
-            }
+            return false;
         }
         if(*char_to_check == 'f'){
-            return ObjMode::Face;
+            return true;
         }
-        return ObjMode::None;
+        return false;
     }
 
     static inline void next_valid(char* file, size_t* current_value, size_t max_value){
         for (size_t i = *current_value; i < max_value; i++){
-            if (file[i] == '\n' && file[i+1] == 'v'){
-                *current_value = i+1;
+            if (select_mode(&file[i])){
                 break;
             }
+            *current_value = i+1;
         }
     }
 
-    static void parse_obj(const char* path_of_obj, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    static void parse_obj(const char* path_of_obj, std::vector<Vertex>& model_vertices, std::vector<uint32_t>& model_indicies)
     {
         std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
         if(!file_stream.is_open())
         {
-            vertices.emplace_back(Vertex{});
-            indices.emplace_back(0);
+            model_vertices.emplace_back(Vertex{});
+            model_indicies.emplace_back(0);
             Debug::log((char*)"Failed to load model");
             return;
         }
@@ -97,41 +92,37 @@ namespace ModelLoader
         file_stream.read(file, file_size);
         file_stream.close();
 
-        std::vector<Vertex> vertex;
-        std::vector<Indices> indicies;
-        std::vector<TextureCord> texture_cords;
 
-        ObjMode current_mode = ObjMode::None;
-        std::string values[3];
-        union {
+        union ValueToAdd {
             float vertex_to_add[3];
             float indicies_to_add[3];
             float texture_cord[2];
         };
-        // float vertex_to_add[3];
+        ValueToAdd value_to_add{};
 
-        uint8_t char_index = 0;
-
+        std::vector<Vertex> vertex;
+        std::vector<Indices> indicies;
+        std::vector<TextureCord> texture_cords;
         vertex.reserve(file_size/40);
         texture_cords.reserve(file_size/60);
         indicies.reserve(file_size/30);
 
         size_t index = 0;
-/*
+        uint8_t char_index = 0;
 
         next_valid(file, &index, file_size);
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
-                vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
                 char_index = 0;
+                vertex.emplace_back(Vertex{{value_to_add.vertex_to_add[0], value_to_add.vertex_to_add[1], value_to_add.vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
                 if(file[i+1] != 'v' || file[i+2] != ' '){
                     index = i;
                     break;
                 }
             }
             if(file[i] == ' '){
-                vertex_to_add[char_index] = atof(&file[i+1]);
+                value_to_add.vertex_to_add[char_index] = atof(&file[i+1]);
                 char_index ++;
             }
         }
@@ -140,14 +131,18 @@ namespace ModelLoader
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
-                texture_cords.emplace_back(texture_cord[0], texture_cord[1]);
+                char_index = 0;
+                TextureCord cord {};
+                cord.x = value_to_add.texture_cord[0];
+                cord.y = 1.f - value_to_add.texture_cord[1];
+                texture_cords.emplace_back(cord);
                 if(file[i+1] != 'v' || file[i+2] != 't'){
                     index = i;
                     break;
                 }
             }
             if(file[i] == ' '){
-                texture_cord[char_index] = atof(&file[i+1]);
+                value_to_add.texture_cord[char_index] = atof(&file[i+1]);
                 char_index ++;
             }
         }
@@ -156,15 +151,15 @@ namespace ModelLoader
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
-                // vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
+                char_index = 0;
                 if(file[i+1] != 'v' || file[i+2] != 'n'){
                     index = i;
                     break;
                 }
             }
-            if(file[i] == ' '){
+            if(file[i] == ' '){//TODO
                 // vertex_to_add[char_index] = atof(&file[i+1]);
-                char_index ++;
+                // char_index ++;
             }
         }
 
@@ -172,96 +167,55 @@ namespace ModelLoader
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
-                // vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
-                if(file[i+1] != 'f' || file[i+2] != ' '){
-                    index = i;
-                    break;
-                }
-            }
-            if(file[i] == '/'){
-                // vertex_to_add[char_index] = atof(&file[i+1]);
-                char_index ++;
-            }
-        }
-
-        for (size_t i = 0; i < file_size; i++)
-        {
-            char value = file[i];
-
-            if(value == '\n' || current_mode == ObjMode::None){
-
-                switch (current_mode)
+                for (size_t t = i; t < file_size; t++)
                 {
-                case ObjMode::None:
-                    current_mode = select_mode(&file[i]);
-                    if(current_mode == ObjMode::TextureCord) i++;//do i even need to?
-                    char_index = 0;
-                    continue;
-                break;
-                case ObjMode::Comment:
-
-                break;
-                case ObjMode::Vertex:
-                    //vertex.emplace_back(Vertex{{vertex_to_add[0], vertex_to_add[1], vertex_to_add[2]}, {0, 0, 0}, {0, 0}});
-                break;
-                case ObjMode::Face:
-                    for (std::string& index : values)
-                    {
-                        if(index.length() <= 0) continue;
-                        uint32_t vertex_index = std::stoi(index)-1;
-                        for (size_t i = 0; i < index.size(); i++)
-                        {
-                            if(index[i] == '/')
-                            {
-                                Indices indecies;
-                                indecies.vertex_index = vertex_index;
-                                indecies.texture_index = std::stoi(&index[i+1])-1;
-                                indicies.emplace_back(indecies);
-                                break;
-                            }
-                        }
+                    char prev = file[t-1];
+                    char current = file[t];
+                    char next = file[t+1];
+                    char next2 = file[t+2];
+                    if(file[t] == 'f'){
+                        i = t-1;
+                        break;
                     }
-                break;
-                case ObjMode::TextureCord:
-                    //texture_cord.emplace_back(TextureCord{std::stof(values[0]), 1.f - std::stof(values[1])});
-                break;
-                case ObjMode::Normal:
-                    //Todo
-                break;
-                default:
-                    break;
                 }
-                for (std::string& index : values)
-                {
-                    index.clear();
-                }
-                current_mode = ObjMode::None;
-                continue;
             }
-
-            if(current_mode == ObjMode::None || current_mode == ObjMode::Comment) continue; // do I even need this?
-
-            if(value == ' '){
-                if(current_mode == ObjMode::Vertex){
-                    vertex_to_add[char_index] = atof(&file[i+1]);
+            if(file[i] == ' '){
+                Indices triangle_indexes {};
+                triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                size_t y = i;
+                for(size_t x = y; x < file_size; x++){
+                    if(file[x] == '\n') break;
+                    if(file[x] == '/'){
+                        triangle_indexes.texture_index = static_cast<uint32_t>(atoi(&file[x+1]));
+                        y = x+1;
+                        break;
+                    }
                 }
-                char_index++;
-                continue;
-            }
-            else if (is_valid_char(value)){
-
-                //values[char_index].push_back(value);
+                for(size_t x = y; x < file_size; x++){
+                    if(file[x] == '\n') break;
+                    if(file[x] == '/'){
+                        triangle_indexes.normal_index = static_cast<uint32_t>(atoi(&file[x+1]));
+                        break;
+                    }
+                }
+                indicies.emplace_back(triangle_indexes);
             }
         }
- */
-        indices.reserve(indicies.size());
+
+        model_indicies.reserve(indicies.size());
         for (size_t i = 0; i < indicies.size(); i++)
         {
-            vertex[indicies[i].vertex_index].texture_cord = texture_cords[indicies[i].texture_index];
-            indices.emplace_back(indicies[i].vertex_index);
+            uint32_t val = indicies[i].vertex_index;
+            uint32_t bal = indicies[i].texture_index;
+            if(val > 0 && bal > 0){
+                vertex[indicies[i].vertex_index-1].texture_cord = texture_cords[indicies[i].texture_index-1];
+                model_indicies.push_back(indicies[i].vertex_index-1);
+            }
         }
-        vertices = vertex;
 
+        model_vertices.resize(vertex.size());
+        memcpy(model_vertices.data(), vertex.data(), vertex.size() * sizeof(Vertex));
+        // vertices = vertex;
         free(file);
     }
 

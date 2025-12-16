@@ -5,7 +5,6 @@
 #include <string>
 #include <unordered_map>
 #include <iostream>
-#include "components.cpp"
 #include "entity_system.cpp"
 
 static void stub(){}
@@ -28,7 +27,7 @@ namespace EntityManager
 
     void add_entity(Entity entity, std::string name);
 
-    void add_component(uint32_t entity_id, Type component, System& system);
+    void add_component(uint32_t entity_id, uint8_t component, System& system);
 
     void remove_entity(Entity entity);
 
@@ -80,7 +79,7 @@ void EntityManager::add_entity(Entity entity, std::string name)
     entity_names[name] = entity.id;
 }
 
-void EntityManager::add_component(uint32_t entity_id, Type component, System& system)
+void EntityManager::add_component(uint32_t entity_id, uint8_t component, System& system)
 {
     TempID temp = TempID{
         0,

@@ -15,6 +15,11 @@
 #include "engine/entity_manager/components.cpp"
 #include "engine/message_system/message.cpp"
 
+struct PlatformLayer
+{
+    float (*MemoryChecker)();
+};
+
 struct OstenEngine
 {
     GLFWwindow* main_window = nullptr;
@@ -27,6 +32,8 @@ struct OstenEngine
 
     FileExplorer file_explorer;
 
+    PlatformLayer& platform_layer;
+
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {
         auto app = reinterpret_cast<OstenEngine*>(glfwGetWindowUserPointer(main_window));
@@ -34,15 +41,15 @@ struct OstenEngine
     }
 
 
-    OstenEngine(const int width, const int height, const char* name);
+    OstenEngine(const int width, const int height, const char* name, PlatformLayer& layer);
 
     ~OstenEngine();
-    void main_game_loop(float (*profile)());
+    void main_game_loop();
 
     void cleanup();
 };
 
-OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
+OstenEngine::OstenEngine(const int width, const int height, const char* name, PlatformLayer& layer) : application_name { name }, platform_layer { layer }
 {
     if(!glfwInit()){
         puts("glfwInit failed");
@@ -97,7 +104,7 @@ void shift(std::vector<float>& mem_usage){
     mem_usage.erase(mem_usage.end());
 }
 
-void OstenEngine::main_game_loop(float (*profile)())
+void OstenEngine::main_game_loop()
 {
     bool test = true;
     static auto start_time = std::chrono::high_resolution_clock::now();
@@ -142,7 +149,7 @@ void OstenEngine::main_game_loop(float (*profile)())
 
         if(frame_time > 1)
         {
-            mem_usage.push_back(profile());
+            mem_usage.push_back(platform_layer.MemoryChecker());
             while(mem_usage.size() > 1000) shift(mem_usage);
             fps = frames / frame_time;
             start_time = current_time;
