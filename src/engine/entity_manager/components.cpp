@@ -10,9 +10,9 @@ constexpr uint8_t TRANSFORM = 1;
 constexpr uint8_t RENDER = 2;
 
 
-typedef struct Component
+typedef struct
 {
-    const uint16_t id = 0;
+    const uint16_t id;
 } Component;
 
 struct TransformComponent

@@ -100,7 +100,7 @@ namespace ModelLoader
         };
         ValueToAdd value_to_add{};
 
-        std::vector<Vertex> vertex;
+        std::vector<Vertex>& vertex = model_vertices;
         std::vector<Indices> indicies;
         std::vector<TextureCord> texture_cords;
         vertex.reserve(file_size/40);
@@ -213,8 +213,8 @@ namespace ModelLoader
             }
         }
 
-        model_vertices.resize(vertex.size());
-        memcpy(model_vertices.data(), vertex.data(), vertex.size() * sizeof(Vertex));
+        //model_vertices.resize(vertex.size());
+        //memcpy(model_vertices.data(), vertex.data(), vertex.size() * sizeof(Vertex));
         // vertices = vertex;
         free(file);
     }

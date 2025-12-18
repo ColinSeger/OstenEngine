@@ -252,7 +252,7 @@ namespace Texture
         constexpr uint8_t image_bit_size = 4;
         if(!image_pixels){
             error_handle = true;
-            std::cout << texture_location << "\n";//TODO REMOVE
+
             uint8_t temp[] = {255, 105, 180, 255};//HotPink
             image_pixels = temp;
             image_size = image_bit_size;
