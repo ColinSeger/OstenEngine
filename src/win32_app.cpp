@@ -4,9 +4,6 @@
 #include <processthreadsapi.h>
 #include <psapi.h>
 
-OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    return OstenEngine(width, height, name);
-}
 
 float value(){
     PROCESS_MEMORY_COUNTERS memory_counters;
@@ -20,9 +17,15 @@ float value(){
 
     return 0;
 }
+OstenEngine start(uint32_t width, uint32_t height, const char* name){
+    PlatformLayer platform_layer{
+        &value
+    };
+    return OstenEngine(width, height, name, platform_layer);
+}
 /*
 */
 uint8_t run(OstenEngine& engine){
-    engine.main_game_loop(value);
+    engine.main_game_loop();
     return 0;
 }
