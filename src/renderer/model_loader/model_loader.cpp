@@ -1,4 +1,3 @@
-// #include "model_loader.h"
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -20,27 +19,28 @@ enum class ObjMode : uint8_t
     Comment
 };
 
-struct Model
+typedef struct
 {
-    uint32_t index_amount = 0;
+    uint32_t index_amount;
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
 
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
-};
+} Model;
 
 
 namespace ModelLoader
 {
-    const char valid_chars[14] = "0123456789.-/";
-    struct Indices{
+    constexpr char valid_chars[14] = "0123456789.-/";
+
+    typedef struct{
         uint32_t vertex_index;
         uint32_t texture_index;
         uint32_t normal_index;
-    };
+    } Indices;
 
-    static bool is_valid_char(char c)
+    static constexpr bool is_valid_char(char c)
     {
         for(char valid : valid_chars)
         {
@@ -49,7 +49,7 @@ namespace ModelLoader
         return false;
     }
 
-    static inline bool select_mode(char* char_to_check)//This is ass
+    static constexpr bool select_mode(char* char_to_check)//This is ass
     {
         if (*char_to_check == 'v') {
             char_to_check++;
@@ -64,7 +64,7 @@ namespace ModelLoader
         return false;
     }
 
-    static inline void next_valid(char* file, size_t* current_value, size_t max_value){
+    static constexpr void next_valid(char* file, size_t* current_value, size_t max_value){
         for (size_t i = *current_value; i < max_value; i++){
             if (select_mode(&file[i])){
                 break;
@@ -213,9 +213,6 @@ namespace ModelLoader
             }
         }
 
-        //model_vertices.resize(vertex.size());
-        //memcpy(model_vertices.data(), vertex.data(), vertex.size() * sizeof(Vertex));
-        // vertices = vertex;
         free(file);
     }
 
@@ -286,7 +283,7 @@ namespace ModelLoader
 
     Model load_model(Device& device, VkCommandPool command_pool, std::string filename)
     {
-        Model model;
+        Model model{};
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         char extention[3];

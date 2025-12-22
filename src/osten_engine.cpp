@@ -7,12 +7,11 @@
 #include "renderer/instance/vulkan/instance.cpp"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
-#define MATH_3D_IMPLEMENTATION
-#include "../external/math_3d.h"
 #include "editor/file_explorer/file_explorer.cpp"
-#include "engine/entity_manager/entity_system.cpp"
 #include "engine/entity_manager/components.cpp"
 #include "engine/message_system/message.cpp"
+#define MATH_3D_IMPLEMENTATION
+#include "../external/math_3d.h"
 
 struct PlatformLayer
 {
@@ -26,8 +25,6 @@ struct OstenEngine
     RenderPipeline* render_pipeline = nullptr;
 
     std::vector<char*> logs;
-
-    std::vector<System> systems;
 
     FileExplorer file_explorer;
 
@@ -73,7 +70,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name, Pl
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
-    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers);
+    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers.data(), validation_layers.size());
     VkSurfaceKHR surface;
 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);

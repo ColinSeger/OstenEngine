@@ -1,29 +1,29 @@
-//#include "swap_chain.h"
 #pragma once
 #include "../../device/vulkan/device.cpp"
 #include "../../texture/vulkan/texture.cpp"
 
-struct WindowSize{
-    int32_t x = 0;
-    int32_t y = 0;
-};
+typedef struct
+{
+    int32_t x;
+    int32_t y;
+} WindowSize;
 
-struct RenderBuffer
+typedef struct
 {
     VkBuffer& vertex_buffer;
     VkBuffer& index_buffer;
-};
+} RenderBuffer;
 
-struct SwapChain
+typedef struct
 {
     VkExtent2D screen_extent;
 
     VkSwapchainKHR swap_chain;
 
     VkFormat swap_chain_image_format;
-};
+} SwapChain;
 
-struct SwapChainImages
+typedef struct
 {
     VkImage depth_image;
 
@@ -36,9 +36,9 @@ struct SwapChainImages
     std::vector<VkImageView> swap_chain_image_view;
 
     std::vector<VkFramebuffer> swap_chain_framebuffers;
-};
+} SwapChainImages;
 
-static uint32_t simple_clamp(uint32_t value, uint32_t min, uint32_t max)
+static constexpr uint32_t simple_clamp(const uint32_t value, const  uint32_t min,const  uint32_t max)
 {
     if(value > max){
         return max;
@@ -78,21 +78,19 @@ VkImageView create_depth_resources(Device& device, VkExtent2D image_size, VkDevi
     return Texture::create_image_view(device.virtual_device ,depth_image, depth_formating, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
-static VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats){
-
-    for (const auto& available_format : available_formats) {
-        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            return available_format;
+static VkSurfaceFormatKHR select_swap_surface_format(const VkSurfaceFormatKHR* available_formats, const uint32_t amount){
+    for (uint32_t i = 0; i < amount ; i++) {
+        if (available_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && available_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return available_formats[i];
         }
     }
-
     return available_formats[0];
 }
 
-static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
-    for (const auto& available_present_mode : available_present_modes) {
-        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return available_present_mode;
+static VkPresentModeKHR select_swap_present_mode(const VkPresentModeKHR* available_present_modes, const uint32_t amount) {
+    for (uint32_t i = 0; i < amount ; i++) {
+        if (available_present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return available_present_modes[i];
         }
     }
 
@@ -102,8 +100,8 @@ static VkPresentModeKHR select_swap_present_mode(const std::vector<VkPresentMode
 void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
-    VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats);
-    VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes);
+    VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats.data(), swap_chain_support.surface_formats.size());
+    VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes.data(), swap_chain_support.surface_present_modes.size());
 
     VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
 

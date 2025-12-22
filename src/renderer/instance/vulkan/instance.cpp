@@ -1,43 +1,44 @@
 #pragma once
+#include <cstdlib>
 #include <vulkan/vulkan.h>
 #include <cstdint>
-#include <vector>
 #include <stdint.h>
 #include <cstring>
 
 namespace Instance
 {
-    static bool check_validation_layer_support(const std::vector<const char*>& validation_layers)
+    static bool check_validation_layer_support(const char*const* validation_layers, uint8_t amount)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-        std::vector<VkLayerProperties> available_layers(layer_count);
-        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+        VkLayerProperties* available_layers = (VkLayerProperties*)malloc(sizeof(VkLayerProperties) * layer_count);
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
+        bool layer_found = false;
 
-        for(const char* layer_name : validation_layers){
-            bool layer_found = false;
-
-            for(const auto& layer_properties : available_layers){
-                if(strcmp(layer_name, layer_properties.layerName) == 0){
+        for(uint8_t i = 0; i < amount; i++){
+            for(uint32_t layer_index = 0; layer_index < layer_count; layer_index++){
+                if(strcmp(validation_layers[i], available_layers[layer_index].layerName) == 0){
                     layer_found = true;
                     break;
                 }
             }
-            if(!layer_found){
-                return false;
-            }
         }
 
+        free(available_layers);
+
+        if(!layer_found){
+            return false;
+        }
         return true;
     }
 
-    VkInstance create_instance(const char* name, uint32_t window_extention_count, const char** window_extensions, const std::vector<const char*>& validation_layers)
+    VkInstance create_instance(const char* name, uint32_t window_extention_count, const char** window_extensions, const char* const* validation_layers, uint8_t layer_amount)
     {
+        if(window_extensions == NULL) throw;
         VkInstance instance = VK_NULL_HANDLE;
-        uint16_t layer_size = validation_layers.size();
-        if(layer_size > 0){
-            if(check_validation_layer_support(validation_layers) != true){
+        if(layer_amount > 0){
+            if(!check_validation_layer_support(validation_layers, layer_amount)){
                 throw("Validation layers requested but could not be found");
             }
         }
@@ -59,18 +60,12 @@ namespace Instance
         create_info.pApplicationInfo = &app_info;
         create_info.flags = VkInstanceCreateFlags(0);
 
-        // uint32_t glfw_extention_count = 0;
-
-        // //Gets critical extensions
-        // const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
-        if(window_extensions == NULL) throw;
-
         create_info.enabledExtensionCount = window_extention_count;
         create_info.ppEnabledExtensionNames = window_extensions;
 
-        if(layer_size > 0){
-            create_info.enabledLayerCount = static_cast<uint32_t>(layer_size);
-            create_info.ppEnabledLayerNames = validation_layers.data();
+        if(layer_amount > 0){
+            create_info.enabledLayerCount = static_cast<uint32_t>(layer_amount);
+            create_info.ppEnabledLayerNames = validation_layers;
         }else{
             create_info.enabledLayerCount = 0;
         }

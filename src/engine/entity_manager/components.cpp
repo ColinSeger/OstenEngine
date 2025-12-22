@@ -151,6 +151,7 @@ void create_render_component_system(uint8_t render_amount){
     ComponentSystem* component_sys = get_component_system(RENDER);
     component_sys->components = malloc(sizeof(RenderComponent) * render_amount);
     component_sys->type = 2;
+    component_sys->capacity = render_amount;
     for (size_t i = 0; i < render_amount; i++)
     {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);

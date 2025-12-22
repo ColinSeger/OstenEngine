@@ -17,9 +17,9 @@ struct Vertex {
     TextureCord texture_cord{};
 };
 
-struct VertexAttributes{
+typedef struct{
     VkVertexInputAttributeDescription array[3];
-};
+} VertexAttributes;
 
 struct optional
 {
@@ -27,16 +27,16 @@ struct optional
     bool has_value = false;
 };
 
-struct QueueFamilyIndicies{
+typedef struct{
     optional graphics_family;
     optional present_family;
-};
+}  QueueFamilyIndicies;
 
-struct SwapChainSupportDetails {
+typedef struct{
     VkSurfaceCapabilitiesKHR surface_capabilities;
     std::vector<VkSurfaceFormatKHR> surface_formats;
     std::vector<VkPresentModeKHR> surface_present_modes;
-};
+} SwapChainSupportDetails ;
 
 struct Device
 {
@@ -52,17 +52,14 @@ static const std::vector<const char*> device_extensions = {
 };
 
 
-namespace DeviceHelperFunctions
+constexpr bool is_completed(const QueueFamilyIndicies& queue_family)
 {
-    bool is_completed(QueueFamilyIndicies& queue_family)
-    {
-        return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
-    }
+    return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
+}
 
-    bool is_completed(SwapChainSupportDetails& swap_chain_support)
-    {
-        return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
-    }
+bool is_completed(SwapChainSupportDetails& swap_chain_support)
+{
+    return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
 }
 
 VkVertexInputBindingDescription get_binding_description() {
@@ -131,19 +128,18 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
 
 SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface){
     SwapChainSupportDetails swap_chain_details;
-
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
 
     uint32_t format_amount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, nullptr);
 
+    uint32_t present_mode_amount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, nullptr);
+
     if (format_amount != 0) {
         swap_chain_details.surface_formats.resize(format_amount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats.data());
     }
-
-    uint32_t present_mode_amount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, nullptr);
 
     if (present_mode_amount != 0) {
         swap_chain_details.surface_present_modes.resize(present_mode_amount);
@@ -182,13 +178,13 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//C
 
     if(has_extention_support){
         SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device, surface);
-        has_swap_chain_support = DeviceHelperFunctions::is_completed(swap_chain_support);
+        has_swap_chain_support = is_completed(swap_chain_support);
     }
 
     VkPhysicalDeviceFeatures supported_features;
     vkGetPhysicalDeviceFeatures(device, &supported_features);
 
-    return DeviceHelperFunctions::is_completed(indices) && has_extention_support && has_swap_chain_support;
+    return is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
 

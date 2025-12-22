@@ -9,29 +9,35 @@
 #include "../../../../external/image_loader/stb_image.h"
 
 
-struct TextureImage
+typedef struct
 {
     VkImage texture_image;
     VkImageView image_view;
     VkSampler texture_sampler;
     VkDeviceMemory texture_image_memory;
-};
+} TextureImage;
 
 std::unordered_map<std::string, uint32_t> loaded_textures_index;
 std::vector<TextureImage> loaded_textures;
 
 namespace Texture
 {
-    static VkFormat find_supported_texture_formats(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
+    struct Formats
     {
-        for (VkFormat format : candidates) {
+        VkFormat* formats;
+        uint32_t format_amount;
+    };
+    static VkFormat find_supported_texture_formats(const Formats formats, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
+    {
+        for(uint32_t i = 0; i < formats.format_amount; i++)
+        {
             VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(physical_device, format, &props);
+            vkGetPhysicalDeviceFormatProperties(physical_device, formats.formats[i], &props);
 
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-                return format;
+                return formats.formats[i];
             } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-                return format;
+                return formats.formats[i];
             }
         }
 
@@ -230,8 +236,14 @@ namespace Texture
 
 
     VkFormat find_depth_formats(VkPhysicalDevice physical_device) {
+        VkFormat valid_formats[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
+        Formats formats{
+            formats.formats = valid_formats,
+            formats.format_amount = 3
+        };
+
         return find_supported_texture_formats(
-            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+            formats,
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
             physical_device

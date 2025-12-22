@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <vulkan/vulkan_core.h>
+#include "../../external/math_3d.h"
 #include "device/vulkan/device.cpp"
 #include "descriptors/descriptors.cpp"
 #include "texture/vulkan/texture.cpp"
@@ -199,7 +200,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, const char* ap
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
-    create_uniform_buffers(to_render, device);
+    create_uniform_buffers(to_render.data(), to_render.size(), device);
     create_descriptor_pool(descriptor_pool, device.virtual_device);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
