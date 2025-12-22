@@ -239,12 +239,8 @@ void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device,
         }
     }
 }
-namespace RenderPass
-{
-    void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent);
-    void end_render_pass(VkCommandBuffer& command_buffer);
-}
-void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
+
+void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
 {
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
@@ -261,6 +257,12 @@ void RenderPass::start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffe
     render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
     render_pass_info.pClearValues = clear_values;
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+}
+void end_render_pass(VkCommandBuffer& command_buffer)
+{
+    if(vkEndCommandBuffer(command_buffer) != VK_SUCCESS){
+        throw("Failed to end render pass");
+    }
 }
 
 void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExtent2D extent)
@@ -280,14 +282,4 @@ void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExten
     scissor.offset = {0, 0};
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-
-//draw_frame(command_buffer, descriptor_set, pipeline_layout, render_buffer, index_amount);
-
-}
-
-void RenderPass::end_render_pass(VkCommandBuffer& command_buffer)
-{
-    if(vkEndCommandBuffer(command_buffer) != VK_SUCCESS){
-        throw("Failed to end render pass");
-    }
 }

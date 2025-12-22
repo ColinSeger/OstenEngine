@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <iostream>
 #include "entity_system.cpp"
 
 static void stub(){}
@@ -48,13 +47,6 @@ namespace {
 }
 std::unordered_map<std::string, uint32_t>& EntityManager::get_entity_names(){
     return entity_names;
-}
-void hello(){
-    std::cout << "Hello\n";
-}
-
-void test(){
-    std::cout << "Test\n";
 }
 
 void EntityManager::add_entity(Entity entity, std::string name)
@@ -109,15 +101,6 @@ uint32_t EntityManager::get_entity_amount()
 {
     return entities.size();
 }
-
-// void EntityManager::print_entities()
-// {
-//     for (size_t i = 0; i < entities.size(); i++)
-//     {
-//         entities[i].test();
-//     }
-
-// }
 
 void rename_entity(std::string current_name, std::string new_name)
 {

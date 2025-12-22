@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#define COMMON_INCLUDES
 #include <vector>
 #include <chrono>
 #include <vulkan/vulkan.h>

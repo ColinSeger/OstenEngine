@@ -4,8 +4,9 @@
 #include <vector>
 #include "../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../../external/math_3d.h"
+#include "../device/vulkan/device.cpp"
 
-const uint8_t FRAMES = 2;
+constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
 struct RenderDescriptors
 {
@@ -51,21 +52,21 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 }
 
 void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
-    std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(FRAMES);
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts.data();
 
-    render_this.descriptor_sets.resize(FRAMES);
+    render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
 
     if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
         throw("Failed to create descriptor sets");
     }
 
-    for (size_t i = 0; i < FRAMES; i++) {
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
         buffer_info.buffer = render_this.uniform_buffers[i];
         buffer_info.offset = 0;
@@ -102,7 +103,7 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
 
 void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler)
 {
-    for (size_t i = 0; i < FRAMES; i++) {
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
         buffer_info.buffer = render_this.uniform_buffers[i];
         buffer_info.offset = 0;
@@ -173,20 +174,20 @@ static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice v
     {
         RenderDescriptors& render_this = to_render[render_index];
 
-        std::vector<VkDescriptorSetLayout> layouts(FRAMES, descriptor_set_layout);//Swap for normal array later?
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);//Swap for normal array later?
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptor_pool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(FRAMES);
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = layouts.data();
 
-        render_this.descriptor_sets.resize(FRAMES);
+        render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
 
         if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets.data()) != VK_SUCCESS){
             throw("Failed to allocate descriptor sets");
         }
 
-        for (size_t i = 0; i < FRAMES; i++) {
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo buffer_info{};
             buffer_info.buffer = render_this.uniform_buffers[i];
             buffer_info.offset = 0;
@@ -219,6 +220,52 @@ static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice v
 
             vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
         }
+    }
+}
+
+static void create_uniform_buffers(std::vector<RenderDescriptors>& render_descriptors, Device device) {
+    for (size_t render_index = 0; render_index < render_descriptors.size(); render_index++)
+    {
+       VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+       RenderDescriptors& render_this = render_descriptors[render_index];
+
+        render_this.uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+        render_this.uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+        render_this.uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            CommandBuffer::create_buffer(
+                device,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                bufferSize,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                render_this.uniform_buffers[i],
+                render_this.uniform_buffers_memory[i]
+            );
+
+            vkMapMemory(device.virtual_device, render_this.uniform_buffers_memory[i], 0, bufferSize, 0, &render_this.uniform_buffers_mapped[i]);
+        }
+    }
+}
+
+void create_uniform_buffer(RenderDescriptors& render_descriptor, Device device) {
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    render_descriptor.uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+    render_descriptor.uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+    render_descriptor.uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        CommandBuffer::create_buffer(
+            device,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            bufferSize,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            render_descriptor.uniform_buffers[i],
+            render_descriptor.uniform_buffers_memory[i]
+        );
+
+        vkMapMemory(device.virtual_device, render_descriptor.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptor.uniform_buffers_mapped[i]);
     }
 }
 

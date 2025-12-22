@@ -19,7 +19,7 @@ static void create_entity(RenderPipeline* render_pipeline){
     //first_obj.transform_index = id;
     //first_obj.model_index = render_pipeline->models.size() -1;
 
-    render_pipeline->create_uniform_buffer(first_obj);
+    create_uniform_buffer(first_obj, render_pipeline->device);
     TextureImage texture;
     if(render_pipeline->to_render.size() < 2){
         uint32_t test = Texture::load_texture(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
