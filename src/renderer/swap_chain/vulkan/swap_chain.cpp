@@ -35,7 +35,7 @@ typedef struct
 
     std::vector<VkImageView> swap_chain_image_view;
 
-    std::vector<VkFramebuffer> swap_chain_framebuffers;
+    std::vector<VkFramebuffer> swap_chain_frame_buffers;
 } SwapChainImages;
 
 static constexpr uint32_t simple_clamp(const uint32_t value, const  uint32_t min,const  uint32_t max)
@@ -157,7 +157,7 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     vkDestroyImage(virtual_device, swap_chain_images.depth_image, nullptr);
     vkFreeMemory(virtual_device, swap_chain_images.depth_image_memory, nullptr);
 
-    for (auto framebuffer : swap_chain_images.swap_chain_framebuffers) {
+    for (auto framebuffer : swap_chain_images.swap_chain_frame_buffers) {
         vkDestroyFramebuffer(virtual_device, framebuffer, nullptr);
     }
 
@@ -215,9 +215,9 @@ void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceK
 
 void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent)
 {
-    swap_images.swap_chain_framebuffers.resize(swap_images.swap_chain_images.size());
+    swap_images.swap_chain_frame_buffers.resize(swap_images.swap_chain_images.size());
 
-    for (size_t i = 0; i < swap_images.swap_chain_framebuffers.size(); i++) {
+    for (size_t i = 0; i < swap_images.swap_chain_frame_buffers.size(); i++) {
         VkImageView attachments[2] = {
             swap_images.swap_chain_image_view[i],
             depth_image_view
@@ -232,7 +232,7 @@ void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device,
         framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
 
-        if(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_images.swap_chain_framebuffers[i]) != VK_SUCCESS){
+        if(vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &swap_images.swap_chain_frame_buffers[i]) != VK_SUCCESS){
             throw("Failed to create frame buffers");
         }
     }

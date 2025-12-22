@@ -1,9 +1,8 @@
+#ifndef TEXTURE_IMPLEMENTATION
 #include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vulkan/vulkan_core.h>
-#ifndef TEXTURE_IMPLEMENTATION
-#include <vulkan/vulkan.h>
 #include <vector>
 #include "../../device/vulkan/device.cpp"
 #include "../../../../external/image_loader/stb_image.h"
@@ -41,7 +40,7 @@ namespace Texture
             }
         }
 
-        throw std::runtime_error("failed to find supported format!");
+        throw "failed to find supported format!";
     }
 
     static void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool)
@@ -178,8 +177,6 @@ namespace Texture
 
         vkBindImageMemory(device.virtual_device, image, image_memory, 0);
     }
-
-
 
     VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)
     {

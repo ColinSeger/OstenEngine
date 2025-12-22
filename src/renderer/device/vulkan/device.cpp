@@ -1,7 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <vulkan/vulkan.h>
 #include <string.h>
-#include <set>
 #include <vector>
 #include "../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
@@ -47,7 +47,7 @@ struct Device
     VkQueue present_queue;
 };
 
-static const std::vector<const char*> device_extensions = {
+static const char* device_extensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -159,13 +159,20 @@ static bool check_device_extension_support(VkPhysicalDevice device)
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
 
-    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+    uint32_t extension_amount = sizeof(device_extensions) / sizeof(device_extensions[0]);
+    uint32_t found_amount = 0;
 
     for (const auto& extension : available_extensions) {
-        required_extensions.erase(extension.extensionName);
+        if(!strcmp(device_extensions[0], extension.extensionName)){
+            found_amount++;
+        }
     }
-
-    return required_extensions.empty();
+    if(found_amount >= extension_amount){
+        return true;
+    }else{
+        return false;
+    }
+    // return required_extensions.empty();
 }
 
 static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//Can improve later
@@ -188,22 +195,33 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//C
 }
 
 
-static void create_virtual_device(Device& device, VkSurfaceKHR surface, const std::vector<const char*>& validation_layers)
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
 {
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = {indices.graphics_family.number, indices.present_family.number};
+    uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
+
     float queuePriority = 1.0f;
 
+    std::vector<uint32_t> done_indexes;
 
-    for (uint32_t queue_family : unique_queue_families) {
+    for (uint32_t queue_family : family_array) {
+        uint8_t contains = 0;
+        for (int i = 0; i < done_indexes.size(); i++) {
+            if(queue_family == done_indexes[i]) contains++;
+        }
+
+        if(contains > 0) continue;
+
         VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;
         queue_create_info.pQueuePriorities = &queuePriority;
         queue_create_infos.push_back(queue_create_info);
+
+        done_indexes.push_back(queue_family);
     }
 
 
@@ -220,13 +238,12 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const st
 
     create_info.pEnabledFeatures = &device_features;
 
-    create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
-    create_info.ppEnabledExtensionNames = device_extensions.data();
+    create_info.enabledExtensionCount = static_cast<uint32_t>(sizeof(device_extensions) / sizeof(device_extensions[0]));
+    create_info.ppEnabledExtensionNames = device_extensions;
 
-    uint32_t validation_length = validation_layers.size();
-    if (validation_length > 0) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_length);
-        create_info.ppEnabledLayerNames = validation_layers.data();
+    if (layer_amount > 0) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(layer_amount);
+        create_info.ppEnabledLayerNames = validation_layers;
     } else {
         create_info.enabledLayerCount = 0;
     }
@@ -243,7 +260,7 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const st
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const std::vector<const char*>& validation_layers)
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const char* const* validation_layers, uint8_t layer_amount)
 {
     uint32_t device_amount = 0;
 
@@ -268,7 +285,7 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         throw "No vulkan supported graphics found";
     }
 
-    create_virtual_device(device, surface_reference, validation_layers);
+    create_virtual_device(device, surface_reference, validation_layers, layer_amount);
 }
 
 void destroy_device(Device& device)
@@ -462,17 +479,15 @@ namespace CommandBuffer
     }
 
     //Can probably make this a array
-    void create_command_buffers(std::vector<VkCommandBuffer>& command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT)
+    void create_command_buffers(VkCommandBuffer* command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT)
     {
-        command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-
         VkCommandBufferAllocateInfo allocation_info{};
         allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocation_info.commandPool = command_pool;
         allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocation_info.commandBufferCount = command_buffers.size();
+        allocation_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-        VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers.data());
+        VkResult result = vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers);
         if(result != VK_SUCCESS){
             throw("Failed at creating command buffers");
         }

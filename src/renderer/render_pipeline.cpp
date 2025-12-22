@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <cstdlib>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
@@ -16,13 +18,12 @@ struct RenderPipeline
     //Device manager
     Device device;
 
-    //TODO check if these even need to be vector
-    std::vector<VkSemaphore> image_available_semaphores;
-    std::vector<VkSemaphore> render_finished_semaphores;
-    std::vector<VkFence> in_flight_fences;
+    VkSemaphore image_available_semaphores[MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore render_finished_semaphores[MAX_FRAMES_IN_FLIGHT];
+    VkFence in_flight_fences[MAX_FRAMES_IN_FLIGHT];
 
     //TODO move out of class
-    std::vector<VkCommandBuffer> command_buffers;
+    VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
     std::vector<RenderDescriptors> to_render;
     std::vector<Model> models;
@@ -46,11 +47,9 @@ struct RenderPipeline
     VkRenderPass render_pass; //TODO MOVE
     uint8_t current_frame = 0;//TODO MOVE
 
-    void shader();
-
     void restart_swap_chain(int32_t width, int32_t height);
 
-    RenderPipeline(const int width, const int height, const char* application_name, VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*> validation_layers);
+    RenderPipeline(const int width, const int height, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount);
     ~RenderPipeline();
 
     int32_t draw_frame(CameraComponent camera);
@@ -58,314 +57,13 @@ struct RenderPipeline
     void cleanup();
 };
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame)
+typedef struct
 {
-    // VkBuffer vertex_buffers[] = {model.vertex_buffer};
-    VkDeviceSize offsets[] = {0};
-    if(model.index_amount > 0){
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
-
-        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
-
-        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
-    }
-}
-
-static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device)
-{
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    VkAttachmentDescription color_attachment{};
-    color_attachment.format = swap_chain_format;
-    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference color_attachment_ref{};
-    color_attachment_ref.attachment = 0;
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
-    VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = Texture::find_depth_formats(device.physical_device);
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depth_attachment_ref{};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
-    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
-
-    VkRenderPassCreateInfo render_pass_info{};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
-    render_pass_info.pAttachments = description_attachments;
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &dependency;
-
-    if(vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass) != VK_SUCCESS){
-        throw "Failed to create RenderPass";
-    }
-}
-
-static void create_sync_objects(VkDevice virtual_device, RenderPipeline& render_pipe)
-{
-    render_pipe.image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    render_pipe.render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    render_pipe.in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-
-    VkSemaphoreCreateInfo semaphore_info{};
-    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fence_info{};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.image_available_semaphores[i]) != VK_SUCCESS){
-            assert(false);
-        }
-        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.render_finished_semaphores[i]) != VK_SUCCESS){
-            assert(false);
-        }
-        if(vkCreateFence(virtual_device, &fence_info, nullptr, &render_pipe.in_flight_fences[i]) != VK_SUCCESS){
-            assert(false);
-        }
-    }
-}
-
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, std::vector<RenderDescriptors>& to_render) {
-    //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    ComponentSystem* render =  get_component_system(RENDER);
-    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
-
-    Vector3 forward_vector = camera_transform.position + Transformations::forward_vector(camera_transform);
-    Vector3 up = Transformations::up_vector(camera_transform);
-    vec3_t pos = {camera_transform.position.x ,camera_transform.position.y ,camera_transform.position.z};
-
-    mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(camera.field_of_view, aspect_ratio, 1.f, 2000.0f);
-
-    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
-    for (size_t render_index = 0; render_index < render->amount; render_index++)
-    {
-        RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
-        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
-
-        UniformBufferObject ubo{
-            model,
-            view,
-            projection
-        };
-
-        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
-    }
-}
-
-RenderPipeline::RenderPipeline(const int width, const int height, const char* application_name, VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*> validation_layers)
-{
-    my_instance = instance;
-    my_surface = surface;
-    create_device(device, instance, surface, validation_layers);
-
-    restart_swap_chain(width, height);
-
-    create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
-
-    create_uniform_buffers(to_render.data(), to_render.size(), device);
-    create_descriptor_pool(descriptor_pool, device.virtual_device);
-
-    VkPipelineLayoutCreateInfo pipeline_layout_info{};
-    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 1;
-    pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
-    pipeline_layout_info.pushConstantRangeCount = 0; // Optional
-    pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
-
-    if(vkCreatePipelineLayout(device.virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
-        assert(false && "Failed to create pipeline");
-    }
-
-    shader();
-
-    create_sync_objects(device.virtual_device, *this);
-}
-
-RenderPipeline::~RenderPipeline()
-{
-    cleanup();
-}
-
-void RenderPipeline::cleanup()
-{
-    vkDeviceWaitIdle(device.virtual_device);
-    clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
-    vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
-
-    vkDestroyDescriptorPool(device.virtual_device, descriptor_pool, nullptr);
-
-
-    vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
-
-    for(Model model : models){
-        vkDestroyBuffer(device.virtual_device, model.index_buffer, nullptr);
-        vkDestroyBuffer(device.virtual_device, model.vertex_buffer, nullptr);
-    }
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(device.virtual_device, image_available_semaphores[i], nullptr);
-        vkDestroySemaphore(device.virtual_device, render_finished_semaphores[i], nullptr);
-        vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
-    }
-
-    vkDestroySurfaceKHR(my_instance, my_surface, nullptr);
-
-    vkDeviceWaitIdle(device.virtual_device);
-    destroy_device(device);
-
-    vkDestroyInstance(my_instance, nullptr);
-}
-
-int32_t RenderPipeline::draw_frame(CameraComponent camera)
-{
-    vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
-
-    static uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
-
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, to_render);
-
-    vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
-
-    vkResetCommandBuffer(command_buffers[current_frame], 0);
-
-    VkCommandBuffer command_buffer = command_buffers[current_frame];
-    CommandBuffer::record_command_buffer(command_buffer);
-
-    start_render_pass(command_buffer, swap_chain_images.swap_chain_framebuffers[image_index], render_pass, swap_chain.screen_extent);
-
-    bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
-
-    ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    ComponentSystem* render =  get_component_system(RENDER);
-    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
-
-    for (int i = 0; i < render->amount; i++) {
-        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
-        if(models.size() > 0){
-            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
-
-        }
-    }
-
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
-
-    vkCmdEndRenderPass(command_buffer);
-
-    end_render_pass(command_buffer);
-
-    VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
-    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame]};
-
-    VkSubmitInfo submit_info{};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = wait_semaphores;
-    submit_info.pWaitDstStageMask = wait_stages;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffers[current_frame];
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = signal_semaphores;
-
-    VkResult queue_result = vkQueueSubmit(device.graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
-
-    if(queue_result != VK_SUCCESS)
-    {
-        return queue_result;
-    }
-
-    VkSwapchainKHR swap_chains[] = {swap_chain.swap_chain};
-
-    VkPresentInfoKHR present_info{};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = signal_semaphores;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = swap_chains;
-    present_info.pImageIndices = &image_index;
-    present_info.pResults = nullptr; // Optional
-
-
-    result = vkQueuePresentKHR(device.present_queue, &present_info);
-    current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-    return result;
-}
-
-void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
-{
-    vkDeviceWaitIdle(device.virtual_device);
-
-    if(swap_chain_images.swap_chain_images.size() > 0){
-        clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
-
-        vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
-
-        create_swap_chain(device, {width, height}, my_surface, swap_chain);
-        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
-
-    }else{
-        create_swap_chain(device, {width, height}, my_surface, swap_chain);
-        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
-        create_render_pass(&render_pass, swap_chain.swap_chain_image_format, device);
-    }
-    command_pool = CommandBuffer::create_command_pool(device, my_surface);
-
-    swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
-
-    create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
-
-    CommandBuffer::create_command_buffers(command_buffers, device.virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
-}
-
-static std::vector<char> load_shader(const std::string& file_name)
+    char* chars;
+    uint32_t amount;
+} String;
+
+static String load_shader(const char* file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
@@ -374,21 +72,23 @@ static std::vector<char> load_shader(const std::string& file_name)
     }
 
     size_t file_size = (size_t) file.tellg();
-    std::vector<char> buffer(file_size);
+    char* buffer = (char*)malloc(sizeof(char) * file_size);
 
     file.seekg(0);
-    file.read(buffer.data(), file_size);
+    file.read(buffer, file_size);
 
     file.close();
-
-    return buffer;
+    String result;
+    result.chars = buffer;
+    result.amount = file_size;
+    return result;
 }
 
-static VkShaderModule create_shader(const std::vector<char>& code, VkDevice virtual_device) {
+static VkShaderModule create_shader(const String& code, VkDevice virtual_device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    createInfo.codeSize = code.amount;
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.chars);
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(virtual_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -398,14 +98,14 @@ static VkShaderModule create_shader(const std::vector<char>& code, VkDevice virt
     return shaderModule;
 }
 
-void RenderPipeline::shader()
+static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline)
 {
     //Move this later
-    auto vertex_shader = load_shader("src/renderer/shaders/vert.spv");
-    auto fragment_shader = load_shader("src/renderer/shaders/frag.spv");
+    String vertex_shader = load_shader("src/renderer/shaders/vert.spv");
+    String fragment_shader = load_shader("src/renderer/shaders/frag.spv");
 
-    VkShaderModule vertex_module = create_shader(vertex_shader, device.virtual_device);
-    VkShaderModule fragment_module = create_shader(fragment_shader, device.virtual_device);
+    VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device);
+    VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -421,8 +121,8 @@ void RenderPipeline::shader()
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
-    auto binding_description = get_binding_description();
-    auto attribute_descriptions = get_attribute_descriptions();
+    VkVertexInputBindingDescription binding_description = get_binding_description();
+    VertexAttributes attribute_descriptions = get_attribute_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info{};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -533,11 +233,317 @@ void RenderPipeline::shader()
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipeline_info.basePipelineIndex = -1; // Optional
 
-    VkResult result = vkCreateGraphicsPipelines(device.virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+    VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, graphics_pipeline);
     if(result != VK_SUCCESS){
-        assert(false);
+        throw "Failed to create pipeline";
     }
 
-    vkDestroyShaderModule(device.virtual_device, fragment_module, nullptr);
-    vkDestroyShaderModule(device.virtual_device, vertex_module, nullptr);
+    vkDestroyShaderModule(virtual_device, fragment_module, nullptr);
+    vkDestroyShaderModule(virtual_device, vertex_module, nullptr);
+    free(vertex_shader.chars);
+    free(fragment_shader.chars);
+}
+
+
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame)
+{
+    // VkBuffer vertex_buffers[] = {model.vertex_buffer};
+    VkDeviceSize offsets[] = {0};
+    if(model.index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
+
+        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
+    }
+}
+
+static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device)
+{
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkAttachmentDescription color_attachment{};
+    color_attachment.format = swap_chain_format;
+    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference color_attachment_ref{};
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+
+    VkAttachmentDescription depth_attachment{};
+    depth_attachment.format = Texture::find_depth_formats(device.physical_device);
+    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depth_attachment_ref{};
+    depth_attachment_ref.attachment = 1;
+    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_attachment_ref;
+    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
+
+    VkRenderPassCreateInfo render_pass_info{};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
+    render_pass_info.pAttachments = description_attachments;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    if(vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass) != VK_SUCCESS){
+        throw "Failed to create RenderPass";
+    }
+}
+
+static void create_sync_objects(VkDevice virtual_device, RenderPipeline& render_pipe)
+{
+    VkSemaphoreCreateInfo semaphore_info{};
+    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fence_info{};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.image_available_semaphores[i]) != VK_SUCCESS){
+            throw "Failed To Create Semaphore";
+        }
+        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.render_finished_semaphores[i]) != VK_SUCCESS){
+            throw "Failed To Create Semaphore";
+        }
+        if(vkCreateFence(virtual_device, &fence_info, nullptr, &render_pipe.in_flight_fences[i]) != VK_SUCCESS){
+            throw "Failed To Create Fence";
+        }
+    }
+}
+
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, std::vector<RenderDescriptors>& to_render) {
+    //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* render =  get_component_system(RENDER);
+    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+
+    Vector3 forward_vector = camera_transform.position + Transformations::forward_vector(camera_transform);
+    Vector3 up = Transformations::up_vector(camera_transform);
+    vec3_t pos = {camera_transform.position.x ,camera_transform.position.y ,camera_transform.position.z};
+
+    mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
+    mat4_t projection = m4_perspective_matrix(camera.field_of_view, aspect_ratio, 1.f, 2000.0f);
+
+    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+    for (size_t render_index = 0; render_index < render->amount; render_index++)
+    {
+        RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
+        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
+
+        UniformBufferObject ubo{
+            model,
+            view,
+            projection
+        };
+
+        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
+    }
+}
+
+RenderPipeline::RenderPipeline(const int width, const int height, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
+{
+    my_instance = instance;
+    my_surface = surface;
+    create_device(device, instance, surface, validation_layers, layer_amount);
+
+    restart_swap_chain(width, height);
+
+    create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
+
+    create_uniform_buffers(to_render.data(), to_render.size(), device);
+    create_descriptor_pool(descriptor_pool, device.virtual_device);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_info{};
+    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_info.setLayoutCount = 1;
+    pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
+    pipeline_layout_info.pushConstantRangeCount = 0; // Optional
+    pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
+
+    if(vkCreatePipelineLayout(device.virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
+        assert(false && "Failed to create pipeline");
+    }
+
+    setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline);
+
+    create_sync_objects(device.virtual_device, *this);
+}
+
+RenderPipeline::~RenderPipeline()
+{
+    cleanup();
+}
+
+void RenderPipeline::cleanup()
+{
+    vkDeviceWaitIdle(device.virtual_device);
+    clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
+    vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
+
+    vkDestroyDescriptorPool(device.virtual_device, descriptor_pool, nullptr);
+
+
+    vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
+
+    for(Model model : models){
+        vkDestroyBuffer(device.virtual_device, model.index_buffer, nullptr);
+        vkDestroyBuffer(device.virtual_device, model.vertex_buffer, nullptr);
+    }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device.virtual_device, image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(device.virtual_device, render_finished_semaphores[i], nullptr);
+        vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
+    }
+
+    vkDestroySurfaceKHR(my_instance, my_surface, nullptr);
+
+    vkDeviceWaitIdle(device.virtual_device);
+    destroy_device(device);
+
+    vkDestroyInstance(my_instance, nullptr);
+}
+
+int32_t RenderPipeline::draw_frame(CameraComponent camera)
+{
+    vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+
+    static uint32_t image_index;
+    VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, to_render);
+
+    vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
+
+    vkResetCommandBuffer(command_buffers[current_frame], 0);
+
+    VkCommandBuffer command_buffer = command_buffers[current_frame];
+    CommandBuffer::record_command_buffer(command_buffer);
+
+    start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
+
+    bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
+
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* render =  get_component_system(RENDER);
+    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+
+    for (int i = 0; i < render->amount; i++) {
+        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
+        if(models.size() > 0){
+            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
+
+        }
+    }
+
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
+
+    vkCmdEndRenderPass(command_buffer);
+
+    end_render_pass(command_buffer);
+
+    VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSemaphore signal_semaphores[] = {render_finished_semaphores[current_frame]};
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = wait_semaphores;
+    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffers[current_frame];
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = signal_semaphores;
+
+    VkResult queue_result = vkQueueSubmit(device.graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
+
+    if(queue_result != VK_SUCCESS)
+    {
+        return queue_result;
+    }
+
+    VkSwapchainKHR swap_chains[] = {swap_chain.swap_chain};
+
+    VkPresentInfoKHR present_info{};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = signal_semaphores;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = swap_chains;
+    present_info.pImageIndices = &image_index;
+    present_info.pResults = nullptr; // Optional
+
+
+    result = vkQueuePresentKHR(device.present_queue, &present_info);
+    current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    return result;
+}
+
+void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
+{
+    vkDeviceWaitIdle(device.virtual_device);
+
+    if(swap_chain_images.swap_chain_images.size() > 0){
+        clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
+
+        vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
+
+        create_swap_chain(device, {width, height}, my_surface, swap_chain);
+        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
+
+    }else{
+        create_swap_chain(device, {width, height}, my_surface, swap_chain);
+        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
+        create_render_pass(&render_pass, swap_chain.swap_chain_image_format, device);
+    }
+    command_pool = CommandBuffer::create_command_pool(device, my_surface);
+
+    swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
+
+    create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
+
+    CommandBuffer::create_command_buffers(command_buffers, device.virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }

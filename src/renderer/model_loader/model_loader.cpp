@@ -1,12 +1,10 @@
 #pragma once
-#include <cstddef>
 #include <cstdint>
-#include <cstdio>
-#include <cstring>
 #include <fstream>
 #include <string>
 #include <vulkan/vulkan.h>
 #include <vector>
+// #include <emmintrin.h>
 #include "../device/vulkan/device.cpp"
 
 enum class ObjMode : uint8_t
@@ -165,40 +163,42 @@ namespace ModelLoader
 
         next_valid(file, &index, file_size);
 
+        uint32_t value_index = 0;
+        Indices triangle_indexes {};
+
+        // __m128i space_vector = _mm_set1_epi8(' ');
+        // __m128i slash_vector = _mm_set1_epi8('/');
+        // __m128i new_line_vector = _mm_set1_epi8('\n');
+
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
                 for (size_t t = i; t < file_size; t++)
                 {
-                    char prev = file[t-1];
-                    char current = file[t];
-                    char next = file[t+1];
-                    char next2 = file[t+2];
                     if(file[t] == 'f'){
-                        i = t-1;
+                        indicies.emplace_back(triangle_indexes);
+                        i = t;
+                        value_index = 0;
                         break;
                     }
                 }
             }
-            if(file[i] == ' '){
-                Indices triangle_indexes {};
-                triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
-                size_t y = i;
-                for(size_t x = y; x < file_size; x++){
-                    if(file[x] == '\n') break;
-                    if(file[x] == '/'){
-                        triangle_indexes.texture_index = static_cast<uint32_t>(atoi(&file[x+1]));
-                        y = x+1;
-                        break;
-                    }
+            else if(file[i] == '/'){
+                if(value_index <= 1){
+                    triangle_indexes.texture_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    value_index++;
+                }else if(value_index > 1){
+                    triangle_indexes.normal_index = static_cast<uint32_t>(atoi(&file[i+1]));
                 }
-                for(size_t x = y; x < file_size; x++){
-                    if(file[x] == '\n') break;
-                    if(file[x] == '/'){
-                        triangle_indexes.normal_index = static_cast<uint32_t>(atoi(&file[x+1]));
-                        break;
-                    }
+            }
+            else if(file[i] == ' '){
+                if(value_index <= 0){
+                    triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    value_index++;
+                }else{
+                    indicies.emplace_back(triangle_indexes);
+                    value_index = 1;
+                    triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
                 }
-                indicies.emplace_back(triangle_indexes);
             }
         }
 

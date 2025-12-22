@@ -59,18 +59,19 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name, Pl
     glfwSetFramebufferSizeCallback(main_window, resize_callback);
 
     #ifdef NDEBUG
-        const std::vector<const char*> validation_layers = {};
+        const char* validation_layers[] = {};
     #else
-        const std::vector<const char*> validation_layers = {
+        const char* validation_layers[] = {
             "VK_LAYER_KHRONOS_validation"
         };
     #endif
+    uint8_t validation_layer_amount = sizeof(validation_layers) / sizeof(validation_layers[0]);
     uint32_t glfw_extention_count = 0;
 
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
-    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers.data(), validation_layers.size());
+    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers, validation_layer_amount);
     VkSurfaceKHR surface;
 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
@@ -79,13 +80,11 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name, Pl
         throw("Failed to create surface");
     }
 
-    render_pipeline = new RenderPipeline(width, height, application_name, instance, surface, validation_layers);
+    render_pipeline = new RenderPipeline(width, height, instance, surface, validation_layers, validation_layer_amount);
 
     init_imgui(main_window, render_pipeline);
 
     file_explorer = init_file_explorer();
-/**/
-
 }
 
 OstenEngine::~OstenEngine()
