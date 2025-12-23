@@ -135,7 +135,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting)
     ImGui::End();
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, std::vector<char*>& editor_logs, uint32_t& inspecting, std::vector<float>& mem_stats)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, std::vector<float>& mem_stats)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -154,6 +154,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Spacing();
 
     ImGui::Text("(%f)", ((float)fps));
+    graph(mem_stats);
 
     ComponentSystem cameras = *get_component_system(CAMERA);
 
@@ -226,14 +227,12 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
 
 
     ImGui::Begin("Console");
-        Debug::get_all_logs(editor_logs);
+        std::vector<std::string> editor_logs = Debug::get_all_logs();
         ImGui::BeginChild("Logs");
-            for (size_t i = 0; i <  editor_logs.size(); i++)
+            for (size_t i = 0; i <  Debug::logs_size(); i++)
             {
-                ImGui::Text("(%s)", editor_logs[i]);
+                ImGui::Text("%s", editor_logs[i].c_str());
             }
-
-            graph(mem_stats);
         ImGui::EndChild();
 
     ImGui::End();

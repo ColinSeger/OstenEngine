@@ -1,8 +1,11 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <chrono>
 
-std::vector<char*> debug_logs{};
+std::vector<std::string> debug_logs{};
+
+std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
 
 namespace Debug
 {
@@ -13,9 +16,33 @@ namespace Debug
         debug_logs.push_back(log);
         std::cout << log << '\n';
     }
-
-    void get_all_logs(std::vector<char*>& external_logs)
+    void log(std::string log)
     {
-        external_logs = debug_logs;
+        debug_logs.push_back(log.c_str());
+        std::cout << log << '\n';
+    }
+
+    uint32_t logs_size()
+    {
+        return debug_logs.size();
+    }
+
+    std::vector<std::string>& get_all_logs()
+    {
+        return debug_logs;
+    }
+    void profile_time_start()
+    {
+        start_time = std::chrono::high_resolution_clock::now();
+    }
+
+    void profile_time_end()
+    {
+        std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
+        double time = std::chrono::duration<double, std::chrono::seconds::period>(end_time - start_time).count();
+        time*=10;//Converts to seconds
+        std::string time_string = std::to_string(time);
+
+        log(time_string.c_str());
     }
 }

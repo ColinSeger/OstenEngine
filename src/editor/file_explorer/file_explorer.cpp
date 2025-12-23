@@ -5,7 +5,6 @@
 #include <string>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../renderer/render_pipeline.cpp"
-#include "../../renderer/texture/vulkan/texture.cpp"
 #include "../../engine/message_system/message.cpp"
 
 struct FileExplorer

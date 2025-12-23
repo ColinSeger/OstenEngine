@@ -24,8 +24,6 @@ struct OstenEngine
     const char* application_name = nullptr;
     RenderPipeline* render_pipeline = nullptr;
 
-    std::vector<char*> logs;
-
     FileExplorer file_explorer;
 
     PlatformLayer& platform_layer;
@@ -102,7 +100,7 @@ void shift(std::vector<float>& mem_usage){
 void OstenEngine::main_game_loop()
 {
     bool test = true;
-    static auto start_time = std::chrono::high_resolution_clock::now();
+    static std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
     double fps = 0;
@@ -151,7 +149,7 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, logs, inspecting, mem_usage);
+        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, inspecting, mem_usage);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 

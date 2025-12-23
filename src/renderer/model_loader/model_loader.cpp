@@ -6,6 +6,7 @@
 #include <vector>
 // #include <emmintrin.h>
 #include "../device/vulkan/device.cpp"
+#include "../../debugger/debugger.cpp"
 
 enum class ObjMode : uint8_t
 {
@@ -166,9 +167,7 @@ namespace ModelLoader
         uint32_t value_index = 0;
         Indices triangle_indexes {};
 
-        // __m128i space_vector = _mm_set1_epi8(' ');
-        // __m128i slash_vector = _mm_set1_epi8('/');
-        // __m128i new_line_vector = _mm_set1_epi8('\n');
+        Debug::profile_time_start();
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
@@ -201,6 +200,8 @@ namespace ModelLoader
                 }
             }
         }
+
+        Debug::profile_time_end();
 
         model_indicies.reserve(indicies.size());
         for (size_t i = 0; i < indicies.size(); i++)
