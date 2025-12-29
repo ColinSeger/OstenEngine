@@ -1,7 +1,7 @@
 #ifndef DESCRIPTORSETS
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
-#include "../../../external/imgui_test/imgui_impl_vulkan.h"
+// #include "../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../../external/math_3d.h"
 #include "../device/vulkan/device.cpp"
 
@@ -26,25 +26,17 @@ typedef struct
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
     VkDescriptorPoolSize pool_sizes[] = {
-        {VK_DESCRIPTOR_TYPE_SAMPLER,                1000},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE},
-        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000},
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-        {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)},
+        {VK_DESCRIPTOR_TYPE_SAMPLER,                static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)}
     };
 
     VkDescriptorPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = (uint32_t) IM_ARRAYSIZE(pool_sizes);
+    // pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(pool_sizes[0]);
     pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+    pool_info.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
         throw("Descriptor failed to create");
@@ -165,8 +157,7 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     layoutInfo.pBindings = bindings;
 
     VkResult result = vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout);
-    if(result != VK_SUCCESS)
-    {
+    if(result != VK_SUCCESS){
         throw("Failed to create descriptor layout");
     }
 }

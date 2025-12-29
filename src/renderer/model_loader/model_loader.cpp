@@ -278,7 +278,7 @@ namespace ModelLoader
         return buffer;
     }
 
-    static Model create_model(Device& device, VkCommandPool command_pool, VertexArray& vertices, Uint32Array& indices)
+    static inline Model create_model(Device& device, VkCommandPool command_pool, VertexArray& vertices, Uint32Array& indices)
     {
         Model result {};
         result.index_amount = indices.amount;

@@ -1,7 +1,8 @@
 #pragma once
+#include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <vulkan/vulkan.h>
-#include <string.h>
 #include "../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
 
@@ -24,7 +25,7 @@ typedef struct{
 typedef struct{
     size_t amount;
     uint32_t* values;
-}Uint32Array;
+} Uint32Array;
 
 typedef struct{
     VkVertexInputAttributeDescription array[3];

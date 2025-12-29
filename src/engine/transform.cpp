@@ -7,43 +7,11 @@ struct Vector2{
     float y = 0;
 };
 
-struct Vector3{
-    float x = 0;
-    float y = 0;
-    float z = 0;
-
-    Vector3 operator+(const Vector3 add){
-        return {
-            x + add.x,
-            y + add.y,
-            z + add.z
-        };
-    }
-    Vector3& operator-=(const Vector3 subtract){
-        x -= subtract.x;
-        y -= subtract.y;
-        z -= subtract.z;
-        return *this;
-    }
-    Vector3& operator+=(const Vector3 add){
-        x += add.x;
-        y += add.y;
-        z += add.z;
-        return *this;
-    }
-    Vector3& operator*(const float mul){
-        x *= mul;
-        y *= mul;
-        z *= mul;
-        return *this;
-    }
-};
-
 struct Transform
 {
-    Vector3 position = {0.0f, 0.0f, 0.0f};
-    Vector3 rotation = {0.0f, 0.0f, 0.0f};
-    Vector3 scale = {1.0f, 1.0f, 1.0f};
+    vec3_t position = {0.0f, 0.0f, 0.0f};
+    vec3_t rotation = {0.0f, 0.0f, 0.0f};
+    vec3_t scale = {1.0f, 1.0f, 1.0f};
 };
 
 namespace Transformations
@@ -64,7 +32,7 @@ namespace Transformations
     }
 
 
-    Vector3 forward_vector(Transform transform)
+    vec3_t forward_vector(Transform transform)
     {
         return {
             cos(transform.rotation.z) * sin(transform.rotation.y),
@@ -73,7 +41,7 @@ namespace Transformations
         };
     }
 
-    Vector3 right_vector(Transform transform)
+    vec3_t right_vector(Transform transform)
     {
         return
         {
@@ -83,15 +51,15 @@ namespace Transformations
         };
     }
 
-    Vector3 up_vector(Transform transform)
+    vec3_t up_vector(Transform transform)
     {
-        Vector3 f = forward_vector(transform);
-        Vector3 r = right_vector(transform);
+        vec3_t f = forward_vector(transform);
+        vec3_t r = right_vector(transform);
         vec3_t forward = {f.x, f.y, f.z};
         vec3_t right = {r.x, r.y, r.z};
         vec3_t res = v3_cross(forward, right);
         // return cross(forward_vector(transform), right_vector(transform));
 
-        return Vector3{res.x, res.y, res.z};
+        return {res.x, res.y, res.z};
     }
 }

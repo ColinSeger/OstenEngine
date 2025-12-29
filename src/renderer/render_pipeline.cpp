@@ -10,6 +10,7 @@
 #include "swap_chain/vulkan/swap_chain.cpp"
 #include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.cpp"
+#include "../../external/imgui_test/imgui_impl_vulkan.h"
 
 struct RenderPipeline
 {
@@ -262,11 +263,6 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkAttachmentReference color_attachment_ref{};
-    color_attachment_ref.attachment = 0;
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
     VkAttachmentDescription depth_attachment{};
     depth_attachment.format = Texture::find_depth_formats(device.physical_device);
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -277,6 +273,12 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
+
+    VkAttachmentReference color_attachment_ref{};
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
     VkAttachmentReference depth_attachment_ref{};
     depth_attachment_ref.attachment = 1;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -286,8 +288,6 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     sub_pass.colorAttachmentCount = 1;
     sub_pass.pColorAttachments = &color_attachment_ref;
     sub_pass.pDepthStencilAttachment = &depth_attachment_ref;
-
-    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
 
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -358,26 +358,23 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     ComponentSystem* render =  get_component_system(RENDER);
     Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
-    Vector3 forward_vector = camera_transform.position + Transformations::forward_vector(camera_transform);
-    Vector3 up = Transformations::up_vector(camera_transform);
-    vec3_t pos = {camera_transform.position.x ,camera_transform.position.y ,camera_transform.position.z};
+    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
 
-    mat4_t view = m4_look_at(pos, {forward_vector.x, forward_vector.y, forward_vector.z}, {0, 0, 1});
+    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(camera.field_of_view, aspect_ratio, 1.f, 2000.0f);
 
-    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
     for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
         mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
 
-        UniformBufferObject ubo{
+        UniformBufferObject uniform_buffer{
             model,
-            view,
+            view_matrix,
             projection
         };
 
-        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
+        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(uniform_buffer));
     }
 }
 
@@ -414,7 +411,7 @@ void cleanup(RenderPipeline& pipeline)
 {
     vkDeviceWaitIdle(pipeline.device.virtual_device);
 
-    ImGui_ImplVulkan_Shutdown();
+    // ImGui_ImplVulkan_Shutdown();
 
     for(Model model : pipeline.models){
         vkDestroyBuffer(pipeline.device.virtual_device, model.index_buffer, nullptr);

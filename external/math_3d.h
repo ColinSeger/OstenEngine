@@ -227,7 +227,10 @@ static inline vec3_t v3_cross(vec3_t a, vec3_t b) {
 static inline float v3_angle_between(vec3_t a, vec3_t b) {
 	return acosf( v3_dot(a, b) / (v3_length(a) * v3_length(b)) );
 }
-
+// // SelfMade
+// static inline vec3_t v3_add(const vec3_t value1, const vec3_t value2){
+//     return {value1.x + value2.x, value1.y + value2.y, value1.z + value2.z};
+// }
 
 //
 // Matrix functions header implementation
