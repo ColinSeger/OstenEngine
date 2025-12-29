@@ -13,11 +13,8 @@ enum class MessageType : uint8_t
     LoadTexture
 };
 
-static void create_entity(RenderPipeline* render_pipeline){
-    //uint16_t id = add_transform();
+static void create_entity(RenderPipeline* render_pipeline, const char* name){
     RenderDescriptors first_obj;
-    //first_obj.transform_index = id;
-    //first_obj.model_index = render_pipeline->models.size() -1;
 
     create_uniform_buffer(first_obj, render_pipeline->device);
     TextureImage texture;
@@ -30,11 +27,10 @@ static void create_entity(RenderPipeline* render_pipeline){
     }
 
     create_descriptor_set(render_pipeline->device.virtual_device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
-    render_pipeline->to_render.push_back(first_obj);
+    render_pipeline->to_render.emplace_back(first_obj);
 
     Entity entity{};
-    // entity.components.push_back({id, TRANSFORM});
-    EntityManager::add_entity(entity, "Test");
+    EntityManager::add_entity(entity, name);
 }
 
 /// Size, Type, Value
@@ -68,7 +64,7 @@ void handle_message(RenderPipeline* render_pipeline){
         break;
 
     case MessageType::CreateEntity :
-        create_entity(render_pipeline);
+        create_entity(render_pipeline, action);
     break;
     case MessageType::LoadTexture:
         Texture::load_texture(render_pipeline->device, action, render_pipeline->command_pool);

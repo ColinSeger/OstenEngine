@@ -72,14 +72,26 @@ namespace ModelLoader
         }
     }
 
-    static void parse_obj(const char* path_of_obj, std::vector<Vertex>& model_vertices, std::vector<uint32_t>& model_indicies)
+    static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
+        uint32_t result = 0;
+        while (*start >= '0' && *start <= '9') {
+            index_jump++;
+            result = result * 10 + (*start - '0');
+            ++start;
+        }
+        return result;
+    }
+
+    static void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies)
     {
         std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
         if(!file_stream.is_open())
         {
-            model_vertices.emplace_back(Vertex{});
-            model_indicies.emplace_back(0);
+            model_vertices.values = nullptr;
+            model_vertices.amount = 0;
+            model_indicies.values = nullptr;
+            model_indicies.amount = 0;
             Debug::log((char*)"Failed to load model");
             return;
         }
@@ -99,7 +111,7 @@ namespace ModelLoader
         };
         ValueToAdd value_to_add{};
 
-        std::vector<Vertex>& vertex = model_vertices;
+        std::vector<Vertex> vertex;
         std::vector<Indices> indicies;
         std::vector<TextureCord> texture_cords;
         vertex.reserve(file_size/40);
@@ -182,37 +194,45 @@ namespace ModelLoader
                 }
             }
             else if(file[i] == '/'){
+                uint32_t value = parse_to_uint32(&file[i+1], &i);
                 if(value_index <= 1){
-                    triangle_indexes.texture_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    triangle_indexes.texture_index = value;
                     value_index++;
                 }else if(value_index > 1){
-                    triangle_indexes.normal_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    triangle_indexes.normal_index = value;
                 }
+                continue;
             }
             else if(file[i] == ' '){
+                uint32_t value = parse_to_uint32(&file[i+1], &i);
                 if(value_index <= 0){
-                    triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    triangle_indexes.vertex_index = value;
                     value_index++;
                 }else{
                     indicies.emplace_back(triangle_indexes);
                     value_index = 1;
-                    triangle_indexes.vertex_index = static_cast<uint32_t>(atoi(&file[i+1]));
+                    triangle_indexes.vertex_index = value;
                 }
+                continue;
             }
         }
 
         Debug::profile_time_end();
 
-        model_indicies.reserve(indicies.size());
+        model_indicies.values = (uint32_t*)malloc(indicies.size() * sizeof(uint32_t));
+        model_indicies.amount = 0;
         for (size_t i = 0; i < indicies.size(); i++)
         {
             uint32_t val = indicies[i].vertex_index;
             uint32_t bal = indicies[i].texture_index;
             if(val > 0 && bal > 0){
                 vertex[indicies[i].vertex_index-1].texture_cord = texture_cords[indicies[i].texture_index-1];
-                model_indicies.push_back(indicies[i].vertex_index-1);
+                model_indicies.values[model_indicies.amount] = indicies[i].vertex_index-1;
+                model_indicies.amount++;
             }
         }
+        model_vertices.values = vertex.data();
+        model_vertices.amount = vertex.size();
 
         free(file);
     }
@@ -245,38 +265,59 @@ namespace ModelLoader
         file.close();
     }
 
-    static void de_serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    //This Returns a char* you need to free after use
+    static char* de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices)
     {
-        std::ifstream file(filename, std::ios::binary);
+        // 0.385672
+        // 0.387602
+        // 0.397742
+        //
+        // 0.372289
+        // 0.381155
+        // 0.382290
+        // 0.374180
+        //
+        // 0.280078
+        // 0.299510
+        // 0.295610
+        // 0.277296
+
+        Debug::profile_time_start();
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
         if(!file.is_open()){
             Debug::log((char*)"There was a issue parsing this model");
-            return;
+            return nullptr;
         }
 
         //Find out where the file ends
-        file.seekg (0, std::ios::end);
         size_t file_size = file.tellg();
         file.seekg(0);
+        char* buffer = (char*)malloc(file_size);
+
+        file.read(buffer, file_size);
+        file.close();
+        //195528 debug asset
 
         //Figures out where the vertexes starts/stops
-        size_t index_start = 0;
-        file.read(reinterpret_cast<char*>(&index_start), sizeof(uint32_t));
+        uint32_t index_start = *reinterpret_cast<uint32_t*>(buffer);
 
-        //Prepare and then load all vertexes into the vertex buffer
-        vertices.resize(index_start / sizeof(Vertex));
-        file.read(reinterpret_cast<char*>(vertices.data()), index_start);
+        //Sets where to start values of the model
+        vertices.values = reinterpret_cast<Vertex*>(buffer + sizeof(uint32_t));
+        indices.values = reinterpret_cast<uint32_t*>(buffer+ sizeof(uint32_t) + index_start);
 
-        //Prepare and then load all indices into the index buffer
-        indices.resize(file_size - index_start);
-        file.read(reinterpret_cast<char*>(indices.data()), file_size - index_start);
-        file.close();
+        //Sets amount the array contains
+        vertices.amount = index_start / sizeof(Vertex);
+        indices.amount = (file_size - index_start) / sizeof(uint32_t);
+
+        Debug::profile_time_end();
+        return buffer;
     }
 
-    static Model create_model(Device& device, VkCommandPool command_pool, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    static Model create_model(Device& device, VkCommandPool command_pool, VertexArray& vertices, Uint32Array& indices)
     {
         Model result {};
-        result.index_amount = indices.size();
+        result.index_amount = indices.amount;
         CommandBuffer::create_vertex_buffer(device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
         CommandBuffer::create_index_buffer(device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
         return result;
@@ -285,8 +326,9 @@ namespace ModelLoader
     Model load_model(Device& device, VkCommandPool command_pool, std::string filename)
     {
         Model model{};
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+        char* file_to_free;//Temp solution for speed test
+        VertexArray vertices;
+        Uint32Array indices;
         char extention[3];
         extention[0] = filename[filename.length() -3];
         extention[1] = filename[filename.length() -2];
@@ -295,10 +337,12 @@ namespace ModelLoader
         if(extention[0] == 'o' || extention[0] == 'O'){
             parse_obj(filename.c_str(), vertices, indices);
         }else if(extention[0] == 'b' || extention[0] == 'B'){
-            de_serialize(filename.c_str(), vertices, indices);
+            file_to_free = de_serialize(filename.c_str(), vertices, indices);
         }
 
         model = create_model(device, command_pool, vertices, indices);
+
+        free(file_to_free);
 
         return model;
     }

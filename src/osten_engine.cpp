@@ -99,7 +99,7 @@ void shift(std::vector<float>& mem_usage){
 
 void OstenEngine::main_game_loop()
 {
-    bool test = true;
+    bool open_window = true;
     static std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
@@ -115,7 +115,7 @@ void OstenEngine::main_game_loop()
     Message empty_entity{
         0,
         MessageType::CreateEntity,
-        nullptr
+        (void*)"Test"
     };
     add_message(empty_entity);
     handle_message(render_pipeline);
@@ -149,7 +149,7 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, test, fps, inspecting, mem_usage);
+        begin_imgui_editor_poll(main_window, render_pipeline, open_window, fps, inspecting, mem_usage);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 
@@ -169,7 +169,7 @@ void OstenEngine::main_game_loop()
                     glfwGetFramebufferSize(main_window, &width, &height);
                     glfwWaitEvents();
                 }
-                render_pipeline->restart_swap_chain(width, height);
+                restart_swap_chain(*render_pipeline ,width, height);
                 result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
             }
         }
@@ -184,5 +184,13 @@ void OstenEngine::main_game_loop()
 void OstenEngine::cleanup()
 {
     clean_imgui();
-    render_pipeline->cleanup();
+    // ImGui_ImplVulkan_Shutdown();
+    VkInstance inst = render_pipeline->my_instance;
+    VkSurfaceKHR surf = render_pipeline->my_surface;
+
+    delete render_pipeline;
+    ImGui_ImplGlfw_Shutdown();
+    vkDestroySurfaceKHR(inst, surf, nullptr);
+    vkDestroyInstance(inst, nullptr);
+    ImGui::DestroyContext();
 }

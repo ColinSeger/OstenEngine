@@ -18,6 +18,16 @@ struct Vertex {
 };
 
 typedef struct{
+    size_t amount;
+    Vertex* values;
+}VertexArray;
+
+typedef struct{
+    size_t amount;
+    uint32_t* values;
+}Uint32Array;
+
+typedef struct{
     VkVertexInputAttributeDescription array[3];
 } VertexAttributes;
 
@@ -391,9 +401,9 @@ namespace CommandBuffer
         vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
     }
 
-    void create_vertex_buffer(Device& device, std::vector<Vertex>& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+    void create_vertex_buffer(Device& device, VertexArray& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
     {
-        VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize buffer_size = sizeof(vertices.values[0]) * vertices.amount;
 
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
@@ -409,7 +419,7 @@ namespace CommandBuffer
 
         void* data;
         vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-        memcpy(data, vertices.data(), (size_t) buffer_size);
+        memcpy(data, vertices.values, (size_t) buffer_size);
         vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
         create_buffer(
@@ -427,9 +437,9 @@ namespace CommandBuffer
         vkFreeMemory(device.virtual_device, staging_buffer_memory, nullptr);
     }
 
-    void create_index_buffer(Device& device, std::vector<uint32_t>& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
+    void create_index_buffer(Device& device, Uint32Array& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool)
     {
-        VkDeviceSize buffer_size = sizeof(indicies[0]) * indicies.size();
+        VkDeviceSize buffer_size = sizeof(indicies.values[0]) * indicies.amount;
 
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
@@ -445,7 +455,7 @@ namespace CommandBuffer
 
         void* data;
         vkMapMemory(device.virtual_device, staging_buffer_memory, 0, buffer_size, 0, &data);
-        memcpy(data, indicies.data(), (size_t) buffer_size);
+        memcpy(data, indicies.values, (size_t) buffer_size);
         vkUnmapMemory(device.virtual_device, staging_buffer_memory);
 
         create_buffer(

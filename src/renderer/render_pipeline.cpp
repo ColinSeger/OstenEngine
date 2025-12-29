@@ -47,20 +47,20 @@ struct RenderPipeline
     VkRenderPass render_pass; //TODO MOVE
     uint8_t current_frame = 0;//TODO MOVE
 
-    void restart_swap_chain(int32_t width, int32_t height);
+    // void restart_swap_chain(int32_t width, int32_t height);
 
     RenderPipeline(const int width, const int height, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount);
     ~RenderPipeline();
 
     int32_t draw_frame(CameraComponent camera);
 
-    void cleanup();
+    // void cleanup();
 };
 
 typedef struct
 {
     char* chars;
-    uint32_t amount;
+    size_t amount;
 } String;
 
 static String load_shader(const char* file_name)
@@ -71,31 +71,29 @@ static String load_shader(const char* file_name)
         throw "Failed to load shaders";
     }
 
-    size_t file_size = (size_t) file.tellg();
-    char* buffer = (char*)malloc(sizeof(char) * file_size);
+    String result;
+    result.amount = (size_t) file.tellg();
+    result.chars = (char*)malloc(sizeof(char) * result.amount);
 
     file.seekg(0);
-    file.read(buffer, file_size);
+    file.read(result.chars, result.amount);
 
     file.close();
-    String result;
-    result.chars = buffer;
-    result.amount = file_size;
     return result;
 }
 
 static VkShaderModule create_shader(const String& code, VkDevice virtual_device) {
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.amount;
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.chars);
+    VkShaderModule shader_result;
+    VkShaderModuleCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    create_info.codeSize = code.amount;
+    create_info.pCode = reinterpret_cast<const uint32_t*>(code.chars);
 
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(virtual_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(virtual_device, &create_info, nullptr, &shader_result) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
-    return shaderModule;
+    return shader_result;
 }
 
 static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline)
@@ -244,22 +242,6 @@ static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain
     free(fragment_shader.chars);
 }
 
-
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame)
-{
-    // VkBuffer vertex_buffers[] = {model.vertex_buffer};
-    VkDeviceSize offsets[] = {0};
-    if(model.index_amount > 0){
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
-
-        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
-
-        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
-    }
-}
-
 static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device)
 {
     VkSubpassDependency dependency{};
@@ -299,11 +281,11 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     depth_attachment_ref.attachment = 1;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+    VkSubpassDescription sub_pass{};
+    sub_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sub_pass.colorAttachmentCount = 1;
+    sub_pass.pColorAttachments = &color_attachment_ref;
+    sub_pass.pDepthStencilAttachment = &depth_attachment_ref;
 
     VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
 
@@ -312,13 +294,39 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
     render_pass_info.pAttachments = description_attachments;
     render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.pSubpasses = &sub_pass;
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
     if(vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass) != VK_SUCCESS){
         throw "Failed to create RenderPass";
     }
+}
+
+void restart_swap_chain(RenderPipeline& render_pipeline, int32_t width, int32_t height)
+{
+    vkDeviceWaitIdle(render_pipeline.device.virtual_device);
+
+    if(render_pipeline.swap_chain_images.swap_chain_images.size() > 0){
+        clean_swap_chain(render_pipeline.device.virtual_device, render_pipeline.swap_chain, render_pipeline.swap_chain_images);
+
+        vkDestroyCommandPool(render_pipeline.device.virtual_device, render_pipeline.command_pool, nullptr);
+
+        create_swap_chain(render_pipeline.device, {width, height}, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
+
+    }else{
+        create_swap_chain(render_pipeline.device, {width, height}, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
+        create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device);
+    }
+    render_pipeline.command_pool = CommandBuffer::create_command_pool(render_pipeline.device, render_pipeline.my_surface);
+
+    render_pipeline.swap_chain_images.depth_image_view = create_depth_resources(render_pipeline.device, render_pipeline.swap_chain.screen_extent, render_pipeline.swap_chain_images.depth_image_memory, render_pipeline.swap_chain_images.depth_image);
+
+    create_frame_buffers(render_pipeline.swap_chain_images, render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.swap_chain_images.depth_image_view, render_pipeline.swap_chain.screen_extent);
+
+    CommandBuffer::create_command_buffers(render_pipeline.command_buffers, render_pipeline.device.virtual_device, render_pipeline.command_pool, MAX_FRAMES_IN_FLIGHT);
 }
 
 static void create_sync_objects(VkDevice virtual_device, RenderPipeline& render_pipe)
@@ -379,7 +387,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
     my_surface = surface;
     create_device(device, instance, surface, validation_layers, layer_amount);
 
-    restart_swap_chain(width, height);
+    restart_swap_chain(*this ,width, height);
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -394,7 +402,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
     if(vkCreatePipelineLayout(device.virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
-        assert(false && "Failed to create pipeline");
+        throw "Failed to create pipeline";
     }
 
     setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline);
@@ -402,42 +410,64 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
     create_sync_objects(device.virtual_device, *this);
 }
 
-RenderPipeline::~RenderPipeline()
+void cleanup(RenderPipeline& pipeline)
 {
-    cleanup();
+    vkDeviceWaitIdle(pipeline.device.virtual_device);
+
+    ImGui_ImplVulkan_Shutdown();
+
+    for(Model model : pipeline.models){
+        vkDestroyBuffer(pipeline.device.virtual_device, model.index_buffer, nullptr);
+        vkDestroyBuffer(pipeline.device.virtual_device, model.vertex_buffer, nullptr);
+    }
+
+    for(int i = 0; i < loaded_textures.size(); i++){
+        vkDestroyImageView(pipeline.device.virtual_device, loaded_textures[i].image_view, nullptr);
+        vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
+    }
+
+    clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images);
+    vkDestroyPipeline(pipeline.device.virtual_device, pipeline.graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(pipeline.device.virtual_device, pipeline.pipeline_layout, nullptr);
+    vkDestroyRenderPass(pipeline.device.virtual_device, pipeline.render_pass, nullptr);
+
+    vkDestroyDescriptorPool(pipeline.device.virtual_device, pipeline.descriptor_pool, nullptr);
+    vkDestroyDescriptorSetLayout(pipeline.device.virtual_device, pipeline.descriptor_set_layout, nullptr);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.render_finished_semaphores[i], nullptr);
+        vkDestroyFence(pipeline.device.virtual_device, pipeline.in_flight_fences[i], nullptr);
+    }
+
+    vkDeviceWaitIdle(pipeline.device.virtual_device);
+
+    vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
+
+    destroy_device(pipeline.device);
+
+    // vkDestroyInstance(pipeline.my_instance, nullptr);
 }
 
-void RenderPipeline::cleanup()
+RenderPipeline::~RenderPipeline()
 {
-    vkDeviceWaitIdle(device.virtual_device);
-    clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
-    vkDestroyPipeline(device.virtual_device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device.virtual_device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(device.virtual_device, render_pass, nullptr);
-
-    vkDestroyDescriptorPool(device.virtual_device, descriptor_pool, nullptr);
+    cleanup(*this);
+}
 
 
-    vkDestroyDescriptorSetLayout(device.virtual_device, descriptor_set_layout, nullptr);
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame)
+{
+    // VkBuffer vertex_buffers[] = {model.vertex_buffer};
+    VkDeviceSize offsets[] = {0};
+    if(model.index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
-    for(Model model : models){
-        vkDestroyBuffer(device.virtual_device, model.index_buffer, nullptr);
-        vkDestroyBuffer(device.virtual_device, model.vertex_buffer, nullptr);
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &render_this.descriptor_sets[frame], 0, nullptr);
+
+        vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
     }
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(device.virtual_device, image_available_semaphores[i], nullptr);
-        vkDestroySemaphore(device.virtual_device, render_finished_semaphores[i], nullptr);
-        vkDestroyFence(device.virtual_device, in_flight_fences[i], nullptr);
-    }
-
-    vkDestroySurfaceKHR(my_instance, my_surface, nullptr);
-
-    vkDeviceWaitIdle(device.virtual_device);
-    destroy_device(device);
-
-    vkDestroyInstance(my_instance, nullptr);
 }
 
 int32_t RenderPipeline::draw_frame(CameraComponent camera)
@@ -520,30 +550,4 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     return result;
-}
-
-void RenderPipeline::restart_swap_chain(int32_t width, int32_t height)
-{
-    vkDeviceWaitIdle(device.virtual_device);
-
-    if(swap_chain_images.swap_chain_images.size() > 0){
-        clean_swap_chain(device.virtual_device, swap_chain, swap_chain_images);
-
-        vkDestroyCommandPool(device.virtual_device, command_pool, nullptr);
-
-        create_swap_chain(device, {width, height}, my_surface, swap_chain);
-        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
-
-    }else{
-        create_swap_chain(device, {width, height}, my_surface, swap_chain);
-        create_swap_chain_images(device, swap_chain, my_surface, swap_chain_images);
-        create_render_pass(&render_pass, swap_chain.swap_chain_image_format, device);
-    }
-    command_pool = CommandBuffer::create_command_pool(device, my_surface);
-
-    swap_chain_images.depth_image_view = create_depth_resources(device, swap_chain.screen_extent, swap_chain_images.depth_image_memory, swap_chain_images.depth_image);
-
-    create_frame_buffers(swap_chain_images, device.virtual_device, render_pass, swap_chain_images.depth_image_view, swap_chain.screen_extent);
-
-    CommandBuffer::create_command_buffers(command_buffers, device.virtual_device, command_pool, MAX_FRAMES_IN_FLIGHT);
 }
