@@ -31,11 +31,13 @@ typedef struct
 
     VkImageView depth_image_view;
 
-    std::vector<VkImage> swap_chain_images;
+    VkImage* swap_chain_images;
 
-    std::vector<VkImageView> swap_chain_image_view;
+    VkImageView* swap_chain_image_view;
 
-    std::vector<VkFramebuffer> swap_chain_frame_buffers;
+    VkFramebuffer* swap_chain_frame_buffers;
+
+    uint8_t image_amount;
 } SwapChainImages;
 
 static constexpr uint32_t simple_clamp(const uint32_t value, const  uint32_t min,const  uint32_t max)
@@ -100,8 +102,8 @@ static VkPresentModeKHR select_swap_present_mode(const VkPresentModeKHR* availab
 void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
-    VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats.data(), swap_chain_support.surface_formats.size());
-    VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes.data(), swap_chain_support.surface_present_modes.size());
+    VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats, swap_chain_support.surface_amount);
+    VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes, swap_chain_support.present_amount);
 
     VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
 
@@ -157,13 +159,12 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     vkDestroyImage(virtual_device, swap_chain_images.depth_image, nullptr);
     vkFreeMemory(virtual_device, swap_chain_images.depth_image_memory, nullptr);
 
-    for (auto framebuffer : swap_chain_images.swap_chain_frame_buffers) {
-        vkDestroyFramebuffer(virtual_device, framebuffer, nullptr);
+    for (int i = 0; i < swap_chain_images.image_amount; i++) {
+        vkDestroyFramebuffer(virtual_device, swap_chain_images.swap_chain_frame_buffers[i], nullptr);
+        vkDestroyImageView(virtual_device, swap_chain_images.swap_chain_image_view[i], nullptr);
     }
-
-    for (auto imageView : swap_chain_images.swap_chain_image_view) {
-        vkDestroyImageView(virtual_device, imageView, nullptr);
-    }
+    free(swap_chain_images.swap_chain_image_view);
+    free(swap_chain_images.swap_chain_frame_buffers);
 
     vkDestroySwapchainKHR(virtual_device, swap_chain.swap_chain, nullptr);
     vkDeviceWaitIdle(virtual_device);
@@ -172,9 +173,10 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
 
 
 static void create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
-    swap_images.swap_chain_image_view.resize(swap_images.swap_chain_images.size());
+    swap_images.swap_chain_image_view = (VkImageView*)malloc(sizeof(VkImageView) * swap_images.image_amount);
+    // swap_images.swap_chain_image_view.resize(swap_images.image_amount);
 
-    for (size_t i = 0; i < swap_images.swap_chain_images.size(); i++)
+    for (size_t i = 0; i < swap_images.image_amount; i++)
     {
         VkImageViewCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -207,17 +209,22 @@ void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceK
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
-    swap_images.swap_chain_images.resize(image_amount);
-    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images.data());
+    VkImage images[image_amount];
+
+    swap_images.image_amount = image_amount;
+    swap_images.swap_chain_images = images;//Should Probably allocate for this
+
+    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images);
 
     create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format);
 }
 
 void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent)
 {
-    swap_images.swap_chain_frame_buffers.resize(swap_images.swap_chain_images.size());
+    swap_images.swap_chain_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swap_images.image_amount);
+    // swap_images.swap_chain_frame_buffers.resize(swap_images.image_amount);
 
-    for (size_t i = 0; i < swap_images.swap_chain_frame_buffers.size(); i++) {
+    for (size_t i = 0; i < swap_images.image_amount; i++) {
         VkImageView attachments[2] = {
             swap_images.swap_chain_image_view[i],
             depth_image_view
@@ -238,7 +245,7 @@ void create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device,
     }
 }
 
-void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
+void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent)
 {
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};

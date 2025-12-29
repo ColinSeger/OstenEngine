@@ -13,7 +13,7 @@
 
 struct RenderPipeline
 {
-    SwapChainImages swap_chain_images;
+    SwapChainImages swap_chain_images = {};
 
     //Device manager
     Device device;
@@ -28,7 +28,7 @@ struct RenderPipeline
     std::vector<RenderDescriptors> to_render;
     std::vector<Model> models;
 
-    SwapChain swap_chain;
+    SwapChain swap_chain = {};
 
     //The Vulkan instance
     VkInstance my_instance = VK_NULL_HANDLE;
@@ -307,7 +307,7 @@ void restart_swap_chain(RenderPipeline& render_pipeline, int32_t width, int32_t 
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
-    if(render_pipeline.swap_chain_images.swap_chain_images.size() > 0){
+    if(render_pipeline.swap_chain_images.image_amount > 0){
         clean_swap_chain(render_pipeline.device.virtual_device, render_pipeline.swap_chain, render_pipeline.swap_chain_images);
 
         vkDestroyCommandPool(render_pipeline.device.virtual_device, render_pipeline.command_pool, nullptr);

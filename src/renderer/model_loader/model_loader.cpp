@@ -4,19 +4,8 @@
 #include <string>
 #include <vulkan/vulkan.h>
 #include <vector>
-// #include <emmintrin.h>
 #include "../device/vulkan/device.cpp"
 #include "../../debugger/debugger.cpp"
-
-enum class ObjMode : uint8_t
-{
-    Vertex,
-    Normal,
-    TextureCord,
-    Face,
-    None,
-    Comment
-};
 
 typedef struct
 {
@@ -31,22 +20,11 @@ typedef struct
 
 namespace ModelLoader
 {
-    constexpr char valid_chars[14] = "0123456789.-/";
-
     typedef struct{
         uint32_t vertex_index;
         uint32_t texture_index;
         uint32_t normal_index;
     } Indices;
-
-    static constexpr bool is_valid_char(char c)
-    {
-        for(char valid : valid_chars)
-        {
-            if(c == valid) return true;
-        }
-        return false;
-    }
 
     static constexpr bool select_mode(char* char_to_check)//This is ass
     {
@@ -268,20 +246,6 @@ namespace ModelLoader
     //This Returns a char* you need to free after use
     static char* de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices)
     {
-        // 0.385672
-        // 0.387602
-        // 0.397742
-        //
-        // 0.372289
-        // 0.381155
-        // 0.382290
-        // 0.374180
-        //
-        // 0.280078
-        // 0.299510
-        // 0.295610
-        // 0.277296
-
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 

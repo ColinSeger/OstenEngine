@@ -47,7 +47,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 
     if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
-        throw("Descriptor fail");
+        throw("Descriptor failed to create");
     }
 }
 
@@ -106,18 +106,18 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
 
 void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler)
 {
+    VkDescriptorImageInfo image_info{};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
         buffer_info.buffer = render_this.uniform_buffers[i];
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
 
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = image_view;
-        image_info.sampler = sampler;
-
-        const uint8_t descriptor_size = 2;
+        constexpr uint8_t descriptor_size = 2;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
@@ -230,7 +230,7 @@ static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice v
     }
 }
 
-static void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amount, Device device) {
+void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amount, Device device) {
     for (size_t render_index = 0; render_index < amount; render_index++)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);

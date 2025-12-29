@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <vulkan/vulkan.h>
 #include <string.h>
-#include <vector>
 #include "../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
 
@@ -44,8 +43,10 @@ typedef struct{
 
 typedef struct{
     VkSurfaceCapabilitiesKHR surface_capabilities;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    std::vector<VkPresentModeKHR> surface_present_modes;
+    VkSurfaceFormatKHR* surface_formats;
+    VkPresentModeKHR* surface_present_modes;
+    uint8_t surface_amount;
+    uint8_t present_amount;
 } SwapChainSupportDetails ;
 
 struct Device
@@ -69,7 +70,7 @@ constexpr bool is_completed(const QueueFamilyIndicies& queue_family)
 
 bool is_completed(SwapChainSupportDetails& swap_chain_support)
 {
-    return !swap_chain_support.surface_formats.empty() && ! swap_chain_support.surface_present_modes.empty();
+    return swap_chain_support.present_amount > 0 && swap_chain_support.surface_amount > 0;
 }
 
 VkVertexInputBindingDescription get_binding_description() {
@@ -108,9 +109,8 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
 
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, nullptr);
 
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_amount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families.data());
-
+    VkQueueFamilyProperties queue_families[queue_family_amount];
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families);
 
     int index = 0;
     for (const auto& queue_family : queue_families) {
@@ -146,14 +146,20 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     uint32_t present_mode_amount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, nullptr);
 
+    swap_chain_details.surface_amount = format_amount;
+    swap_chain_details.present_amount = present_mode_amount;
+
+    VkSurfaceFormatKHR surfaces[format_amount];// This NEEDS to be turned into a actual allocation since this will be deallocated after function call
+    VkPresentModeKHR presents[present_mode_amount];
+
     if (format_amount != 0) {
-        swap_chain_details.surface_formats.resize(format_amount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats.data());
+        swap_chain_details.surface_formats = surfaces;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats);
     }
 
     if (present_mode_amount != 0) {
-        swap_chain_details.surface_present_modes.resize(present_mode_amount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, swap_chain_details.surface_present_modes.data());
+        swap_chain_details.surface_present_modes = presents;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, swap_chain_details.surface_present_modes);
     }
 
     return swap_chain_details;
@@ -165,14 +171,14 @@ static bool check_device_extension_support(VkPhysicalDevice device)
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    VkExtensionProperties available_extensions[extension_count];
 
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions);
 
     uint32_t extension_amount = sizeof(device_extensions) / sizeof(device_extensions[0]);
     uint32_t found_amount = 0;
 
-    for (const auto& extension : available_extensions) {
+    for (const VkExtensionProperties& extension : available_extensions) {
         if(!strcmp(device_extensions[0], extension.extensionName)){
             found_amount++;
         }
@@ -204,38 +210,41 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)//C
     return is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
+static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const uint32_t compare, const uint32_t amount)
+{
+    for (int i = 0; i < amount; i++) {
+        if(queue_create_infos[i].queueFamilyIndex == compare){
+            return true;
+        }
+    }
+    return false;
+}
 
 static void create_virtual_device(Device& device, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
 {
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
-
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
+
+    VkDeviceQueueCreateInfo queue_create_infos[sizeof(family_array) / sizeof(family_array[0])];
+    uint8_t queue_create_info_amount = 0;
 
     float queuePriority = 1.0f;
 
-    std::vector<uint32_t> done_indexes;
+    for (int i = 0; i < sizeof(queue_create_infos) / sizeof(queue_create_infos[0]); i++) {
+        queue_create_infos[i].queueFamilyIndex = UINT32_MAX;
+    }
 
     for (uint32_t queue_family : family_array) {
-        uint8_t contains = 0;
-        for (int i = 0; i < done_indexes.size(); i++) {
-            if(queue_family == done_indexes[i]) contains++;
-        }
-
-        if(contains > 0) continue;
+        if(contains(queue_create_infos, queue_family, sizeof(queue_create_infos) / sizeof(queue_create_infos[0]))) continue;
 
         VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;
         queue_create_info.pQueuePriorities = &queuePriority;
-        queue_create_infos.push_back(queue_create_info);
-
-        done_indexes.push_back(queue_family);
+        queue_create_infos[queue_create_info_amount] = queue_create_info;
+        queue_create_info_amount++;
     }
-
-
-    // queue_create_info.pQueuePriorities = &queuePriority;
 
     VkPhysicalDeviceFeatures device_features{};
     device_features.samplerAnisotropy = VK_TRUE;
@@ -243,8 +252,8 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const ch
     VkDeviceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-    create_info.pQueueCreateInfos = queue_create_infos.data();
+    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_info_amount);
+    create_info.pQueueCreateInfos = queue_create_infos;
 
     create_info.pEnabledFeatures = &device_features;
 
@@ -280,9 +289,8 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         throw "There is no device that supports vulkan on this computer";
     }
 
-    std::vector<VkPhysicalDevice> devices(device_amount);
-    vkEnumeratePhysicalDevices(instance, &device_amount, devices.data());
-
+    VkPhysicalDevice devices[device_amount];
+    vkEnumeratePhysicalDevices(instance, &device_amount, devices);
 
     for (const VkPhysicalDevice& device_physical : devices) {
         if (is_device_suitable(device_physical, surface_reference)) {
