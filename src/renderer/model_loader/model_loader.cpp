@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <fstream>
-#include <string>
+// #include <string>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
@@ -17,6 +17,11 @@ typedef struct
     VkDeviceMemory index_buffer_memory;
 } Model;
 
+enum class LoadMode
+{
+    OBJ,
+    BIN
+};
 
 namespace ModelLoader
 {
@@ -278,33 +283,22 @@ namespace ModelLoader
         return buffer;
     }
 
-    static inline Model create_model(Device& device, VkCommandPool command_pool, VertexArray& vertices, Uint32Array& indices)
-    {
-        Model result {};
-        result.index_amount = indices.amount;
-        CommandBuffer::create_vertex_buffer(device, vertices, result.vertex_buffer, result.vertex_buffer_memory, command_pool);
-        CommandBuffer::create_index_buffer(device, indices, result.index_buffer, result.index_buffer_memory, command_pool);
-        return result;
-    }
-
-    Model load_model(Device& device, VkCommandPool command_pool, std::string filename)
+    Model load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode)
     {
         Model model{};
         char* file_to_free;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
-        char extention[3];
-        extention[0] = filename[filename.length() -3];
-        extention[1] = filename[filename.length() -2];
-        extention[2] = filename[filename.length() -1];
 
-        if(extention[0] == 'o' || extention[0] == 'O'){
-            parse_obj(filename.c_str(), vertices, indices);
-        }else if(extention[0] == 'b' || extention[0] == 'B'){
-            file_to_free = de_serialize(filename.c_str(), vertices, indices);
+        if(load_mode == LoadMode::OBJ){
+            parse_obj(file_name, vertices, indices);
+        }else if(load_mode == LoadMode::BIN){
+            file_to_free = de_serialize(file_name, vertices, indices);
         }
 
-        model = create_model(device, command_pool, vertices, indices);
+        model.index_amount = indices.amount;
+        CommandBuffer::create_vertex_buffer(device, vertices, model.vertex_buffer, model.vertex_buffer_memory, command_pool);
+        CommandBuffer::create_index_buffer(device, indices, model.index_buffer, model.index_buffer_memory, command_pool);
 
         free(file_to_free);
 

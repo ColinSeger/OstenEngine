@@ -18,19 +18,32 @@ static void create_entity(RenderPipeline* render_pipeline, const char* name){
 
     create_uniform_buffer(first_obj, render_pipeline->device);
     TextureImage texture;
-    if(render_pipeline->to_render.size() < 2){
-        uint32_t test = Texture::load_texture(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
-        texture = loaded_textures[test];
-    }else{
-        uint32_t test = Texture::load_texture(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
-        texture = loaded_textures[test];
-    }
+    uint32_t index = Texture::load_texture(render_pipeline->device, ".png", render_pipeline->command_pool);
+    // uint32_t test = Texture::load_texture(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
+    texture = loaded_textures[index];
 
     create_descriptor_set(render_pipeline->device.virtual_device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
     render_pipeline->to_render.emplace_back(first_obj);
 
     Entity entity{};
     EntityManager::add_entity(entity, name);
+}
+
+void load_asset(const char* file_name, RenderPipeline& render_pipeline)
+{
+    std::string filename = file_name;
+    char extention[3];
+    extention[0] = filename[filename.length() -3];
+    extention[1] = filename[filename.length() -2];
+    extention[2] = filename[filename.length() -1];
+
+    if(extention[0] == 'o' || extention[0] == 'O'){
+        render_pipeline.models.emplace_back(ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ));
+    }else if(extention[0] == 'b' || extention[0] == 'B'){
+        render_pipeline.models.emplace_back(ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN));
+    }else if(extention[0] == 'p' || extention[0] == 'P'){
+        Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
+    }
 }
 
 /// Size, Type, Value
@@ -60,14 +73,14 @@ void handle_message(RenderPipeline* render_pipeline){
     switch (message.type)
     {
     case MessageType::LoadModel :
-        render_pipeline->models.emplace_back(ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, action));
-        break;
+        load_asset(action, *render_pipeline);
+    break;
 
     case MessageType::CreateEntity :
         create_entity(render_pipeline, action);
     break;
     case MessageType::LoadTexture:
-        Texture::load_texture(render_pipeline->device, action, render_pipeline->command_pool);
+        load_asset(action, *render_pipeline);
     break;
     default:
         break;

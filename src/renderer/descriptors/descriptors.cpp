@@ -60,17 +60,16 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets) != VK_SUCCESS){
         throw("Failed to create descriptor sets");
     }
+    VkDescriptorImageInfo image_info{};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
         buffer_info.buffer = render_this.uniform_buffers[i];
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
-
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = image_view;
-        image_info.sampler = sampler;
 
         constexpr uint8_t descriptor_size = 2;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};

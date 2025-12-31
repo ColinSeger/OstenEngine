@@ -112,6 +112,13 @@ void OstenEngine::main_game_loop()
     create_camera_system(1);
     create_render_component_system(50);
 
+    Message default_texture{
+        0,
+        MessageType::LoadTexture,
+        (void*)".png"
+    };
+    add_message(default_texture);
+
     Message empty_entity{
         0,
         MessageType::CreateEntity,
@@ -122,12 +129,6 @@ void OstenEngine::main_game_loop()
 
     uint32_t inspecting = 0;
 
-    Message default_texture{
-        0,
-        MessageType::LoadTexture,
-        (void*)".."
-    };
-    add_message(default_texture);
 
     std::vector<float> mem_usage{};
 
