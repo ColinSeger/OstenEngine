@@ -366,6 +366,7 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
+
         mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
 
         UniformBufferObject uniform_buffer{
@@ -497,6 +498,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
+        vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+        //There Is a Issue if there are multiple renderables as well
+        update_descriptor_set(device.virtual_device, to_render[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
         if(models.size() > 0){
             swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
 
