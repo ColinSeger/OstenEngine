@@ -27,7 +27,7 @@ struct RenderPipeline
     VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
     std::vector<RenderDescriptors> to_render;
-    std::vector<Model> models;
+    // std::vector<Model> models;
 
     SwapChain swap_chain = {};
 
@@ -352,7 +352,7 @@ static void create_sync_objects(VkDevice virtual_device, RenderPipeline& render_
     }
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, std::vector<RenderDescriptors>& to_render) {
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, RenderDescriptors* to_render) {
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
@@ -414,7 +414,7 @@ void cleanup(RenderPipeline& pipeline)
 
     // ImGui_ImplVulkan_Shutdown();
 
-    for(Model model : pipeline.models){
+    for(Model model : loaded_models){
         vkDestroyBuffer(pipeline.device.virtual_device, model.index_buffer, nullptr);
         vkDestroyBuffer(pipeline.device.virtual_device, model.vertex_buffer, nullptr);
     }
@@ -479,7 +479,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
         return result;
     }
 
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, to_render);
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, to_render.data());
 
     vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
 
@@ -498,12 +498,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
-        vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-        //There Is a Issue if there are multiple renderables as well
-        update_descriptor_set(device.virtual_device, to_render[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
-        if(models.size() > 0){
-            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, models[comp.mesh_id], current_frame);
-
+        if(loaded_models.size() > 0){
+            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, loaded_models[comp.mesh_id], current_frame);
         }
     }
 
@@ -548,6 +544,14 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
+
+    vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+    //There Is a Issue if there are multiple renderables as well
+    for (int i = 0; i < render->amount; i++) {
+        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
+        update_descriptor_set(device.virtual_device, to_render[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
+    }
+
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     return result;

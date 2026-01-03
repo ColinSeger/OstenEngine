@@ -83,10 +83,84 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     ImGui_ImplVulkan_Init(&init_info);
 }
 
+void inspect(uint8_t type, uint16_t id)
+{
+    switch (type)
+    {
+    case 0:{
+            ImGui::Text("Camera");
+            ComponentSystem* transform_system = get_component_system(TRANSFORM);
+            Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[0].transform_id))->transform;
+            ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
+            ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
+            ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->field_of_view, 0.1f);
+        }
+        break;
+    case 1:
+        ImGui::Text("Transform");
+        ImGui::DragFloat3("Position", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.position.x, 0.1f);
+        ImGui::DragFloat3("Rotation", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.rotation.x, 0.1f);
+        ImGui::DragFloat3("Scale", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.scale.x, 0.1f);
+        break;
+    case 2:{
+            ImGui::Text("Render Component");
+            ComponentSystem* transform_system = get_component_system(TRANSFORM);
+            ComponentSystem* render_system = get_component_system(RENDER);
+            RenderComponent* component = (RenderComponent*)get_component_by_id(render_system, id);
+            Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[0].transform_id))->transform;
+
+            ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
+            ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
+            ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
+
+            int mesh_id = component->mesh_id;
+            int texture_id = component->texture_id;
+            const char* test;
+            std::string model_names;
+            uint32_t t = 0;
+            for(auto const& value : loaded_model_index){
+                for(char c : value.first){
+                    model_names.push_back(c);
+                }
+                t++;
+            }
+            bool b = false;
+
+            if(ImGui::BeginCombo("Models", "")){
+                for (auto const& value : loaded_model_index)
+                {
+                    if (ImGui::Button(value.first.c_str()))
+                    {
+                        component->mesh_id = value.second;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            if(ImGui::BeginCombo("Textures", "")){
+                for (auto const& value : loaded_textures_index)
+                {
+                    if (ImGui::Button(value.first.c_str()))
+                    {
+                        component->texture_id = value.second;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            // ImGui::InputInt("Mesh Index", &mesh_id);
+            // ImGui::InputInt("Texture Index", &texture_id);
+            // component->mesh_id = mesh_id;
+            // component->texture_id = texture_id;
+        }
+    break;
+    default:
+        break;
+    }
+}
+
 
 static void graph(std::vector<float>& stats)
 {
-    ImGui::PlotLines("te", stats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
+    ImGui::PlotLines("Memory Usage", stats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
 }
 
 static void imgui_hierarchy_pop_up()
@@ -167,7 +241,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
     }
 
-    for (int i = 0; i < render_pipeline->models.size(); i++) {
+    for (int i = 0; i < loaded_models.size(); i++) {
         ImGui::PushID(i);
 
         ImGui::Text("Model %i", i);

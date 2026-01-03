@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <fstream>
 // #include <string>
+#include <unordered_map>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
@@ -22,6 +23,9 @@ enum class LoadMode
     OBJ,
     BIN
 };
+
+std::unordered_map<std::string, uint32_t> loaded_model_index;
+std::vector<Model> loaded_models;
 
 namespace ModelLoader
 {
@@ -283,9 +287,12 @@ namespace ModelLoader
         return buffer;
     }
 
-    Model load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode)
+    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode)
     {
         Model model{};
+        if(auto contains = loaded_model_index.find(file_name); contains != loaded_model_index.end()){
+            return loaded_model_index[file_name];
+        }
         char* file_to_free;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
@@ -299,9 +306,11 @@ namespace ModelLoader
         model.index_amount = indices.amount;
         CommandBuffer::create_vertex_buffer(device, vertices, model.vertex_buffer, model.vertex_buffer_memory, command_pool);
         CommandBuffer::create_index_buffer(device, indices, model.index_buffer, model.index_buffer_memory, command_pool);
+        loaded_models.emplace_back(model);
+        loaded_model_index[file_name] = loaded_models.size() -1;
 
         free(file_to_free);
 
-        return model;
+        return loaded_model_index[file_name];
     }
 }/**/

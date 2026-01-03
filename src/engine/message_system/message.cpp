@@ -38,9 +38,9 @@ void load_asset(const char* file_name, RenderPipeline& render_pipeline)
     extention[2] = filename[filename.length() -1];
 
     if(extention[0] == 'o' || extention[0] == 'O'){
-        render_pipeline.models.emplace_back(ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ));
+        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ);
     }else if(extention[0] == 'b' || extention[0] == 'B'){
-        render_pipeline.models.emplace_back(ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN));
+        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN);
     }else if(extention[0] == 'p' || extention[0] == 'P'){
         Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
     }
