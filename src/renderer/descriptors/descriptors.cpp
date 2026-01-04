@@ -55,8 +55,6 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts;
 
-    //render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-
     if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets) != VK_SUCCESS){
         throw("Failed to create descriptor sets");
     }

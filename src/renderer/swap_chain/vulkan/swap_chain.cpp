@@ -1,6 +1,8 @@
 #pragma once
 #include "../../device/vulkan/device.cpp"
 #include "../../texture/vulkan/texture.cpp"
+#include "vulkan/vulkan_core.h"
+#include <cstdlib>
 
 typedef struct
 {
@@ -102,8 +104,11 @@ static VkPresentModeKHR select_swap_present_mode(const VkPresentModeKHR* availab
 void create_swap_chain(Device& device, WindowSize window, VkSurfaceKHR surface, SwapChain& swap_chain){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
-    VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.surface_formats, swap_chain_support.surface_amount);
-    VkPresentModeKHR present_mode = select_swap_present_mode(swap_chain_support.surface_present_modes, swap_chain_support.present_amount);
+    VkSurfaceFormatKHR surface_format = select_swap_surface_format((VkSurfaceFormatKHR*)swap_chain_support.surface_data, swap_chain_support.surface_amount);
+    VkSurfaceFormatKHR* surface_end = (VkSurfaceFormatKHR*)swap_chain_support.surface_data;
+    surface_end+= swap_chain_support.surface_amount;
+    VkPresentModeKHR* offset = (VkPresentModeKHR*)surface_end;
+    VkPresentModeKHR present_mode = select_swap_present_mode(offset, swap_chain_support.present_amount);
 
     VkExtent2D screen_extent = select_swap_chain_extent(swap_chain_support.surface_capabilities, window);
 
@@ -209,10 +214,10 @@ void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceK
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
-    VkImage images[image_amount];
+    swap_images.swap_chain_images = (VkImage*)malloc(sizeof(VkImage) * image_amount);
 
     swap_images.image_amount = image_amount;
-    swap_images.swap_chain_images = images;//Should Probably allocate for this
+    //swap_images.swap_chain_images = images;//Should Probably allocate for this
 
     vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images);
 

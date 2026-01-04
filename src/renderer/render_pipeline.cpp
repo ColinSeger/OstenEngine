@@ -26,7 +26,7 @@ struct RenderPipeline
     //TODO move out of class
     VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
-    std::vector<RenderDescriptors> to_render;
+    std::vector<RenderDescriptors> render_descriptors;
     // std::vector<Model> models;
 
     SwapChain swap_chain = {};
@@ -389,7 +389,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
-    create_uniform_buffers(to_render.data(), to_render.size(), device);
+    create_uniform_buffers(render_descriptors.data(), render_descriptors.size(), device);
     create_descriptor_pool(descriptor_pool, device.virtual_device);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
@@ -479,7 +479,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
         return result;
     }
 
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, to_render.data());
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_descriptors.data());
 
     vkResetFences(device.virtual_device, 1, &in_flight_fences[current_frame]);
 
@@ -499,7 +499,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
         if(loaded_models.size() > 0){
-            swap_draw_frame(command_buffer, to_render[comp.descriptor_id], pipeline_layout, loaded_models[comp.mesh_id], current_frame);
+            swap_draw_frame(command_buffer, render_descriptors[comp.descriptor_id], pipeline_layout, loaded_models[comp.mesh_id], current_frame);
         }
     }
 
@@ -549,7 +549,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     //There Is a Issue if there are multiple renderables as well
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
-        update_descriptor_set(device.virtual_device, to_render[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
+        update_descriptor_set(device.virtual_device, render_descriptors[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;

@@ -1,11 +1,12 @@
 #pragma once
 #include <iostream>
+#include <string>
 #include <vector>
 #include <chrono>
 
 std::vector<std::string> debug_logs{};
 
-std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
+std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::high_resolution_clock::now();
 
 namespace Debug
 {
@@ -38,9 +39,10 @@ namespace Debug
 
     void profile_time_end()
     {
-        std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::time_point<std::chrono::steady_clock> end_time = std::chrono::high_resolution_clock::now();
         double time = std::chrono::duration<double, std::chrono::seconds::period>(end_time - start_time).count();
         time*=10;//Converts to seconds
+
         std::string time_string = std::to_string(time);
 
         log(time_string.c_str());

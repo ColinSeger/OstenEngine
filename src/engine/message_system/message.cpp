@@ -14,16 +14,16 @@ enum class MessageType : uint8_t
 };
 
 static void create_entity(RenderPipeline* render_pipeline, const char* name){
+     vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     RenderDescriptors first_obj;
 
     create_uniform_buffer(first_obj, render_pipeline->device);
-    TextureImage texture;
+
     uint32_t index = Texture::load_texture(render_pipeline->device, ".png", render_pipeline->command_pool);
-    // uint32_t test = Texture::load_texture(render_pipeline->device, "assets/debug_assets/viking_room.png", render_pipeline->command_pool);
-    texture = loaded_textures[index];
+    TextureImage texture = loaded_textures[index];
 
     create_descriptor_set(render_pipeline->device.virtual_device, first_obj, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler);
-    render_pipeline->to_render.emplace_back(first_obj);
+    render_pipeline->render_descriptors.emplace_back(first_obj);
 
     Entity entity{};
     EntityManager::add_entity(entity, name);

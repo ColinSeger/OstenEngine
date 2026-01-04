@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include "../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
+#include "vulkan/vulkan_core.h"
 
 struct TextureCord{
     float x = 0;
@@ -44,8 +45,9 @@ typedef struct{
 
 typedef struct{
     VkSurfaceCapabilitiesKHR surface_capabilities;
-    VkSurfaceFormatKHR* surface_formats;
-    VkPresentModeKHR* surface_present_modes;
+    void* surface_data;
+    //VkSurfaceFormatKHR* surface_formats;
+    //VkPresentModeKHR* surface_present_modes;
     uint8_t surface_amount;
     uint8_t present_amount;
 } SwapChainSupportDetails ;
@@ -110,12 +112,12 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
 
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, nullptr);
 
-    VkQueueFamilyProperties queue_families[queue_family_amount];
+    VkQueueFamilyProperties* queue_families = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queue_family_amount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families);
 
     int index = 0;
-    for (const auto& queue_family : queue_families) {
-        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    for (int i = 0; i < queue_family_amount; i++) {
+        if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics_family.number = index;
             indices.graphics_family.has_value = true;
         }
@@ -150,17 +152,21 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     swap_chain_details.surface_amount = format_amount;
     swap_chain_details.present_amount = present_mode_amount;
 
-    VkSurfaceFormatKHR surfaces[format_amount];// This NEEDS to be turned into a actual allocation since this will be deallocated after function call
-    VkPresentModeKHR presents[present_mode_amount];
+
+    swap_chain_details.surface_data = malloc((sizeof(VkSurfaceFormatKHR) * format_amount) + (sizeof(VkPresentModeKHR) * present_mode_amount));
+    //VkSurfaceFormatKHR surfaces[format_amount];// This NEEDS to be turned into a actual allocation since this will be deallocated after function call
+    //VkPresentModeKHR presents[present_mode_amount];
 
     if (format_amount != 0) {
-        swap_chain_details.surface_formats = surfaces;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, swap_chain_details.surface_formats);
+        //swap_chain_details.surface_formats = surfaces;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_amount, (VkSurfaceFormatKHR*)swap_chain_details.surface_data);
     }
 
     if (present_mode_amount != 0) {
-        swap_chain_details.surface_present_modes = presents;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, swap_chain_details.surface_present_modes);
+        VkSurfaceFormatKHR* surface_end = (VkSurfaceFormatKHR*)swap_chain_details.surface_data;
+        surface_end+= format_amount;
+        VkPresentModeKHR* offset = (VkPresentModeKHR*)surface_end;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_amount, offset);
     }
 
     return swap_chain_details;
@@ -168,22 +174,24 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
 
 static bool check_device_extension_support(VkPhysicalDevice device)
 {
-    uint32_t extension_count;
+    uint32_t extension_count = 0;
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
-    VkExtensionProperties available_extensions[extension_count];
+    VkExtensionProperties* available_extensions = (VkExtensionProperties*)malloc(sizeof(VkExtensionProperties) * extension_count);//I Dislike this
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions);
 
     uint32_t extension_amount = sizeof(device_extensions) / sizeof(device_extensions[0]);
     uint32_t found_amount = 0;
 
-    for (const VkExtensionProperties& extension : available_extensions) {
-        if(!strcmp(device_extensions[0], extension.extensionName)){
+    for (int i = 0; i < extension_count; i++) {
+        //Improve Later
+        if(!strcmp(device_extensions[0], available_extensions[i].extensionName)){
             found_amount++;
         }
     }
+    free(available_extensions);
     if(found_amount >= extension_amount){
         return true;
     }else{
@@ -290,12 +298,12 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         throw "There is no device that supports vulkan on this computer";
     }
 
-    VkPhysicalDevice devices[device_amount];
+    VkPhysicalDevice* devices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * device_amount);
     vkEnumeratePhysicalDevices(instance, &device_amount, devices);
 
-    for (const VkPhysicalDevice& device_physical : devices) {
-        if (is_device_suitable(device_physical, surface_reference)) {
-            device.physical_device = device_physical;
+    for (int i = 0; i < device_amount; i++) {
+        if (is_device_suitable(devices[i], surface_reference)) {
+            device.physical_device = devices[i];
             break;
         }
     }

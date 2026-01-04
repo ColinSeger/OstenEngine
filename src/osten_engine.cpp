@@ -100,7 +100,7 @@ void shift(std::vector<float>& mem_usage){
 void OstenEngine::main_game_loop()
 {
     bool open_window = true;
-    static std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
+    static std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
     double fps = 0;
@@ -124,6 +124,7 @@ void OstenEngine::main_game_loop()
         MessageType::CreateEntity,
         (void*)"Test"
     };
+
     add_message(empty_entity);
     handle_message(render_pipeline);
 

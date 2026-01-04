@@ -8,6 +8,7 @@
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../renderer/device/vulkan/device.cpp"
+#include "../../engine/message_system/message.cpp"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
 
@@ -146,10 +147,6 @@ void inspect(uint8_t type, uint16_t id)
                 }
                 ImGui::EndCombo();
             }
-            // ImGui::InputInt("Mesh Index", &mesh_id);
-            // ImGui::InputInt("Texture Index", &texture_id);
-            // component->mesh_id = mesh_id;
-            // component->texture_id = texture_id;
         }
     break;
     default:
@@ -168,7 +165,11 @@ static void imgui_hierarchy_pop_up()
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            EntityManager::add_entity(Entity{}, "GameObject");
+            Message entity{};
+            entity.size = 0;
+            entity.type = MessageType::CreateEntity;
+            entity.value = (void*)"GameObject";
+            add_message(entity);
         }
         ImGui::EndPopup();
     }
@@ -209,6 +210,29 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting)
     ImGui::End();
 }
 
+static inline void show_loaded_assets()
+{
+    ImGui::Text("Loaded Models");
+
+    for (auto const& value : loaded_model_index)
+    {
+        ImGui::PushID(value.second);
+        ImGui::Button(value.first.c_str());
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
+
+    ImGui::Text("Loaded Textures");
+
+    for (auto const& value : loaded_textures_index)
+    {
+        ImGui::PushID(value.second);
+        ImGui::Button(value.first.c_str());
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
+}
+
 void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, std::vector<float>& mem_stats)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
@@ -241,14 +265,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
     }
 
-    for (int i = 0; i < loaded_models.size(); i++) {
-        ImGui::PushID(i);
-
-        ImGui::Text("Model %i", i);
-        ImGui::Spacing();
-
-        ImGui::PopID();
-    }
+    show_loaded_assets();
 
     imgui_hierarchy(is_open, inspecting);
 
@@ -284,7 +301,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
-                    static_cast<uint32_t>(add_render_component(render_pipeline->to_render.size()-1)),
+                    static_cast<uint32_t>(add_render_component(render_pipeline->render_descriptors.size()-1)),
                     static_cast<uint16_t>(RENDER)
                 };
                 EntityManager::get_all_entities()[inspecting].components.emplace_back(render);
