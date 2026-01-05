@@ -27,6 +27,7 @@ struct RenderPipeline
     VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
     std::vector<RenderDescriptors> render_descriptors;
+    uint32_t descriptor_usage = 0;
     // std::vector<Model> models;
 
     SwapChain swap_chain = {};

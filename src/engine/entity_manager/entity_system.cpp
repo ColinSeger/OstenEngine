@@ -2,6 +2,7 @@
 #pragma once
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include "components.cpp"
 
 struct System

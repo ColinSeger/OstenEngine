@@ -100,7 +100,7 @@ void shift(std::vector<float>& mem_usage){
 void OstenEngine::main_game_loop()
 {
     bool open_window = true;
-    static std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::high_resolution_clock::now();
+    static std::chrono::time_point<std::chrono::system_clock> start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
     double fps = 0;
@@ -136,7 +136,7 @@ void OstenEngine::main_game_loop()
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
 
-        auto current_time = std::chrono::high_resolution_clock::now();
+        std::chrono::time_point<std::chrono::system_clock> current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 

@@ -26,9 +26,9 @@ typedef struct
 void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
 {
     VkDescriptorPoolSize pool_sizes[] = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)},
-        {VK_DESCRIPTOR_TYPE_SAMPLER,                static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)}
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100},
+        {VK_DESCRIPTOR_TYPE_SAMPLER,                static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100}
     };
 
     VkDescriptorPoolCreateInfo pool_info{};
@@ -36,14 +36,14 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     // pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(pool_sizes[0]);
     pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    pool_info.maxSets = 100;
 
     if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
         throw("Descriptor failed to create");
     }
 }
 
-void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool& descriptor_pool, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
+void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -55,9 +55,11 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts;
 
-    if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets) != VK_SUCCESS){
+    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets);
+
+    if(allocation_status != VK_SUCCESS)
         throw("Failed to create descriptor sets");
-    }
+
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -154,9 +156,8 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     layoutInfo.pBindings = bindings;
 
     VkResult result = vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout);
-    if(result != VK_SUCCESS){
+    if(result != VK_SUCCESS)
         throw("Failed to create descriptor layout");
-    }
 }
 
 static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, RenderDescriptors* render_descriptors, uint32_t amount)
@@ -175,12 +176,10 @@ static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice v
         allocInfo.descriptorPool = descriptor_pool;
         allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = layouts;
+        VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets);
 
-        // render_this.descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-
-        if(vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets) != VK_SUCCESS){
+        if(allocation_status != VK_SUCCESS)
             throw("Failed to allocate descriptor sets");
-        }
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo buffer_info{};

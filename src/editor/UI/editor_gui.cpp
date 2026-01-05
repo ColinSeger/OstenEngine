@@ -301,9 +301,10 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
-                    static_cast<uint32_t>(add_render_component(render_pipeline->render_descriptors.size()-1)),
+                    static_cast<uint32_t>(add_render_component(render_pipeline->descriptor_usage)),
                     static_cast<uint16_t>(RENDER)
                 };
+                render_pipeline->descriptor_usage++;
                 EntityManager::get_all_entities()[inspecting].components.emplace_back(render);
                 //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
