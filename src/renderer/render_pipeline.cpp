@@ -15,6 +15,7 @@
 struct RenderPipeline
 {
     SwapChainImages swap_chain_images = {};
+    OffScreenImage offscreen_image;
 
     //Device manager
     Device device;
@@ -51,10 +52,10 @@ struct RenderPipeline
 
     // void restart_swap_chain(int32_t width, int32_t height);
 
-    RenderPipeline(const int width, const int height, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount);
+    RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount);
     ~RenderPipeline();
 
-    int32_t draw_frame(CameraComponent camera);
+    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture);
 
     // void cleanup();
 };
@@ -262,7 +263,8 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    //color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkAttachmentDescription depth_attachment{};
     depth_attachment.format = Texture::find_depth_formats(device.physical_device);
@@ -304,7 +306,7 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     }
 }
 
-void restart_swap_chain(RenderPipeline& render_pipeline, int32_t width, int32_t height)
+void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
@@ -313,11 +315,11 @@ void restart_swap_chain(RenderPipeline& render_pipeline, int32_t width, int32_t 
 
         vkDestroyCommandPool(render_pipeline.device.virtual_device, render_pipeline.command_pool, nullptr);
 
-        create_swap_chain(render_pipeline.device, {width, height}, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
         create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
 
     }else{
-        create_swap_chain(render_pipeline.device, {width, height}, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
         create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
         create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device);
     }
@@ -325,7 +327,11 @@ void restart_swap_chain(RenderPipeline& render_pipeline, int32_t width, int32_t 
 
     render_pipeline.swap_chain_images.depth_image_view = create_depth_resources(render_pipeline.device, render_pipeline.swap_chain.screen_extent, render_pipeline.swap_chain_images.depth_image_memory, render_pipeline.swap_chain_images.depth_image);
 
-    create_frame_buffers(render_pipeline.swap_chain_images, render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.swap_chain_images.depth_image_view, render_pipeline.swap_chain.screen_extent);
+    VkResult frambuffer_status = create_frame_buffers(render_pipeline.swap_chain_images, render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.swap_chain_images.depth_image_view, render_pipeline.swap_chain.screen_extent);
+
+    if(frambuffer_status != VK_SUCCESS){
+        throw "FrameBuffers could not be created";
+    }
 
     CommandBuffer::create_command_buffers(render_pipeline.command_buffers, render_pipeline.device.virtual_device, render_pipeline.command_pool, MAX_FRAMES_IN_FLIGHT);
 }
@@ -380,13 +386,13 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-RenderPipeline::RenderPipeline(const int width, const int height, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
+RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
 {
     my_instance = instance;
     my_surface = surface;
     create_device(device, instance, surface, validation_layers, layer_amount);
 
-    restart_swap_chain(*this ,width, height);
+    restart_swap_chain(*this, screen_size);
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -407,6 +413,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
     setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline);
 
     create_sync_objects(device.virtual_device, *this);
+    create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
 }
 
 void cleanup(RenderPipeline& pipeline)
@@ -469,7 +476,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& 
     }
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent camera)
+int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture)
 {
     vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
@@ -489,7 +496,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
+    // start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
+    start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
@@ -509,7 +517,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     vkCmdEndRenderPass(command_buffer);
 
-    end_render_pass(command_buffer);
+    // end_render_pass(command_buffer);
 
     VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -546,7 +554,16 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
 
+    VkSampler sampler = Texture::create_texture_sampler(device);
+
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+    imgui_texture =
+    ImGui_ImplVulkan_AddTexture(
+        sampler,
+        offscreen_image.swap_chain_image_view,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
         update_descriptor_set(device.virtual_device, render_descriptors[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);

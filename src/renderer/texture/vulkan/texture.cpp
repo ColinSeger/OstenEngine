@@ -199,7 +199,7 @@ namespace Texture
         return result;
     }
 
-    VkSampler create_texture_sampler(Device& device, uint32_t mip_level)//TODO Remove miplevel that is here for testing
+    VkSampler create_texture_sampler(Device& device)
     {
         VkSampler textureSampler{};
 
@@ -510,7 +510,7 @@ namespace Texture
         }
         TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
         texture_image.image_view = create_image_view(device.virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture_image.mip_levels);
-        texture_image.texture_sampler = Texture::create_texture_sampler(device, texture_image.mip_levels);
+        texture_image.texture_sampler = Texture::create_texture_sampler(device);
 
 
         loaded_textures.emplace_back(texture_image);

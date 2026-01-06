@@ -3,6 +3,7 @@
 #include <chrono>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
 #include "renderer/instance/vulkan/instance.cpp"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
@@ -77,7 +78,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name, Pl
         throw("Failed to create surface");
     }
 
-    render_pipeline = new RenderPipeline(width, height, instance, surface, validation_layers, validation_layer_amount);
+    render_pipeline = new RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, validation_layers, validation_layer_amount);
 
     init_imgui(main_window, render_pipeline);
 
@@ -122,6 +123,8 @@ void OstenEngine::main_game_loop()
 
     uint32_t inspecting = 0;
 
+    VkDescriptorSet imgui_texture = VK_NULL_HANDLE;
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
 
@@ -145,23 +148,32 @@ void OstenEngine::main_game_loop()
         start_file_explorer(file_explorer, render_pipeline);
 
         end_file_explorer();
+        if(imgui_texture != VK_NULL_HANDLE){
+            ImGui::Begin("Viewport");
+            ImGui::Image(
+                (ImTextureID)imgui_texture,
+                ImVec2(1280, 920)
+            );
+            ImGui::End();
+        }
 
         ComponentSystem* cameras = get_component_system(0);
         int32_t result = 0;
         for (size_t i = 0; i < cameras->amount; i++)
         {
-            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
+            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture);
 
             if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
                 resized = false;
-                int32_t width = 0, height = 0;
+                int32_t width = 0;
+                int32_t height = 0;
                 glfwGetFramebufferSize(main_window, &width, &height);
                 while (width <= 0 || height <= 0) {
                     glfwGetFramebufferSize(main_window, &width, &height);
                     glfwWaitEvents();
                 }
-                restart_swap_chain(*render_pipeline ,width, height);
-                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)));
+                restart_swap_chain(*render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture);
             }
         }
 
