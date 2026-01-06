@@ -391,7 +391,7 @@ RenderPipeline::RenderPipeline(const int width, const int height, VkInstance ins
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
     create_uniform_buffers(render_descriptors.data(), render_descriptors.size(), device);
-    create_descriptor_pool(descriptor_pool, device.virtual_device);
+    create_descriptor_pool(descriptor_pool, device.virtual_device, 100);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -547,7 +547,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera)
     result = vkQueuePresentKHR(device.present_queue, &present_info);
 
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-    //There Is a Issue if there are multiple renderables as well
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
         update_descriptor_set(device.virtual_device, render_descriptors[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);

@@ -23,12 +23,12 @@ typedef struct
     mat4_t projection;
 } UniformBufferObject;
 
-void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
+void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device, const uint32_t pool_size)
 {
     VkDescriptorPoolSize pool_sizes[] = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100},
-        {VK_DESCRIPTOR_TYPE_SAMPLER,                static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 100}
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * pool_size},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * pool_size},
+        {VK_DESCRIPTOR_TYPE_SAMPLER,                static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * pool_size}
     };
 
     VkDescriptorPoolCreateInfo pool_info{};
@@ -36,7 +36,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device)
     // pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(pool_sizes[0]);
     pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = 100;
+    pool_info.maxSets = pool_size;
 
     if(vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &result) != VK_SUCCESS){
         throw("Descriptor failed to create");

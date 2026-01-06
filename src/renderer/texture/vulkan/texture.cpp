@@ -221,7 +221,7 @@ namespace Texture
         sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
         sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         sampler_info.mipLodBias = 0.0f;
-        sampler_info.minLod = static_cast<float>(static_cast<float>(mip_level) / 2);
+        sampler_info.minLod = 0;
         sampler_info.maxLod = VK_LOD_CLAMP_NONE;
 
         VkResult sampler_status = vkCreateSampler(device.virtual_device, &sampler_info, nullptr, &textureSampler);
@@ -497,6 +497,8 @@ namespace Texture
         if(!error_handle){
             stbi_image_free(image_pixels);
         }
+
+        vkDestroyBuffer(device.virtual_device, staging_buffer, nullptr);
 
         return texture_image;
     }

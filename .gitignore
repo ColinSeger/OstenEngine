@@ -71,3 +71,7 @@ cmake_install.cmake
 OstenEngine
 
 assets/debug_assets/napoleon.OBJ
+
+external/built_glfw/*
+
+external/*.o

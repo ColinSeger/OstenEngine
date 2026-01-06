@@ -154,10 +154,19 @@ void inspect(uint8_t type, uint16_t id)
     }
 }
 
+static float memory_stats[30]{};
+static float highest_value = 0;
+constexpr uint8_t graph_size = sizeof(memory_stats) / sizeof(memory_stats[0]);
 
-static void graph(std::vector<float>& stats)
+static void update_graph(float current)
 {
-    ImGui::PlotLines("Memory Usage", stats.data(), stats.size(), 0, nullptr, 0, 1000, {100, 100});
+    if(current > highest_value) highest_value = current;
+    float push_value = current;
+    for(uint8_t i = 0; i < graph_size; i++){
+        float saved = memory_stats[i];
+        memory_stats[i] = push_value;
+        push_value = saved;
+    }
 }
 
 static void imgui_hierarchy_pop_up()
@@ -233,7 +242,7 @@ static inline void show_loaded_assets()
     }
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, std::vector<float>& mem_stats)
+void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -252,7 +261,8 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     ImGui::Spacing();
 
     ImGui::Text("(%f)", ((float)fps));
-    graph(mem_stats);
+
+    ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value + 10, {100, 100});
 
     ComponentSystem cameras = *get_component_system(CAMERA);
 

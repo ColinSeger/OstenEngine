@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <chrono>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -90,13 +89,6 @@ OstenEngine::~OstenEngine()
     cleanup();
 }
 
-void shift(std::vector<float>& mem_usage){
-    for (int i = 0; i < mem_usage.size() - 1; i++) {
-        mem_usage[i] = mem_usage[i+1];
-    }
-    mem_usage.erase(mem_usage.end());
-}
-
 void OstenEngine::main_game_loop()
 {
     bool open_window = true;
@@ -130,9 +122,6 @@ void OstenEngine::main_game_loop()
 
     uint32_t inspecting = 0;
 
-
-    std::vector<float> mem_usage{};
-
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
 
@@ -144,14 +133,14 @@ void OstenEngine::main_game_loop()
 
         if(frame_time > 1)
         {
-            mem_usage.push_back(platform_layer.MemoryChecker());
-            while(mem_usage.size() > 1000) shift(mem_usage);
+            update_graph(platform_layer.MemoryChecker());
+
             fps = frames / frame_time;
             start_time = current_time;
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, open_window, fps, inspecting, mem_usage);
+        begin_imgui_editor_poll(main_window, render_pipeline, open_window, fps, inspecting);
         //ImGui::DockSpaceOverViewport();
         start_file_explorer(file_explorer, render_pipeline);
 
