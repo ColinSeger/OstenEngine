@@ -1,5 +1,8 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 // #include <string>
 #include <unordered_map>
@@ -133,7 +136,7 @@ namespace ModelLoader
                 TextureCord cord {};
                 cord.x = value_to_add.texture_cord[0];
                 cord.y = 1.f - value_to_add.texture_cord[1];
-                texture_cords.emplace_back(cord);
+                texture_cords.push_back(cord);
                 if(file[i+1] != 'v' || file[i+2] != 't'){
                     index = i;
                     break;
@@ -210,15 +213,17 @@ namespace ModelLoader
         model_indicies.amount = 0;
         for (size_t i = 0; i < indicies.size(); i++)
         {
-            uint32_t val = indicies[i].vertex_index;
-            uint32_t bal = indicies[i].texture_index;
-            if(val > 0 && bal > 0){
-                vertex[indicies[i].vertex_index-1].texture_cord = texture_cords[indicies[i].texture_index-1];
-                model_indicies.values[model_indicies.amount] = indicies[i].vertex_index-1;
+            uint32_t val = indicies[i].vertex_index-1;
+            uint32_t bal = indicies[i].texture_index-1;
+            if(val >= 0 && bal >= 0){
+                vertex[val].texture_cord = texture_cords[bal];
+                model_indicies.values[model_indicies.amount] = val;
                 model_indicies.amount++;
             }
         }
-        model_vertices.values = vertex.data();
+
+        model_vertices.values = (Vertex*)malloc(sizeof(Vertex) * vertex.size());
+        memcpy(model_vertices.values, vertex.data(), sizeof(Vertex) * vertex.size());
         model_vertices.amount = vertex.size();
 
         free(file);
@@ -295,7 +300,7 @@ namespace ModelLoader
         if(contains != loaded_model_index.end()){
             return loaded_model_index[file_name];
         }
-        char* file_to_free;//Temp solution for speed test
+        char* file_to_free = nullptr;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
 
@@ -311,7 +316,7 @@ namespace ModelLoader
         loaded_models.emplace_back(model);
         loaded_model_index[file_name] = loaded_models.size() -1;
 
-        free(file_to_free);
+        if(file_to_free) free(file_to_free);
 
         return loaded_model_index[file_name];
     }

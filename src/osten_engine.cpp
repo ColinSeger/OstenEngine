@@ -14,11 +14,6 @@
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
 
-struct PlatformLayer
-{
-    float (*MemoryChecker)();
-};
-
 struct OstenEngine
 {
     GLFWwindow* main_window = nullptr;

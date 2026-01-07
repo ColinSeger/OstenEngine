@@ -184,6 +184,11 @@ void create_camera_system(uint8_t camera_amount){
         CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
         *comp = CameraComponent{};
         comp->transform_id = add_transform();
+        TransformComponent* transform = (TransformComponent*)get_component_by_id(&transforms, comp->transform_id);
+        transform->transform.position.x = 10;
+        transform->transform.position.z = 2;
+
+        transform->transform.rotation.y = 1.3f;
     }
 }
 
