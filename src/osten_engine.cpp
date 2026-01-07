@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
+#include "platform.h"
 #include "renderer/instance/vulkan/instance.cpp"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
@@ -26,8 +27,6 @@ struct OstenEngine
 
     FileExplorer file_explorer;
 
-    PlatformLayer& platform_layer;
-
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {
         auto app = reinterpret_cast<OstenEngine*>(glfwGetWindowUserPointer(main_window));
@@ -35,7 +34,7 @@ struct OstenEngine
     }
 
 
-    OstenEngine(const int width, const int height, const char* name, PlatformLayer& layer);
+    OstenEngine(const int width, const int height, const char* name);
 
     ~OstenEngine();
     void main_game_loop();
@@ -43,7 +42,7 @@ struct OstenEngine
     void cleanup();
 };
 
-OstenEngine::OstenEngine(const int width, const int height, const char* name, PlatformLayer& layer) : application_name { name }, platform_layer { layer }
+OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
 {
     if(!glfwInit()){
         puts("glfwInit failed");
@@ -93,7 +92,7 @@ OstenEngine::~OstenEngine()
 void OstenEngine::main_game_loop()
 {
     bool open_window = true;
-    static std::chrono::time_point<std::chrono::system_clock> start_time = std::chrono::high_resolution_clock::now();
+    static auto start_time = std::chrono::high_resolution_clock::now();
     double frames = 0;
 
     double fps = 0;
@@ -128,7 +127,7 @@ void OstenEngine::main_game_loop()
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
 
-        std::chrono::time_point<std::chrono::system_clock> current_time = std::chrono::high_resolution_clock::now();
+        auto current_time = std::chrono::high_resolution_clock::now();
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
@@ -136,7 +135,7 @@ void OstenEngine::main_game_loop()
 
         if(frame_time > 1)
         {
-            update_graph(platform_layer.MemoryChecker());
+            update_graph(platform_memory_mb());
 
             fps = frames / frame_time;
             start_time = current_time;

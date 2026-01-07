@@ -290,7 +290,9 @@ namespace ModelLoader
     uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode)
     {
         Model model{};
-        if(auto contains = loaded_model_index.find(file_name); contains != loaded_model_index.end()){
+        auto contains = loaded_model_index.find(file_name);
+
+        if(contains != loaded_model_index.end()){
             return loaded_model_index[file_name];
         }
         char* file_to_free;//Temp solution for speed test

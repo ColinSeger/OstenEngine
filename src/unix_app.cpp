@@ -1,8 +1,9 @@
+#include "platform.h"
 #include "osten_engine.cpp"
 #include <cstdint>
 #include <unistd.h>
 
-float get_size()
+float platform_memory_mb()
 {//https://libstatgrab.org/ Look Into
     FILE *file = fopen("/proc/self/statm", "r");
     if (!file)
@@ -28,10 +29,7 @@ float get_size()
 }
 
 OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    PlatformLayer platform_layer{
-        &get_size
-    };
-    return OstenEngine(width, height, name, platform_layer);
+    return OstenEngine(width, height, name);
 }
 
 uint8_t run(OstenEngine& engine){

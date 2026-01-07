@@ -1,3 +1,4 @@
+#include "platform.h"
 #include "osten_engine.cpp"
 #include <cstdint>
 #include <windows.h>
@@ -5,7 +6,7 @@
 #include <psapi.h>
 
 
-float value(){
+float platform_memory_mb(){
     PROCESS_MEMORY_COUNTERS memory_counters;
     auto handle = GetCurrentProcess();
     if(GetProcessMemoryInfo(handle , &memory_counters, sizeof(memory_counters))){
@@ -18,10 +19,7 @@ float value(){
     return 0;
 }
 OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    PlatformLayer platform_layer{
-        &value
-    };
-    return OstenEngine(width, height, name, platform_layer);
+    return OstenEngine(width, height, name);
 }
 /*
 */

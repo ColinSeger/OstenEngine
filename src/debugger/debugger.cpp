@@ -6,7 +6,7 @@
 
 std::vector<std::string> debug_logs{};
 
-std::chrono::time_point<std::chrono::system_clock> start_time = std::chrono::high_resolution_clock::now();
+auto start_time = std::chrono::high_resolution_clock::now();
 
 namespace Debug
 {
@@ -39,7 +39,7 @@ namespace Debug
 
     void profile_time_end()
     {
-        std::chrono::time_point<std::chrono::system_clock> end_time = std::chrono::high_resolution_clock::now();
+        auto end_time = std::chrono::high_resolution_clock::now();
         double time = std::chrono::duration<double, std::chrono::seconds::period>(end_time - start_time).count();
         time*=10;//Converts to seconds
 

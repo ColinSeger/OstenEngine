@@ -263,8 +263,8 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    //color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkAttachmentDescription depth_attachment{};
     depth_attachment.format = Texture::find_depth_formats(device.physical_device);
@@ -413,7 +413,7 @@ RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance
     setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline);
 
     create_sync_objects(device.virtual_device, *this);
-    create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
+    //create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
 }
 
 void cleanup(RenderPipeline& pipeline)
@@ -496,8 +496,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    // start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
-    start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
+    start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
+   // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
@@ -516,8 +516,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
 
     vkCmdEndRenderPass(command_buffer);
-
-    // end_render_pass(command_buffer);
+    vkEndCommandBuffer(command_buffer);
 
     VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -554,15 +553,15 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
 
-    VkSampler sampler = Texture::create_texture_sampler(device);
+    //VkSampler sampler = Texture::create_texture_sampler(device);
 
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-    imgui_texture =
+    /*imgui_texture =
     ImGui_ImplVulkan_AddTexture(
         sampler,
         offscreen_image.swap_chain_image_view,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        );*/
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
