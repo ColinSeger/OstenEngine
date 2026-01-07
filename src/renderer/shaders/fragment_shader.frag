@@ -7,5 +7,5 @@ layout(location = 1) in vec2 frag_tex_cord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(texture_sampler, frag_tex_cord);
+    outColor = vec4(fragColor, 1) * texture(texture_sampler, frag_tex_cord);
 }

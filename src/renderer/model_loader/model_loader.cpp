@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-// #include <string>
 #include <unordered_map>
 #include <vulkan/vulkan.h>
 #include <vector>
@@ -97,6 +96,7 @@ namespace ModelLoader
         union ValueToAdd {
             float vertex_to_add[3];
             float indicies_to_add[3];
+            float normal_cords[3];
             float texture_cord[2];
         };
         ValueToAdd value_to_add{};
@@ -104,6 +104,7 @@ namespace ModelLoader
         std::vector<Vertex> vertex;
         std::vector<Indices> indicies;
         std::vector<TextureCord> texture_cords;
+        std::vector<vec3_t> vertex_normals;
         vertex.reserve(file_size/40);
         texture_cords.reserve(file_size/60);
         indicies.reserve(file_size/30);
@@ -113,6 +114,7 @@ namespace ModelLoader
 
         next_valid(file, &index, file_size);
 
+        //Vertexes
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
                 char_index = 0;
@@ -130,6 +132,7 @@ namespace ModelLoader
 
         next_valid(file, &index, file_size);
 
+        //TextureCords
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
                 char_index = 0;
@@ -150,17 +153,19 @@ namespace ModelLoader
 
         next_valid(file, &index, file_size);
 
+        //Normals
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
                 char_index = 0;
+                vertex_normals.push_back({value_to_add.normal_cords[0], value_to_add.normal_cords[1], value_to_add.normal_cords[2]});
                 if(file[i+1] != 'v' || file[i+2] != 'n'){
                     index = i;
                     break;
                 }
             }
             if(file[i] == ' '){//TODO
-                // vertex_to_add[char_index] = atof(&file[i+1]);
-                // char_index ++;
+                value_to_add.normal_cords[char_index] = atof(&file[i+1]);
+                char_index ++;
             }
         }
 
@@ -213,11 +218,13 @@ namespace ModelLoader
         model_indicies.amount = 0;
         for (size_t i = 0; i < indicies.size(); i++)
         {
-            uint32_t val = indicies[i].vertex_index-1;
-            uint32_t bal = indicies[i].texture_index-1;
-            if(val >= 0 && bal >= 0){
-                vertex[val].texture_cord = texture_cords[bal];
-                model_indicies.values[model_indicies.amount] = val;
+            uint32_t vertex_index = indicies[i].vertex_index-1;
+            uint32_t texture_index = indicies[i].texture_index-1;
+            uint32_t normal_index = indicies[i].normal_index-1;
+            if(vertex_index >= 0 && texture_index >= 0){
+                vertex[vertex_index].texture_cord = texture_cords[texture_index];
+                vertex[vertex_index].normals = vertex_normals[normal_index];
+                model_indicies.values[model_indicies.amount] = vertex_index;
                 model_indicies.amount++;
             }
         }

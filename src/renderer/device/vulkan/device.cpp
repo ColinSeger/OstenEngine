@@ -14,7 +14,7 @@ struct TextureCord{
 
 struct Vertex {
     vec3_t position{};
-    vec3_t color{};
+    vec3_t normals{};
     TextureCord texture_cord{};
 };
 
@@ -95,7 +95,7 @@ VertexAttributes get_attribute_descriptions() {
     attribute_descriptions.array[1].binding = 0;
     attribute_descriptions.array[1].location = 1;
     attribute_descriptions.array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attribute_descriptions.array[1].offset = offsetof(Vertex, color);
+    attribute_descriptions.array[1].offset = offsetof(Vertex, normals);
 
     attribute_descriptions.array[2].binding = 0;
     attribute_descriptions.array[2].location = 2;
