@@ -1,22 +1,30 @@
 #pragma once
+#include <cstddef>
 #include <cstdlib>
 #include <vulkan/vulkan.h>
 #include <cstdint>
 #include <stdint.h>
 #include <cstring>
+#include "../../../additional_things/arena.h"
+#include "../../validation.h"
+
+typedef struct {
+    const char** window_extensions;
+    uint32_t extensions_amount;
+} WindowExtentions;
 
 namespace Instance
 {
-    static bool check_validation_layer_support(const char*const* validation_layers, uint8_t amount)
+    static bool check_validation_layer_support(MemArena& memory_arena)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-        VkLayerProperties* available_layers = (VkLayerProperties*)malloc(sizeof(VkLayerProperties) * layer_count);
+        size_t index = arena_alloc_memory(memory_arena, sizeof(VkLayerProperties) * layer_count);
+        VkLayerProperties* available_layers = (VkLayerProperties*)memory_arena[index];
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
         bool layer_found = false;
 
-        for(uint8_t i = 0; i < amount; i++){
+        for(uint8_t i = 0; i < sizeof(validation_layers) / sizeof(validation_layers[0]); i++){
             for(uint32_t layer_index = 0; layer_index < layer_count; layer_index++){
                 if(strcmp(validation_layers[i], available_layers[layer_index].layerName) == 0){
                     layer_found = true;
@@ -25,7 +33,7 @@ namespace Instance
             }
         }
 
-        free(available_layers);
+        free_arena(memory_arena, index);
 
         if(!layer_found){
             return false;
@@ -33,12 +41,12 @@ namespace Instance
         return true;
     }
 
-    VkInstance create_instance(const char* name, uint32_t window_extention_count, const char** window_extensions, const char* const* validation_layers, uint8_t layer_amount)
+    VkInstance create_instance(const char* name, WindowExtentions window_extensions, MemArena& memory_arena)
     {
-        if(window_extensions == NULL) throw;
+        if(window_extensions.window_extensions == NULL) throw;
         VkInstance instance = VK_NULL_HANDLE;
-        if(layer_amount > 0){
-            if(!check_validation_layer_support(validation_layers, layer_amount)){
+        if(sizeof(validation_layers) / sizeof(validation_layers[0]) > 0){
+            if(!check_validation_layer_support(memory_arena)){
                 throw("Validation layers requested but could not be found");
             }
         }
@@ -60,11 +68,11 @@ namespace Instance
         create_info.pApplicationInfo = &app_info;
         create_info.flags = VkInstanceCreateFlags(0);
 
-        create_info.enabledExtensionCount = window_extention_count;
-        create_info.ppEnabledExtensionNames = window_extensions;
+        create_info.enabledExtensionCount = window_extensions.extensions_amount;
+        create_info.ppEnabledExtensionNames = window_extensions.window_extensions;
 
-        if(layer_amount > 0){
-            create_info.enabledLayerCount = static_cast<uint32_t>(layer_amount);
+        if(sizeof(validation_layers) / sizeof(validation_layers[0]) > 0){
+            create_info.enabledLayerCount = static_cast<uint32_t>(sizeof(validation_layers) / sizeof(validation_layers[0]));
             create_info.ppEnabledLayerNames = validation_layers;
         }else{
             create_info.enabledLayerCount = 0;

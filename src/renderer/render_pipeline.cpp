@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
@@ -11,6 +12,7 @@
 #include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.cpp"
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
+#include "../additional_things/arena.h"
 
 struct RenderPipeline
 {
@@ -52,7 +54,7 @@ struct RenderPipeline
 
     // void restart_swap_chain(int32_t width, int32_t height);
 
-    RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount);
+    RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena);
     ~RenderPipeline();
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture);
@@ -62,11 +64,11 @@ struct RenderPipeline
 
 typedef struct
 {
-    char* chars;
+    size_t arena_index;
     size_t amount;
-} String;
+} ShaderMemoryIndexing;
 
-static String load_shader(const char* file_name)
+static ShaderMemoryIndexing load_shader(const char* file_name, MemArena& memory_arena)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
@@ -74,23 +76,24 @@ static String load_shader(const char* file_name)
         throw "Failed to load shaders";
     }
 
-    String result;
+    ShaderMemoryIndexing result;
     result.amount = (size_t) file.tellg();
-    result.chars = (char*)malloc(sizeof(char) * result.amount);
+
+    result.arena_index = arena_alloc_memory(memory_arena, sizeof(char) * result.amount);
 
     file.seekg(0);
-    file.read(result.chars, result.amount);
+    file.read((char*)memory_arena[result.arena_index], result.amount);
 
     file.close();
     return result;
 }
 
-static VkShaderModule create_shader(const String& code, VkDevice virtual_device) {
+static VkShaderModule create_shader(const ShaderMemoryIndexing& code, VkDevice virtual_device, MemArena& memory_arena) {
     VkShaderModule shader_result;
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code.amount;
-    create_info.pCode = reinterpret_cast<const uint32_t*>(code.chars);
+    create_info.pCode = reinterpret_cast<const uint32_t*>(memory_arena[code.arena_index]);
 
     if (vkCreateShaderModule(virtual_device, &create_info, nullptr, &shader_result) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
@@ -99,14 +102,16 @@ static VkShaderModule create_shader(const String& code, VkDevice virtual_device)
     return shader_result;
 }
 
-static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline)
+static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena)
 {
     //Move this later
-    String vertex_shader = load_shader("src/renderer/shaders/vert.spv");
-    String fragment_shader = load_shader("src/renderer/shaders/frag.spv");
+    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
+    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
 
-    VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device);
-    VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device);
+    VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device, memory_arena);
+    VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device, memory_arena);
+    free_arena(memory_arena, vertex_shader.arena_index);
+    free_arena(memory_arena, fragment_shader.arena_index);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -241,8 +246,6 @@ static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain
 
     vkDestroyShaderModule(virtual_device, fragment_module, nullptr);
     vkDestroyShaderModule(virtual_device, vertex_module, nullptr);
-    free(vertex_shader.chars);
-    free(fragment_shader.chars);
 }
 
 static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device)
@@ -306,7 +309,7 @@ static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_fo
     }
 }
 
-void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size)
+void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, MemArena& memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
@@ -316,18 +319,18 @@ void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size)
         vkDestroyCommandPool(render_pipeline.device.virtual_device, render_pipeline.command_pool, nullptr);
 
         create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
-        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
+        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images, memory_arena);
 
     }else{
         create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
-        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images);
+        create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images, memory_arena);
         create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device);
     }
     render_pipeline.command_pool = CommandBuffer::create_command_pool(render_pipeline.device, render_pipeline.my_surface);
 
     render_pipeline.swap_chain_images.depth_image_view = create_depth_resources(render_pipeline.device, render_pipeline.swap_chain.screen_extent, render_pipeline.swap_chain_images.depth_image_memory, render_pipeline.swap_chain_images.depth_image);
 
-    VkResult frambuffer_status = create_frame_buffers(render_pipeline.swap_chain_images, render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.swap_chain_images.depth_image_view, render_pipeline.swap_chain.screen_extent);
+    VkResult frambuffer_status = create_frame_buffers(render_pipeline.swap_chain_images, render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.swap_chain_images.depth_image_view, render_pipeline.swap_chain.screen_extent, memory_arena);
 
     if(frambuffer_status != VK_SUCCESS){
         throw "FrameBuffers could not be created";
@@ -386,13 +389,13 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
+RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
 {
     my_instance = instance;
     my_surface = surface;
-    create_device(device, instance, surface, validation_layers, layer_amount);
+    create_device(device, instance, surface);
 
-    restart_swap_chain(*this, screen_size);
+    restart_swap_chain(*this, screen_size, memory_arena);
 
     create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
 
@@ -410,7 +413,7 @@ RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance
         throw "Failed to create pipeline";
     }
 
-    setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline);
+    setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline, memory_arena);
 
     create_sync_objects(device.virtual_device, *this);
     //create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);

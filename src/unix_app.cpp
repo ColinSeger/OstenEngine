@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <unistd.h>
 
-float platform_memory_mb()
+inline float platform_memory_mb()
 {//https://libstatgrab.org/ Look Into
     FILE *file = fopen("/proc/self/statm", "r");
     if (!file)
@@ -26,6 +26,11 @@ float platform_memory_mb()
 
     // Convert to MB
     return rss_kb / 1024.0f;
+}
+
+inline void* platform_alloc_memory(unsigned long long size)
+{
+    return malloc(size);
 }
 
 OstenEngine start(uint32_t width, uint32_t height, const char* name){

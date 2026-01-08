@@ -1,8 +1,10 @@
 #pragma once
+#include <cstddef>
+#include <vulkan/vulkan_core.h>
+#include <cstdlib>
+#include "../../../additional_things/arena.h"
 #include "../../device/vulkan/device.cpp"
 #include "../../texture/vulkan/texture.cpp"
-#include "vulkan/vulkan_core.h"
-#include <cstdlib>
 
 typedef struct
 {
@@ -163,8 +165,9 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
 }
 
 
-static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format){
-    swap_images.swap_chain_image_view = (VkImageView*)malloc(sizeof(VkImageView) * swap_images.image_amount);
+static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format, MemArena& memory_arena){
+    size_t index = arena_alloc_memory(memory_arena, sizeof(VkImageView) * swap_images.image_amount);
+    swap_images.swap_chain_image_view = (VkImageView*)memory_arena[index];
 
     for (size_t i = 0; i < swap_images.image_amount; i++)
     {
@@ -195,27 +198,29 @@ static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtua
     return VK_SUCCESS;
 }
 
-void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images)
+void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images, MemArena& memory_arena)
 {
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface);
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
-    swap_images.swap_chain_images = (VkImage*)malloc(sizeof(VkImage) * image_amount);
+    size_t index = arena_alloc_memory(memory_arena, sizeof(VkImage) * image_amount);
+    swap_images.swap_chain_images = (VkImage*)memory_arena[index];
 
     swap_images.image_amount = image_amount;
     //swap_images.swap_chain_images = images;//Should Probably allocate for this
 
     vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, swap_images.swap_chain_images);
 
-    VkResult images_result = create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format);
+    VkResult images_result = create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format, memory_arena);
 
     if(images_result != VK_SUCCESS) throw "Failed to create swapchain images";
 }
 
-VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent)
+VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent, MemArena& memory_arena)
 {
-    swap_images.swap_chain_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swap_images.image_amount);
+    size_t index = arena_alloc_memory(memory_arena, sizeof(VkFramebuffer) * swap_images.image_amount);
+    swap_images.swap_chain_frame_buffers = (VkFramebuffer*)memory_arena[index];
 
     for (size_t i = 0; i < swap_images.image_amount; i++) {
         VkImageView attachments[2] = {

@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 #include "platform.h"
+#include "additional_things/arena.h"
 #include "renderer/instance/vulkan/instance.cpp"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
@@ -21,6 +22,8 @@ struct OstenEngine
     RenderPipeline* render_pipeline = nullptr;
 
     FileExplorer file_explorer;
+
+    MemArena memory_arena;
 
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {
@@ -39,6 +42,7 @@ struct OstenEngine
 
 OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
 {
+    memory_arena = init_mem_arena(67108864);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");
@@ -50,20 +54,19 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
     glfwSetWindowUserPointer(main_window, this);
     glfwSetFramebufferSizeCallback(main_window, resize_callback);
 
-    #ifdef NDEBUG
-        const char* validation_layers[] = {};
-    #else
-        const char* validation_layers[] = {
-            "VK_LAYER_KHRONOS_validation"
-        };
-    #endif
-    uint8_t validation_layer_amount = sizeof(validation_layers) / sizeof(validation_layers[0]);
     uint32_t glfw_extention_count = 0;
 
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
-    VkInstance instance = Instance::create_instance(application_name, glfw_extention_count, glfw_extensions , validation_layers, validation_layer_amount);
+    WindowExtentions window_extentions{
+        glfw_extensions,
+        glfw_extention_count
+    };
+
+    //Investigate Why so slow
+    VkInstance instance = Instance::create_instance(application_name, window_extentions, memory_arena);
+
     VkSurfaceKHR surface;
 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
@@ -72,7 +75,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
         throw("Failed to create surface");
     }
 
-    render_pipeline = new RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, validation_layers, validation_layer_amount);
+    render_pipeline = new RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, memory_arena);
 
     init_imgui(main_window, render_pipeline);
 
@@ -166,7 +169,7 @@ void OstenEngine::main_game_loop()
                     glfwGetFramebufferSize(main_window, &width, &height);
                     glfwWaitEvents();
                 }
-                restart_swap_chain(*render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+                restart_swap_chain(*render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, memory_arena);
                 result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture);
             }
         }

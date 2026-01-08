@@ -6,6 +6,7 @@
 #include "../../../../external/math_3d.h"
 #include "../../../debugger/debugger.cpp"
 #include "vulkan/vulkan_core.h"
+#include "../../validation.h"
 
 struct TextureCord{
     float x = 0;
@@ -229,7 +230,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const u
     return false;
 }
 
-static void create_virtual_device(Device& device, VkSurfaceKHR surface, const char* const* validation_layers, uint8_t layer_amount)
+static void create_virtual_device(Device& device, VkSurfaceKHR surface)
 {
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
@@ -269,8 +270,8 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const ch
     create_info.enabledExtensionCount = static_cast<uint32_t>(sizeof(device_extensions) / sizeof(device_extensions[0]));
     create_info.ppEnabledExtensionNames = device_extensions;
 
-    if (layer_amount > 0) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(layer_amount);
+    if ((sizeof(validation_layers) / sizeof(validation_layers[0])) > 0) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(sizeof(validation_layers) / sizeof(validation_layers[0]));
         create_info.ppEnabledLayerNames = validation_layers;
     } else {
         create_info.enabledLayerCount = 0;
@@ -288,7 +289,7 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, const ch
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, const char* const* validation_layers, uint8_t layer_amount)
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference)
 {
     uint32_t device_amount = 0;
 
@@ -312,7 +313,7 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
         throw "No vulkan supported graphics found";
     }
 
-    create_virtual_device(device, surface_reference, validation_layers, layer_amount);
+    create_virtual_device(device, surface_reference);
 }
 
 void destroy_device(Device& device)

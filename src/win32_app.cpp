@@ -2,6 +2,7 @@
 #include "osten_engine.cpp"
 #include <cstdint>
 #include <windows.h>
+#include <memoryapi.h>
 #include <processthreadsapi.h>
 #include <psapi.h>
 
@@ -17,6 +18,11 @@ float platform_memory_mb(){
     }
 
     return 0;
+}
+
+void* platform_alloc_memory(unsigned long long size)
+{
+    return VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
 
 OstenEngine start(uint32_t width, uint32_t height, const char* name){

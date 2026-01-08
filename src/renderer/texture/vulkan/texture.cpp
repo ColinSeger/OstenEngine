@@ -505,7 +505,8 @@ namespace Texture
 
     uint32_t load_texture(Device& device ,const char* texture_location, VkCommandPool& command_pool)
     {
-        if(auto contains = loaded_textures_index.find(texture_location); contains != loaded_textures_index.end()){
+        auto contains = loaded_textures_index.find(texture_location);
+        if(contains != loaded_textures_index.end()){
             return loaded_textures_index[texture_location];
         }
         TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
