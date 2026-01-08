@@ -1,8 +1,10 @@
 // #include "components.h"
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include "../transform.cpp"
+#include "../../additional_things/arena.h"
 
 constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
@@ -48,7 +50,8 @@ struct CameraComponent
 
 struct ComponentSystem
 {
-    void* components;
+    MemArena* memory_arena;
+    size_t components;
     uint16_t amount = 0;
     uint16_t capacity = 10;
     uint8_t type = 0;
@@ -80,7 +83,8 @@ uint16_t get_component_size_by_type(uint16_t type){
 
 void* get_component_by_id(ComponentSystem* component_system, uint16_t id)
 {
-    char* comp = (char*)component_system->components;
+    MemArena memory = *component_system->memory_arena;
+    uint8_t* comp = (uint8_t*)memory[component_system->components];
     uint16_t size = get_component_size_by_type(component_system->type);
     uint32_t size_offset = size * id;
     comp += size_offset;
@@ -123,22 +127,22 @@ ComponentSystem* get_component_system(uint8_t system_id)
 //     }
 // }
 
-void create_transform_system(uint8_t transform_amount){
+void create_transform_system(uint8_t transform_amount, MemArena* memory_arena){
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
-    component_sys->components = malloc(sizeof(TransformComponent) * transform_amount);
+    component_sys->components = arena_alloc_memory(*memory_arena, sizeof(TransformComponent) * transform_amount);
+    component_sys->memory_arena = memory_arena;
     component_sys->type = 1;
     for (size_t i = 0; i < transform_amount; i++)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
         comp->transform = Transform{};
     }
-     //Component* test = reinterpret_cast<Component*>(component_sys->components);
 }
 
 uint16_t add_transform()
 {
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
-    char* comp = (char*)component_sys->components;
+    uint8_t* comp = (uint8_t*)component_sys->memory_arena;
     uint16_t size = get_component_size_by_type(TRANSFORM);
     uint32_t size_offset = size * component_sys->amount;
     comp += size_offset;
@@ -146,9 +150,10 @@ uint16_t add_transform()
     return component_sys->amount-1;
 }
 
-void create_render_component_system(uint8_t render_amount){
+void create_render_component_system(uint8_t render_amount, MemArena* memory_arena){
     ComponentSystem* component_sys = get_component_system(RENDER);
-    component_sys->components = malloc(sizeof(RenderComponent) * render_amount);
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(*memory_arena, sizeof(RenderComponent) * render_amount);
     component_sys->type = 2;
     component_sys->capacity = render_amount;
     for (size_t i = 0; i < render_amount; i++)
@@ -164,7 +169,8 @@ void create_render_component_system(uint8_t render_amount){
 uint16_t add_render_component(uint16_t descriptor_index)
 {
     ComponentSystem* component_sys = get_component_system(RENDER);
-    RenderComponent* comp = reinterpret_cast<RenderComponent*>(component_sys->components);
+    auto memory = *component_sys->memory_arena;
+    RenderComponent* comp = reinterpret_cast<RenderComponent*>(memory[component_sys->components]);
     // uint16_t size = get_component_size_by_type(RENDER);
     uint32_t size_offset = component_sys->amount;
     comp += size_offset;
@@ -173,9 +179,11 @@ uint16_t add_render_component(uint16_t descriptor_index)
     return component_sys->amount-1;
 }
 
-void create_camera_system(uint8_t camera_amount){
+void create_camera_system(uint8_t camera_amount, MemArena* memory_arena){
     ComponentSystem* component_sys = get_component_system(CAMERA);
-    component_sys->components = malloc(sizeof(CameraComponent) * camera_amount);
+
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(*memory_arena, sizeof(CameraComponent) * camera_amount);
     component_sys->amount = camera_amount;
     component_sys->type = 0;
 

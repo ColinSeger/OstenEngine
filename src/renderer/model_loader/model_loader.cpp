@@ -71,8 +71,9 @@ namespace ModelLoader
         return result;
     }
 
-    static void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies)
+    static void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, MemArena& memory_arena)
     {
+        Debug::profile_time_start();
         std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
 
         if(!file_stream.is_open())
@@ -174,7 +175,6 @@ namespace ModelLoader
         uint32_t value_index = 0;
         Indices triangle_indexes {};
 
-        Debug::profile_time_start();
 
         for (size_t i = index; i < file_size; i++){
             if (file[i] == '\n') {
@@ -212,7 +212,6 @@ namespace ModelLoader
             }
         }
 
-        Debug::profile_time_end();
 
         model_indicies.values = (uint32_t*)malloc(indicies.size() * sizeof(uint32_t));
         model_indicies.amount = 0;
@@ -234,6 +233,7 @@ namespace ModelLoader
         model_vertices.amount = vertex.size();
 
         free(file);
+        Debug::profile_time_end();
     }
 
     static void serialize(const char* filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
@@ -265,20 +265,21 @@ namespace ModelLoader
     }
 
     //This Returns a char* you need to free after use
-    static char* de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices)
+    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena)
     {
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
         if(!file.is_open()){
             Debug::log((char*)"There was a issue parsing this model");
-            return nullptr;
+            return memory_arena.capacity;
         }
 
         //Find out where the file ends
         size_t file_size = file.tellg();
         file.seekg(0);
-        char* buffer = (char*)malloc(file_size);
+        size_t mem_index = arena_alloc_memory(memory_arena, file_size);
+        char* buffer = (char*)memory_arena[mem_index];
 
         file.read(buffer, file_size);
         file.close();
@@ -296,10 +297,10 @@ namespace ModelLoader
         indices.amount = (file_size - index_start) / sizeof(uint32_t);
 
         Debug::profile_time_end();
-        return buffer;
+        return mem_index;
     }
 
-    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode)
+    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, MemArena& memory_arena)
     {
         Model model{};
         auto contains = loaded_model_index.find(file_name);
@@ -307,14 +308,14 @@ namespace ModelLoader
         if(contains != loaded_model_index.end()){
             return loaded_model_index[file_name];
         }
-        char* file_to_free = nullptr;//Temp solution for speed test
+        size_t file_to_free = memory_arena.capacity;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
 
         if(load_mode == LoadMode::OBJ){
-            parse_obj(file_name, vertices, indices);
+            parse_obj(file_name, vertices, indices, memory_arena);
         }else if(load_mode == LoadMode::BIN){
-            file_to_free = de_serialize(file_name, vertices, indices);
+            file_to_free = de_serialize(file_name, vertices, indices, memory_arena);
         }
 
         model.index_amount = indices.amount;
@@ -323,7 +324,7 @@ namespace ModelLoader
         loaded_models.emplace_back(model);
         loaded_model_index[file_name] = loaded_models.size() -1;
 
-        if(file_to_free) free(file_to_free);
+        free_arena(memory_arena, file_to_free);
 
         return loaded_model_index[file_name];
     }

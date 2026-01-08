@@ -28,7 +28,7 @@ static void create_entity(RenderPipeline* render_pipeline, const char* name){
     EntityManager::add_entity(entity, name);
 }
 
-void load_asset(const char* file_name, RenderPipeline& render_pipeline)
+void load_asset(const char* file_name, RenderPipeline& render_pipeline, MemArena& memory_arena)
 {
     std::string filename = file_name;
     char extention[3];
@@ -37,9 +37,9 @@ void load_asset(const char* file_name, RenderPipeline& render_pipeline)
     extention[2] = filename[filename.length() -1];
 
     if(extention[0] == 'o' || extention[0] == 'O'){
-        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ);
+        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ, memory_arena);
     }else if(extention[0] == 'b' || extention[0] == 'B'){
-        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN);
+        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
     }else if(extention[0] == 'p' || extention[0] == 'P'){
         Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
     }
@@ -64,7 +64,7 @@ void add_message(Message message){
     messages.emplace_back(message);
 }
 
-void handle_message(RenderPipeline* render_pipeline){
+void handle_message(RenderPipeline* render_pipeline, MemArena& memory_arena){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
@@ -72,14 +72,14 @@ void handle_message(RenderPipeline* render_pipeline){
     switch (message.type)
     {
     case MessageType::LoadModel :
-        load_asset(action, *render_pipeline);
+        load_asset(action, *render_pipeline, memory_arena);
     break;
 
     case MessageType::CreateEntity :
         create_entity(render_pipeline, action);
     break;
     case MessageType::LoadTexture:
-        load_asset(action, *render_pipeline);
+        load_asset(action, *render_pipeline, memory_arena);
     break;
     default:
         break;

@@ -1,6 +1,9 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include "../platform.h"
 
 struct MemArena{
@@ -22,9 +25,26 @@ inline MemArena init_mem_arena(unsigned long long capacity)
     };
 }
 
+inline bool arena_expand(MemArena& arena, size_t passed_in)
+{
+    printf("Resized Arena \n");
+    unsigned long long new_size = arena.capacity * 2;
+    while (arena.index + passed_in > new_size) {
+        new_size*=2;
+    }
+
+    uint8_t* new_data = (uint8_t*)platform_alloc_memory(new_size);
+    uint8_t* old_data = arena.data;
+    memcpy(new_data, old_data, arena.capacity);
+    platform_free_memory(old_data, arena.capacity);
+    arena.capacity = new_size;
+    arena.data = new_data;
+    return true;
+}
+
 //Reserves the requested size and return it's index to you
 inline unsigned long long arena_alloc_memory(MemArena& arena, unsigned long long size){
-    if(arena.capacity < size + arena.index) throw;
+    while(arena.capacity < size + arena.index) arena_expand(arena, size);
     arena.index += size;
     return arena.index - size;
 }

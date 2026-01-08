@@ -42,7 +42,7 @@ struct OstenEngine
 
 OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
 {
-    memory_arena = init_mem_arena(67108864);
+    memory_arena = init_mem_arena(70000);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");
@@ -77,7 +77,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
 
     render_pipeline = new RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, memory_arena);
 
-    init_imgui(main_window, render_pipeline);
+    init_imgui(main_window, render_pipeline, memory_arena);
 
     file_explorer = init_file_explorer();
 }
@@ -98,9 +98,9 @@ void OstenEngine::main_game_loop()
     auto last_tick = std::chrono::high_resolution_clock::now();
 
 
-    create_transform_system(100);
-    create_camera_system(1);
-    create_render_component_system(50);
+    create_transform_system(100, &memory_arena);
+    create_camera_system(1, &memory_arena);
+    create_render_component_system(50, &memory_arena);
 
     Message default_texture{
         0,
@@ -116,7 +116,6 @@ void OstenEngine::main_game_loop()
     };
 
     add_message(empty_entity);
-    handle_message(render_pipeline);
 
     uint32_t inspecting = 0;
 
@@ -129,7 +128,7 @@ void OstenEngine::main_game_loop()
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
-        handle_message(render_pipeline);
+        handle_message(render_pipeline, memory_arena);
 
         if(frame_time > 1)
         {
@@ -158,7 +157,7 @@ void OstenEngine::main_game_loop()
         int32_t result = 0;
         for (size_t i = 0; i < cameras->amount; i++)
         {
-            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture);
+            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
 
             if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
                 resized = false;
@@ -170,7 +169,7 @@ void OstenEngine::main_game_loop()
                     glfwWaitEvents();
                 }
                 restart_swap_chain(*render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, memory_arena);
-                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture);
+                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
             }
         }
 

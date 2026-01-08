@@ -57,7 +57,7 @@ struct RenderPipeline
     RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena);
     ~RenderPipeline();
 
-    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture);
+    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 
     // void cleanup();
 };
@@ -318,15 +318,15 @@ void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size,
 
         vkDestroyCommandPool(render_pipeline.device.virtual_device, render_pipeline.command_pool, nullptr);
 
-        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain, memory_arena);
         create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images, memory_arena);
 
     }else{
-        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain);
+        create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain, memory_arena);
         create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images, memory_arena);
         create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device);
     }
-    render_pipeline.command_pool = CommandBuffer::create_command_pool(render_pipeline.device, render_pipeline.my_surface);
+    render_pipeline.command_pool = CommandBuffer::create_command_pool(render_pipeline.device, render_pipeline.my_surface, memory_arena);
 
     render_pipeline.swap_chain_images.depth_image_view = create_depth_resources(render_pipeline.device, render_pipeline.swap_chain.screen_extent, render_pipeline.swap_chain_images.depth_image_memory, render_pipeline.swap_chain_images.depth_image);
 
@@ -377,7 +377,9 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
 
-        mat4_t model = Transformations::get_model_matrix(static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform);
+        Transform transform = static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform;
+
+        mat4_t model = Transformations::get_model_matrix(transform);
 
         UniformBufferObject uniform_buffer{
             model,
@@ -393,7 +395,7 @@ RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance
 {
     my_instance = instance;
     my_surface = surface;
-    create_device(device, instance, surface);
+    create_device(device, instance, surface, memory_arena);
 
     restart_swap_chain(*this, screen_size, memory_arena);
 
@@ -479,7 +481,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& 
     }
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture)
+int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena)
 {
     vkWaitForFences(device.virtual_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
@@ -499,7 +501,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    start_render_pass(command_buffer, swap_chain_images.swap_chain_frame_buffers[image_index], render_pass, swap_chain.screen_extent);
+    start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
@@ -509,7 +511,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
     for (int i = 0; i < render->amount; i++) {
-        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
+        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
         if(loaded_models.size() > 0){
             swap_draw_frame(command_buffer, render_descriptors[comp.descriptor_id], pipeline_layout, loaded_models[comp.mesh_id], current_frame);
         }
@@ -567,8 +569,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
         );*/
 
     for (int i = 0; i < render->amount; i++) {
-        RenderComponent comp = reinterpret_cast<RenderComponent*>(render->components)[i];
-        update_descriptor_set(device.virtual_device, render_descriptors[comp.descriptor_id], loaded_textures[comp.texture_id].image_view, loaded_textures[comp.texture_id].texture_sampler);
+        RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
+        update_descriptor_set(device.virtual_device, render_descriptors[comp->descriptor_id], loaded_textures[comp->texture_id].image_view, loaded_textures[comp->texture_id].texture_sampler);
     }
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;

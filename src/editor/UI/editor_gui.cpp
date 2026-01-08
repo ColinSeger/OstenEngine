@@ -35,7 +35,7 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
+void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline, MemArena& memory_arena)
 {
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
@@ -68,13 +68,13 @@ void init_imgui(GLFWwindow* main_window, RenderPipeline* render_pipeline)
     init_info.Instance = render_pipeline->my_instance;
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
-    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->my_surface).graphics_family.number;
+    init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->my_surface, memory_arena).graphics_family.number;
 
     init_info.Queue = render_pipeline->device.graphics_queue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = imgui_descriptor_pool;
     init_info.MinImageCount = 2;
-    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->my_surface).surface_capabilities.minImageCount + 1;
+    init_info.ImageCount = find_swap_chain_support(physical_device, render_pipeline->my_surface, memory_arena).surface_capabilities.minImageCount + 1;
     init_info.Allocator = nullptr;
     init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
@@ -107,25 +107,12 @@ void inspect(uint8_t type, uint16_t id)
             ImGui::Text("Render Component");
             ComponentSystem* transform_system = get_component_system(TRANSFORM);
             ComponentSystem* render_system = get_component_system(RENDER);
-            RenderComponent* component = (RenderComponent*)get_component_by_id(render_system, id);
+            RenderComponent* component = static_cast<RenderComponent*>(get_component_by_id(render_system, id));
             Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[0].transform_id))->transform;
 
             ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
             ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
             ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
-
-            int mesh_id = component->mesh_id;
-            int texture_id = component->texture_id;
-            const char* test;
-            std::string model_names;
-            uint32_t t = 0;
-            for(auto const& value : loaded_model_index){
-                for(char c : value.first){
-                    model_names.push_back(c);
-                }
-                t++;
-            }
-            bool b = false;
 
             if(ImGui::BeginCombo("Models", "")){
                 for (auto const& value : loaded_model_index)
@@ -186,6 +173,7 @@ static void imgui_hierarchy_pop_up()
 
 static void imgui_hierarchy(bool& open, uint32_t& inspecting)
 {
+    auto& entities = EntityManager::get_all_entities();
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
         ImGui::Text("Hierarchy!");
@@ -197,8 +185,8 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting)
 
         if(ImGui::TreeNode("Thing"))
         {
-            auto& entities = EntityManager::get_all_entities();
-            if(EntityManager::get_all_entities().size() > 0)
+
+            if(entities.size() > 0)
             {
                 for (auto& name : EntityManager::get_entity_names())
                 {
@@ -249,7 +237,6 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         ImGui_ImplGlfw_Sleep(10);
         // continue;
     }
-
     /**/
     // Start the Dear ImGui frame
     ImGui_ImplVulkan_NewFrame();
@@ -269,21 +256,40 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
     for (size_t i = 0; i < cameras.amount; i++)
     {
         ComponentSystem* transform_system = get_component_system(TRANSFORM);
-        Transform& camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[i].transform_id))->transform;
+        CameraComponent* camera = (CameraComponent*)get_component_by_id(&cameras, i);
+
+        Transform& camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera->transform_id))->transform;
         ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
         ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
-        ImGui::DragFloat("Fov", &reinterpret_cast<CameraComponent*>(cameras.components)[i].field_of_view, 0.1f);
+        ImGui::DragFloat("Fov", &camera->field_of_view, 0.1f);
     }
 
     show_loaded_assets();
 
+    ImGui::Begin("Console");
+        std::vector<std::string> editor_logs = Debug::get_all_logs();
+        ImGui::BeginChild("Logs");
+            for (size_t i = 0; i <  Debug::logs_size(); i++)
+            {
+                ImGui::Text("%s", editor_logs[i].c_str());
+            }
+        ImGui::EndChild();
+
+    ImGui::End();
+
+    auto& entities = EntityManager::get_all_entities();
+
+    if(entities.empty()){
+        ImGui::End();
+        return;
+    }
     imgui_hierarchy(is_open, inspecting);
 
     ImGui::End();
     ImGui::Begin("Inspector");
         for (auto& entity : EntityManager::get_entity_names())
         {
-            if(entity.second == EntityManager::get_all_entities()[inspecting].id){
+            if(entity.second == entities[inspecting].id){
                 char buffer[64] = {};
                 for (int i = 0; i < entity.first.length(); i++) {
                     buffer[i] = entity.first[i];
@@ -293,7 +299,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
             }
         }
 
-        for(TempID& id : EntityManager::get_all_entities()[inspecting].components){
+        for(TempID& id : entities[inspecting].components){
             ImGui::PushID(id.type);
             inspect(id.type, id.index);
             ImGui::Spacing();
@@ -306,7 +312,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
                     static_cast<uint32_t>(add_transform()),
                     static_cast<uint16_t>(TRANSFORM)
                 };
-                EntityManager::get_all_entities()[inspecting].components.emplace_back(transform);
+                entities[inspecting].components.emplace_back(transform);
                 // inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             if(ImGui::Button("Add Render Component")){
@@ -315,7 +321,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
                     static_cast<uint16_t>(RENDER)
                 };
                 render_pipeline->descriptor_usage++;
-                EntityManager::get_all_entities()[inspecting].components.emplace_back(render);
+                entities[inspecting].components.emplace_back(render);
                 //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             ImGui::EndPopup();
@@ -324,18 +330,6 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
         {
             ImGui::OpenPopup("components_pop_up");
         }
-
-    ImGui::End();
-
-
-    ImGui::Begin("Console");
-        std::vector<std::string> editor_logs = Debug::get_all_logs();
-        ImGui::BeginChild("Logs");
-            for (size_t i = 0; i <  Debug::logs_size(); i++)
-            {
-                ImGui::Text("%s", editor_logs[i].c_str());
-            }
-        ImGui::EndChild();
 
     ImGui::End();
 }

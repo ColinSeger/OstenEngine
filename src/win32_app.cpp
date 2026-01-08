@@ -25,6 +25,11 @@ void* platform_alloc_memory(unsigned long long size)
     return VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
 
+void platform_free_memory(void* pointer, unsigned long long size)
+{
+    VirtualFree(pointer, size, MEM_DECOMMIT);
+}
+
 OstenEngine start(uint32_t width, uint32_t height, const char* name){
     return OstenEngine(width, height, name);
 }
