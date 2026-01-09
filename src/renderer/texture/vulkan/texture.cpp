@@ -27,6 +27,7 @@ namespace Texture
         VkFormat* formats;
         uint32_t format_amount;
     };
+
     static VkFormat find_supported_texture_formats(const Formats formats, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
     {
         for(uint32_t i = 0; i < formats.format_amount; i++)

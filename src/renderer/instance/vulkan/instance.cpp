@@ -24,7 +24,7 @@ namespace Instance
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
         bool layer_found = false;
 
-        for(uint8_t i = 0; i < sizeof(validation_layers) / sizeof(validation_layers[0]); i++){
+        for(uint8_t i = 0; i < validation_amount; i++){
             for(uint32_t layer_index = 0; layer_index < layer_count; layer_index++){
                 if(strcmp(validation_layers[i], available_layers[layer_index].layerName) == 0){
                     layer_found = true;
@@ -45,7 +45,7 @@ namespace Instance
     {
         if(window_extensions.window_extensions == NULL) throw;
         VkInstance instance = VK_NULL_HANDLE;
-        if(sizeof(validation_layers) / sizeof(validation_layers[0]) > 0){
+        if(validation_amount > 0){
             if(!check_validation_layer_support(memory_arena)){
                 throw("Validation layers requested but could not be found");
             }
@@ -71,8 +71,8 @@ namespace Instance
         create_info.enabledExtensionCount = window_extensions.extensions_amount;
         create_info.ppEnabledExtensionNames = window_extensions.window_extensions;
 
-        if(sizeof(validation_layers) / sizeof(validation_layers[0]) > 0){
-            create_info.enabledLayerCount = static_cast<uint32_t>(sizeof(validation_layers) / sizeof(validation_layers[0]));
+        if(validation_amount > 0){
+            create_info.enabledLayerCount = static_cast<uint32_t>(validation_amount);
             create_info.ppEnabledLayerNames = validation_layers;
         }else{
             create_info.enabledLayerCount = 0;

@@ -95,8 +95,7 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     }
 }
 
-void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler)
-{
+void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler){
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -132,8 +131,7 @@ void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     }
 }
 
-void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout)
-{
+void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout){
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
     ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -160,8 +158,15 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
         throw("Failed to create descriptor layout");
 }
 
-static void create_descriptor_sets(VkDescriptorPool& descriptor_pool, VkDevice virtual_device, VkDescriptorSetLayout& descriptor_set_layout, VkImageView image_view, VkSampler sampler, RenderDescriptors* render_descriptors, uint32_t amount)
-{
+static void create_descriptor_sets(
+        VkDescriptorPool& descriptor_pool,
+        VkDevice virtual_device,
+        VkDescriptorSetLayout& descriptor_set_layout,
+        VkImageView image_view,
+        VkSampler sampler,
+        RenderDescriptors* render_descriptors,
+        uint32_t amount
+    ){
     for (size_t render_index = 0; render_index < amount; render_index++)
     {
         RenderDescriptors& render_this = render_descriptors[render_index];

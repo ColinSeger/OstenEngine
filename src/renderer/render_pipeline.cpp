@@ -444,6 +444,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     //Solving this wait should bring great benefits
+
     for (int i = 0; i < render->amount; i++) {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
         update_descriptor_set(device.virtual_device, render_data.render_descriptors[comp->descriptor_id], loaded_textures[comp->texture_id].image_view, loaded_textures[comp->texture_id].texture_sampler);
@@ -516,7 +517,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
-
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
 

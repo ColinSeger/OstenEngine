@@ -293,13 +293,13 @@ struct OffScreenImage{
 
     VkImageView swap_chain_image_view;
 
-    VkFramebuffer* swap_chain_frame_buffers;
+    size_t mem_index_frame_buffer;
 };
 
-OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRenderPass render_pass, VkImageView depth_image)
+OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRenderPass render_pass, VkImageView depth_image, MemArena& memory_arena)
 {
     OffScreenImage offscreen_image;
-    offscreen_image.swap_chain_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer));
+    offscreen_image.mem_index_frame_buffer = arena_alloc_memory(memory_arena, sizeof(VkFramebuffer));;
 
     Texture::create_image(
         device,
@@ -346,7 +346,7 @@ OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRende
     framebuffer_info.height = extent.height;
     framebuffer_info.layers = 1;
 
-    creation_status = vkCreateFramebuffer(device.virtual_device, &framebuffer_info, nullptr, offscreen_image.swap_chain_frame_buffers);
+    creation_status = vkCreateFramebuffer(device.virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(memory_arena[offscreen_image.mem_index_frame_buffer]));
 
     return offscreen_image;
 }

@@ -159,8 +159,6 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
 
     size_t mem_index = arena_alloc_memory(memory_arena, (sizeof(VkSurfaceFormatKHR) * format_amount) + (sizeof(VkPresentModeKHR) * present_mode_amount));
     swap_chain_details.surface_data = memory_arena[mem_index];
-    //VkSurfaceFormatKHR surfaces[format_amount];// This NEEDS to be turned into a actual allocation since this will be deallocated after function call
-    //VkPresentModeKHR presents[present_mode_amount];
 
     if (format_amount != 0) {
         //swap_chain_details.surface_formats = surfaces;
@@ -274,8 +272,8 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, MemArena
     create_info.enabledExtensionCount = static_cast<uint32_t>(sizeof(device_extensions) / sizeof(device_extensions[0]));
     create_info.ppEnabledExtensionNames = device_extensions;
 
-    if ((sizeof(validation_layers) / sizeof(validation_layers[0])) > 0) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(sizeof(validation_layers) / sizeof(validation_layers[0]));
+    if (validation_amount > 0) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_amount);
         create_info.ppEnabledLayerNames = validation_layers;
     } else {
         create_info.enabledLayerCount = 0;
