@@ -188,7 +188,7 @@ void OstenEngine::cleanup()
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplVulkan_Shutdown();
     vkDestroySurfaceKHR(inst, surf, nullptr);
-    delete render_pipeline;
+    render_cleanup(*render_pipeline, memory_arena);
     vkDestroyInstance(inst, nullptr);
     ImGui::DestroyContext();
 }

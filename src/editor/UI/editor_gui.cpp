@@ -249,7 +249,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
 
     ImGui::Text("(%f)", ((float)fps));
 
-    ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value + 10, {100, 100});
+    ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
 
     ComponentSystem cameras = *get_component_system(CAMERA);
 
@@ -317,10 +317,10 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, RenderPipeline* render_pip
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
-                    static_cast<uint32_t>(add_render_component(render_pipeline->descriptor_usage)),
+                    static_cast<uint32_t>(add_render_component(render_pipeline->render_data.descriptor_usage)),
                     static_cast<uint16_t>(RENDER)
                 };
-                render_pipeline->descriptor_usage++;
+                render_pipeline->render_data.descriptor_usage++;
                 entities[inspecting].components.emplace_back(render);
                 //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
@@ -338,11 +338,4 @@ void end_imgui_editor_poll()
 {
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
-}
-
-void clean_imgui()
-{
-    // ImGui_ImplVulkan_Shutdown();
-    // ImGui_ImplGlfw_Shutdown();
-    // ImGui::DestroyContext();
 }

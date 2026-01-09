@@ -145,7 +145,7 @@ void create_swap_chain(Device& device, const VkExtent2D window, VkSurfaceKHR sur
     swap_chain.swap_chain_image_format = surface_format.format;
 }
 
-int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images)
+int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images, MemArena& memory_arena)
 {
     vkDeviceWaitIdle(virtual_device);
     vkDestroyImageView(virtual_device, swap_chain_images.depth_image_view, nullptr);
@@ -153,8 +153,8 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
     vkFreeMemory(virtual_device, swap_chain_images.depth_image_memory, nullptr);
 
     for (int i = 0; i < swap_chain_images.image_amount; i++) {
-        //vkDestroyFramebuffer(virtual_device, swap_chain_images.swap_chain_frame_buffers[i], nullptr);
-        //vkDestroyImageView(virtual_device, swap_chain_images.swap_chain_image_view[i], nullptr);
+        vkDestroyFramebuffer(virtual_device, ((VkFramebuffer*)memory_arena[swap_chain_images.swap_chain_frame_buffers])[i], nullptr);
+        vkDestroyImageView(virtual_device, ((VkImageView*)memory_arena[swap_chain_images.swap_chain_image_view])[i], nullptr);
     }
 
     vkDestroySwapchainKHR(virtual_device, swap_chain.swap_chain, nullptr);
