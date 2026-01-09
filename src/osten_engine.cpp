@@ -182,14 +182,13 @@ void OstenEngine::main_game_loop()
 
 void OstenEngine::cleanup()
 {
-    clean_imgui();
-    // ImGui_ImplVulkan_Shutdown();
     VkInstance inst = render_pipeline->my_instance;
     VkSurfaceKHR surf = render_pipeline->my_surface;
 
-    delete render_pipeline;
     ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplVulkan_Shutdown();
     vkDestroySurfaceKHR(inst, surf, nullptr);
+    delete render_pipeline;
     vkDestroyInstance(inst, nullptr);
     ImGui::DestroyContext();
 }

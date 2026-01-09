@@ -12,6 +12,7 @@
 #include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.cpp"
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
+#include "shaders/shaders.h"
 #include "../additional_things/arena.h"
 
 struct RenderPipeline
@@ -61,46 +62,6 @@ struct RenderPipeline
 
     // void cleanup();
 };
-
-typedef struct
-{
-    size_t arena_index;
-    size_t amount;
-} ShaderMemoryIndexing;
-
-static ShaderMemoryIndexing load_shader(const char* file_name, MemArena& memory_arena)
-{
-    std::ifstream file(file_name, std::ios::ate | std::ios::binary);
-
-    if(!file.is_open()){
-        throw "Failed to load shaders";
-    }
-
-    ShaderMemoryIndexing result;
-    result.amount = (size_t) file.tellg();
-
-    result.arena_index = arena_alloc_memory(memory_arena, sizeof(char) * result.amount);
-
-    file.seekg(0);
-    file.read((char*)memory_arena[result.arena_index], result.amount);
-
-    file.close();
-    return result;
-}
-
-static VkShaderModule create_shader(const ShaderMemoryIndexing& code, VkDevice virtual_device, MemArena& memory_arena) {
-    VkShaderModule shader_result;
-    VkShaderModuleCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    create_info.codeSize = code.amount;
-    create_info.pCode = reinterpret_cast<const uint32_t*>(memory_arena[code.arena_index]);
-
-    if (vkCreateShaderModule(virtual_device, &create_info, nullptr, &shader_result) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module!");
-    }
-
-    return shader_result;
-}
 
 static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena)
 {
@@ -455,7 +416,7 @@ void cleanup(RenderPipeline& pipeline)
 
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 
-    destroy_device(pipeline.device);
+    //destroy_device(pipeline.device);
 
     // vkDestroyInstance(pipeline.my_instance, nullptr);
 }

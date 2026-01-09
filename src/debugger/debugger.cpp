@@ -1,10 +1,18 @@
 #pragma once
 #include <iostream>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <chrono>
 
 std::vector<std::string> debug_logs{};
+
+struct TimeProfile
+{
+
+};
+
+std::unordered_map<std::string, TimeProfile> timers;
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
