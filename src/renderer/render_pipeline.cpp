@@ -56,14 +56,13 @@ struct RenderPipeline
 
     VkRenderPass render_pass; //TODO MOVE
 
-    RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena);
-    ~RenderPipeline();
+    //RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena);
+    //~RenderPipeline();
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
 
-static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena)
-{
+static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena){
     //Move this later
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
     ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
@@ -71,7 +70,7 @@ static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain
     VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device, memory_arena);
     VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device, memory_arena);
     free_arena(memory_arena, vertex_shader.arena_index);
-    free_arena(memory_arena, fragment_shader.arena_index);
+    free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -208,8 +207,7 @@ static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain
     vkDestroyShaderModule(virtual_device, vertex_module, nullptr);
 }
 
-static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device)
-{
+static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
@@ -351,37 +349,40 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-RenderPipeline::RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
+RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
 {
-    my_instance = instance;
-    my_surface = surface;
-    create_device(device, instance, surface, memory_arena);
+    struct RenderPipeline result{};
 
-    restart_swap_chain(*this, screen_size, memory_arena);
+    result.my_instance = instance;
+    result.my_surface = surface;
+    create_device(result.device, instance, surface, memory_arena);
 
-    create_descriptor_set_layout(device.virtual_device, descriptor_set_layout);
+    restart_swap_chain(result, screen_size, memory_arena);
 
-    create_uniform_buffers(render_data.render_descriptors.data(), render_data.render_descriptors.size(), device);
-    create_descriptor_pool(descriptor_pool, device.virtual_device, 100);
+    create_descriptor_set_layout(result.device.virtual_device, result.descriptor_set_layout);
+
+    create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
+    create_descriptor_pool(result.descriptor_pool, result.device.virtual_device, 100);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 1;
-    pipeline_layout_info.pSetLayouts = &descriptor_set_layout;
+    pipeline_layout_info.pSetLayouts = &result.descriptor_set_layout;
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    if(vkCreatePipelineLayout(device.virtual_device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS){
+    if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
 
-    setup_render_pipeline(device.virtual_device, swap_chain, render_pass, pipeline_layout, &graphics_pipeline, memory_arena);
+    setup_render_pipeline(result.device.virtual_device, result.swap_chain, result.render_pass, result.pipeline_layout, &result.graphics_pipeline, memory_arena);
 
-    create_sync_objects(device.virtual_device, &render_data);
+    create_sync_objects(result.device.virtual_device, &result.render_data);
     //create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
+    return result;
 }
 
-void render_cleanup(RenderPipeline& pipeline, MemArena& memory_arena)
+void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
 {
     vkDeviceWaitIdle(pipeline.device.virtual_device);
 
@@ -414,14 +415,7 @@ void render_cleanup(RenderPipeline& pipeline, MemArena& memory_arena)
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 }
 
-RenderPipeline::~RenderPipeline()
-{
-
-}
-
-
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame)
-{
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& render_this, VkPipelineLayout pipeline_layout, Model& model,const uint8_t frame){
     // VkBuffer vertex_buffers[] = {model.vertex_buffer};
     VkDeviceSize offsets[] = {0};
     if(model.index_amount > 0){

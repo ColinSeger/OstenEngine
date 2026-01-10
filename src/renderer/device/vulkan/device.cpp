@@ -68,14 +68,11 @@ static const char* device_extensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-
-constexpr bool is_completed(const QueueFamilyIndicies& queue_family)
-{
+constexpr bool is_completed(const QueueFamilyIndicies& queue_family){
     return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
 }
 
-constexpr bool is_completed(const SwapChainSupportDetails& swap_chain_support)
-{
+constexpr bool is_completed(const SwapChainSupportDetails& swap_chain_support){
     return swap_chain_support.present_amount > 0 && swap_chain_support.surface_amount > 0;
 }
 
@@ -175,8 +172,7 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     return swap_chain_details;
 }
 
-static bool check_device_extension_support(VkPhysicalDevice device, MemArena& memory_arena)
-{
+static bool check_device_extension_support(VkPhysicalDevice device, MemArena& memory_arena){
     uint32_t extension_count = 0;
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
@@ -203,8 +199,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, MemArena& me
     // return required_extensions.empty();
 }
 
-static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, MemArena& memory_arena)//Can improve later
-{
+static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, MemArena& memory_arena){//Can improve later
     QueueFamilyIndicies indices = find_queue_families(device, surface, memory_arena);
 
     bool has_extention_support = check_device_extension_support(device, memory_arena);
@@ -222,8 +217,7 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, Me
     return is_completed(indices) && has_extention_support && has_swap_chain_support;
 }
 
-static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const uint32_t compare, const uint32_t amount)
-{
+static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const uint32_t compare, const uint32_t amount){
     for (int i = 0; i < amount; i++) {
         if(queue_create_infos[i].queueFamilyIndex == compare){
             return true;
@@ -232,8 +226,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const u
     return false;
 }
 
-static void create_virtual_device(Device& device, VkSurfaceKHR surface, MemArena& memory_arena)
-{
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, MemArena& memory_arena){
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface, memory_arena);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 

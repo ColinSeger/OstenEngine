@@ -18,8 +18,8 @@
 struct OstenEngine
 {
     GLFWwindow* main_window = nullptr;
-    const char* application_name = nullptr;
-    RenderPipeline* render_pipeline = nullptr;
+    const char* application_name = "";
+    struct RenderPipeline render_pipeline;
 
     FileExplorer file_explorer;
 
@@ -30,7 +30,6 @@ struct OstenEngine
         auto app = reinterpret_cast<OstenEngine*>(glfwGetWindowUserPointer(main_window));
         app->resized = true;
     }
-
 
     OstenEngine(const int width, const int height, const char* name);
 
@@ -75,9 +74,9 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
         throw("Failed to create surface");
     }
 
-    render_pipeline = new RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, memory_arena);
+    this->render_pipeline = RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, memory_arena);
 
-    init_imgui(main_window, render_pipeline, memory_arena);
+    init_imgui(main_window, &render_pipeline, memory_arena);
 
     file_explorer = init_file_explorer();
 }
@@ -128,7 +127,7 @@ void OstenEngine::main_game_loop()
         double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
-        handle_message(render_pipeline, memory_arena);
+        handle_message(&render_pipeline, memory_arena);
 
         if(frame_time > 1)
         {
@@ -139,9 +138,9 @@ void OstenEngine::main_game_loop()
             frames = 0;
         }
 
-        begin_imgui_editor_poll(main_window, render_pipeline, open_window, fps, inspecting);
+        begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting);
         //ImGui::DockSpaceOverViewport();
-        start_file_explorer(file_explorer, render_pipeline);
+        start_file_explorer(file_explorer, &render_pipeline);
 
         end_file_explorer();
         if(imgui_texture != VK_NULL_HANDLE){
@@ -157,7 +156,7 @@ void OstenEngine::main_game_loop()
         int32_t result = 0;
         for (size_t i = 0; i < cameras->amount; i++)
         {
-            result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
+            result = render_pipeline.draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
 
             if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
                 resized = false;
@@ -168,8 +167,8 @@ void OstenEngine::main_game_loop()
                     glfwGetFramebufferSize(main_window, &width, &height);
                     glfwWaitEvents();
                 }
-                restart_swap_chain(*render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, memory_arena);
-                result = render_pipeline->draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
+                restart_swap_chain(render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, memory_arena);
+                result = render_pipeline.draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
             }
         }
 
@@ -182,13 +181,13 @@ void OstenEngine::main_game_loop()
 
 void OstenEngine::cleanup()
 {
-    VkInstance inst = render_pipeline->my_instance;
-    VkSurfaceKHR surf = render_pipeline->my_surface;
+    VkInstance inst = render_pipeline.my_instance;
+    VkSurfaceKHR surf = render_pipeline.my_surface;
 
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplVulkan_Shutdown();
     vkDestroySurfaceKHR(inst, surf, nullptr);
-    render_cleanup(*render_pipeline, memory_arena);
+    render_cleanup(render_pipeline, memory_arena);
     vkDestroyInstance(inst, nullptr);
     ImGui::DestroyContext();
 }

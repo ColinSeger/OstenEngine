@@ -61,7 +61,7 @@ namespace ModelLoader
         file.close();
     }
 
-    //This Returns a char* you need to free after use
+    //This Returns a size_t from the memory arena index
     static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena){
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);

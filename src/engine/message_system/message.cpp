@@ -14,7 +14,7 @@ enum class MessageType : uint8_t
     SerializeOBJ
 };
 
-static void create_entity(RenderPipeline* render_pipeline, const char* name){
+static void create_entity(struct RenderPipeline* render_pipeline, const char* name){
      vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     render_pipeline->render_data.render_descriptors.emplace_back();
 
@@ -29,7 +29,7 @@ static void create_entity(RenderPipeline* render_pipeline, const char* name){
     EntityManager::add_entity(entity, name);
 }
 
-void load_asset(const char* file_name, RenderPipeline& render_pipeline, MemArena& memory_arena)
+void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, MemArena& memory_arena)
 {
     std::string filename = file_name;
     char extention[3];
@@ -65,7 +65,7 @@ void add_message(Message message){
     messages.emplace_back(message);
 }
 
-void handle_message(RenderPipeline* render_pipeline, MemArena& memory_arena){
+void handle_message(struct RenderPipeline* render_pipeline, MemArena& memory_arena){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);

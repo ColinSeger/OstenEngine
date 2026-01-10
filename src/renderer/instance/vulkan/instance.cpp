@@ -77,10 +77,10 @@ namespace Instance
         }else{
             create_info.enabledLayerCount = 0;
         }
+
         if(vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS){
             throw("Failed to create instance");
         }
-
 
         return instance;
     }

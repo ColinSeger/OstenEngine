@@ -51,7 +51,7 @@ FileExplorer init_file_explorer(){
     return result;
 }
 
-void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pipeline){ //TODO Optimize as it's very slow
+void start_file_explorer(FileExplorer& file_explorer, struct RenderPipeline* render_pipeline){ //TODO Optimize as it's very slow
     ImGui::Begin("FolderView");
 
     std::string current_dir = file_explorer.current_directory;
