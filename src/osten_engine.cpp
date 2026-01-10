@@ -42,7 +42,7 @@ struct OstenEngine
 
 OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
 {
-    memory_arena = init_mem_arena(70000);
+    memory_arena = init_mem_arena(1024 * 1024);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");

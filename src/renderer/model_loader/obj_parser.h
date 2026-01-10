@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 #include "../device/vulkan/device.cpp"
-#include "../../debugger/debugger.cpp"
+#include "../../debugger/debugger.h"
 
 typedef struct{
     uint32_t vertex_index;

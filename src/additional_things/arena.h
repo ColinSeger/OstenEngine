@@ -1,7 +1,7 @@
 #pragma once
 #include <cstring>
 #include "../platform.h"
-#include "../debugger/debugger.cpp"
+#include "../debugger/debugger.h"
 
 struct MemArena{
     unsigned long long capacity;
@@ -22,7 +22,7 @@ inline MemArena init_mem_arena(unsigned long long capacity){
 }
 
 inline bool arena_expand(MemArena& arena, unsigned long long passed_in){
-    Debug::log("Arena Expanded, Consider increasing base size");
+    Debug::log((char*)"Arena Expanded, Consider increasing base size");
     unsigned long long new_size = arena.capacity * 2;
     while (arena.index + passed_in > new_size) {
         new_size*=2;

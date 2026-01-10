@@ -145,8 +145,7 @@ static float memory_stats[30]{};
 static float highest_value = 0;
 constexpr uint8_t graph_size = sizeof(memory_stats) / sizeof(memory_stats[0]);
 
-static void update_graph(float current)
-{
+static void update_graph(float current){
     if(current > highest_value) highest_value = current;
     float push_value = current;
     for(uint8_t i = 0; i < graph_size; i++){
@@ -156,8 +155,7 @@ static void update_graph(float current)
     }
 }
 
-static void imgui_hierarchy_pop_up()
-{
+static void imgui_hierarchy_pop_up(){
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
@@ -171,8 +169,7 @@ static void imgui_hierarchy_pop_up()
     }
 }
 
-static void imgui_hierarchy(bool& open, uint32_t& inspecting)
-{
+static void imgui_hierarchy(bool& open, uint32_t& inspecting){
     auto& entities = EntityManager::get_all_entities();
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
@@ -207,14 +204,20 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting)
     ImGui::End();
 }
 
-static inline void show_loaded_assets()
-{
+static inline void show_loaded_assets(){
     ImGui::Text("Loaded Models");
 
     for (auto const& value : loaded_model_index)
     {
         ImGui::PushID(value.second);
-        ImGui::Button(value.first.c_str());
+        if(ImGui::Button(value.first.c_str()) && value.first[value.first.size()-1] == 'j'){
+            Message serialize{};
+            serialize.value = (void*)value.first.c_str();
+            serialize.size = 0;
+            serialize.type = MessageType::SerializeOBJ;
+
+            add_message(serialize);
+        }
         ImGui::Spacing();
         ImGui::PopID();
     }

@@ -7,15 +7,13 @@
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/message_system/message.cpp"
 
-struct FileExplorer
-{
+struct FileExplorer{
     std::vector<std::string> folders;
     std::vector<std::string> files;
     std::string current_directory;
 };
 
-void get_folders(const char* folder_to_look, std::vector<std::string>& result)
-{
+void get_folders(const char* folder_to_look, std::vector<std::string>& result){
     for(auto& folders : std::filesystem::directory_iterator(folder_to_look)){
         if (folders.is_directory()){
             result.push_back(folders.path().string());
@@ -23,8 +21,7 @@ void get_folders(const char* folder_to_look, std::vector<std::string>& result)
     }
 }
 
-void get_folders(const std::string folder_to_look, std::vector<std::string>& result)
-{
+void get_folders(const std::string folder_to_look, std::vector<std::string>& result){
     for(auto& folders : std::filesystem::directory_iterator(folder_to_look)){
         if (folders.is_directory()){
             result.push_back(folders.path().string());
@@ -32,8 +29,7 @@ void get_folders(const std::string folder_to_look, std::vector<std::string>& res
     }
 }
 
-void get_folders(FileExplorer& file_explorer)
-{
+void get_folders(FileExplorer& file_explorer){
     for(auto& folders : std::filesystem::directory_iterator(file_explorer.current_directory)){
         if (folders.is_directory()){
             file_explorer.folders.push_back(folders.path().string());
@@ -44,8 +40,7 @@ void get_folders(FileExplorer& file_explorer)
     }
 }
 
-FileExplorer init_file_explorer()
-{
+FileExplorer init_file_explorer(){
     FileExplorer result;
     auto file_path = std::filesystem::current_path();
 
@@ -56,9 +51,7 @@ FileExplorer init_file_explorer()
     return result;
 }
 
-void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pipeline)//TODO Optimize as it's very slow
-{
-
+void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pipeline){ //TODO Optimize as it's very slow
     ImGui::Begin("FolderView");
 
     std::string current_dir = file_explorer.current_directory;
@@ -71,8 +64,7 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
         }
     }
 
-    for (size_t i = 0; i < file_explorer.folders.size(); i++)
-    {
+    for (size_t i = 0; i < file_explorer.folders.size(); i++){
         ImGui::PushID(i);
         if(ImGui::Button(file_explorer.folders[i].c_str()))
         {
@@ -84,12 +76,9 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
         ImGui::PopID();
     }
 
-    for (size_t i = 0; i < file_explorer.files.size(); i++)
-    {
+    for (size_t i = 0; i < file_explorer.files.size(); i++){
         ImGui::PushID(i);
-        // ImGui::Text("%s", file_explorer.files[i].c_str());
         if(ImGui::Button(file_explorer.files[i].c_str())){
-            //Model model = ModelLoader::load_model(render_pipeline->device, render_pipeline->command_pool, file_explorer.files[i].c_str());
             Message load{
                 static_cast<uint32_t>(file_explorer.files[i].size()),
                 MessageType::LoadModel,
@@ -97,10 +86,6 @@ void start_file_explorer(FileExplorer& file_explorer, RenderPipeline* render_pip
             };
 
             add_message(load);
-
-            //render_pipeline->models.emplace_back(model);
-
-            //create_entity(render_pipeline);
         }
 
         ImGui::Spacing();

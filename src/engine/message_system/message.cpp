@@ -10,7 +10,8 @@ enum class MessageType : uint8_t
     None,
     LoadModel,
     CreateEntity,
-    LoadTexture
+    LoadTexture,
+    SerializeOBJ
 };
 
 static void create_entity(RenderPipeline* render_pipeline, const char* name){
@@ -78,8 +79,11 @@ void handle_message(RenderPipeline* render_pipeline, MemArena& memory_arena){
     case MessageType::CreateEntity :
         create_entity(render_pipeline, action);
     break;
-    case MessageType::LoadTexture:
+    case MessageType::LoadTexture :
         load_asset(action, *render_pipeline, memory_arena);
+    break;
+    case MessageType::SerializeOBJ :
+        ModelLoader::serialize(action, memory_arena);
     break;
     default:
         break;

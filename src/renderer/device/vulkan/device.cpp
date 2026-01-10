@@ -5,7 +5,7 @@
 #include <cstring>
 #include <vulkan/vulkan.h>
 #include "../../../../external/math_3d.h"
-#include "../../../debugger/debugger.cpp"
+#include "../../../debugger/debugger.h"
 #include "vulkan/vulkan_core.h"
 #include "../../validation.h"
 #include "../../../additional_things/arena.h"
@@ -74,12 +74,12 @@ constexpr bool is_completed(const QueueFamilyIndicies& queue_family)
     return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
 }
 
-bool is_completed(SwapChainSupportDetails& swap_chain_support)
+constexpr bool is_completed(const SwapChainSupportDetails& swap_chain_support)
 {
     return swap_chain_support.present_amount > 0 && swap_chain_support.surface_amount > 0;
 }
 
-VkVertexInputBindingDescription get_binding_description() {
+constexpr VkVertexInputBindingDescription get_binding_description() {
     VkVertexInputBindingDescription binding_description{};
     binding_description.binding = 0;
     binding_description.stride = sizeof(Vertex);
@@ -88,7 +88,7 @@ VkVertexInputBindingDescription get_binding_description() {
     return binding_description;
 }
 
-VertexAttributes get_attribute_descriptions() {
+constexpr VertexAttributes get_attribute_descriptions() {
     VertexAttributes attribute_descriptions{};
     attribute_descriptions.array[0].binding = 0;
     attribute_descriptions.array[0].location = 0;

@@ -4,11 +4,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <string>
 #include <unordered_map>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
-#include "../../debugger/debugger.cpp"
+#include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
 typedef struct
@@ -32,9 +33,19 @@ std::vector<Model> loaded_models;
 
 namespace ModelLoader
 {
-    static void serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena)
-    {
-        std::ofstream file(filename, std::ios::binary);
+    static void serialize(const char* filename, MemArena& memory_arena){
+        VertexArray vertices;
+        Uint32Array indices;
+
+        std::string new_name = filename;
+
+        new_name[new_name.size()-1] = 'n';
+        new_name[new_name.size()-2] = 'i';
+        new_name[new_name.size()-3] = 'b';
+
+        parse_obj(filename, vertices, indices, memory_arena);
+
+        std::ofstream file(new_name, std::ios::binary);
 
         if(!file.is_open()){
             abort();
@@ -47,22 +58,11 @@ namespace ModelLoader
 
         file.write(reinterpret_cast<char*>(indices.values),  indices.amount * sizeof(uint32_t));
 
-        /*
-        for(Vertex vertex : vertices){
-            file.write(reinterpret_cast<const char*>(&vertex), sizeof(Vertex));
-        }
-
-        for(uint32_t index : indices){
-            file.write(reinterpret_cast<const char*>(&index), sizeof(uint32_t));
-        }
-
-         */
         file.close();
     }
 
     //This Returns a char* you need to free after use
-    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena)
-    {
+    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena){
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
