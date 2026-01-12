@@ -1,9 +1,7 @@
 #pragma once
 #include <cstddef>
-#include <cstdlib>
 #include <vulkan/vulkan.h>
 #include <cstdint>
-#include <stdint.h>
 #include <cstring>
 #include "../../../additional_things/arena.h"
 #include "../../validation.h"

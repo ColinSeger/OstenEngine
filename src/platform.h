@@ -1,4 +1,4 @@
-
+#pragma once
 
 float platform_memory_mb();
 

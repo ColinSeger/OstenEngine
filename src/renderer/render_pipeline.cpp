@@ -1,7 +1,6 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
@@ -14,6 +13,7 @@
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
 #include "shaders/shaders.h"
 #include "../additional_things/arena.h"
+#include "render_passes/render_passes.h"
 
 struct RenderData
 {
@@ -207,66 +207,6 @@ static void setup_render_pipeline(VkDevice virtual_device, SwapChain& swap_chain
     vkDestroyShaderModule(virtual_device, vertex_module, nullptr);
 }
 
-static void create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    VkAttachmentDescription color_attachment{};
-    color_attachment.format = swap_chain_format;
-    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    //color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = Texture::find_depth_formats(device.physical_device);
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
-
-    VkAttachmentReference color_attachment_ref{};
-    color_attachment_ref.attachment = 0;
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depth_attachment_ref{};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription sub_pass{};
-    sub_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    sub_pass.colorAttachmentCount = 1;
-    sub_pass.pColorAttachments = &color_attachment_ref;
-    sub_pass.pDepthStencilAttachment = &depth_attachment_ref;
-
-    VkRenderPassCreateInfo render_pass_info{};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
-    render_pass_info.pAttachments = description_attachments;
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &sub_pass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &dependency;
-
-    if(vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass) != VK_SUCCESS){
-        throw "Failed to create RenderPass";
-    }
-}
-
 void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, MemArena& memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
@@ -282,7 +222,7 @@ void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size,
     }else{
         create_swap_chain(render_pipeline.device, screen_size, render_pipeline.my_surface, render_pipeline.swap_chain, memory_arena);
         create_swap_chain_images(render_pipeline.device, render_pipeline.swap_chain, render_pipeline.my_surface, render_pipeline.swap_chain_images, memory_arena);
-        create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device);
+        if(create_render_pass(&render_pipeline.render_pass, render_pipeline.swap_chain.swap_chain_image_format, render_pipeline.device) != VK_SUCCESS) throw "failed to create renderpass";
     }
     render_pipeline.command_pool = CommandBuffer::create_command_pool(render_pipeline.device, render_pipeline.my_surface, memory_arena);
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -51,33 +52,37 @@ static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
 
 #include <stdint.h>
 
-static float parse_float_test(const char *s) {//float parser made by chatgpt, Sorry
+static float parse_float_test(const char* character, size_t& index_jump) {//float parser made by chatgpt but modified by me
     uint32_t int_part = 0;
     uint32_t frac_part = 0;
     uint32_t frac_div = 1;
     int sign = 1;
+    uint8_t jump = 0;
 
-    if (*s == '-') {
+    if (*character == '-') {
         sign = -1;
-        s++;
+        character++;
+        jump++;
     }
 
-    if (*s < '0' || *s > '9') return 0;
+    if (*character < '0' || *character > '9') return 0;
 
-    while (*s >= '0' && *s <= '9') {
-        int_part = int_part * 10 + (*s - '0');
-        s++;
+    while (*character >= '0' && *character <= '9') {
+        int_part = int_part * 10 + (*character - '0');
+        character++;
+        jump++;
     }
 
-    if (*s == '.') {
-        s++;
-        while (*s >= '0' && *s <= '9') {
-            frac_part = frac_part * 10 + (*s - '0');
+    if (*character == '.') {
+        character++;
+        while (*character >= '0' && *character <= '9') {
+            frac_part = frac_part * 10 + (*character - '0');
             frac_div *= 10;
-            s++;
+            character++;
+            jump++;
         }
     }
-
+    index_jump += jump;
     return (sign * ((float)int_part + (float)frac_part / frac_div));
 }
 
@@ -99,7 +104,8 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
 
     size_t file_size = file_stream.tellg();
     file_stream.seekg(0);
-    char* file = (char*)malloc(sizeof(char) * file_size);
+    size_t mem_index = arena_alloc_memory(memory_arena, sizeof(char) * file_size);
+    char* file = (char*)memory_arena[mem_index];
 
     file_stream.read(file, file_size);
     file_stream.close();
@@ -137,7 +143,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){
-            value_to_add.vertex_to_add[char_index] = parse_float_test(&file[i+1]);
+            value_to_add.vertex_to_add[char_index] = parse_float_test(&file[i+1], index);
             char_index ++;
         }
     }
@@ -158,7 +164,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){
-            value_to_add.texture_cord[char_index] = parse_float_test(&file[i+1]);
+            value_to_add.texture_cord[char_index] = parse_float_test(&file[i+1], index);
             char_index ++;
         }
     }
@@ -176,7 +182,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){//TODO
-            value_to_add.normal_cords[char_index] = parse_float_test(&file[i+1]);
+            value_to_add.normal_cords[char_index] = parse_float_test(&file[i+1], index);
             char_index ++;
         }
     }
@@ -243,7 +249,8 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
     memcpy(model_vertices.values, vertex.data(), sizeof(Vertex) * vertex.size());
     model_vertices.amount = vertex.size();
 
-    free(file);
+    // free(file);
+    free_arena(memory_arena, mem_index);
     Debug::profile_time_end();
 }
 
@@ -252,7 +259,7 @@ static inline Vertex parse_vertex(const std::string& line, const uint16_t start_
     uint8_t cord_index = 0;
     for (size_t i = start_index; i < line.length(); i++){
         if(line[i] == ' '){
-            result[cord_index] = parse_float_test(&line[i+1]);
+            result[cord_index] = parse_float_test(&line[i+1], i);
 
             cord_index ++;
             if(cord_index >= 3)break;
@@ -260,34 +267,36 @@ static inline Vertex parse_vertex(const std::string& line, const uint16_t start_
     }
     return Vertex{{result[0], result[1], result[2]}, {0, 0, 0}, {0, 0}};
 }
-static inline void parse_indicie(const std::string& line, const uint16_t start_index){
-    Indices result[3] {};
+static inline void parse_indicie(const std::string& line, const uint16_t start_index, uint32_t values[9]){
     uint8_t value_index = 0;
-    uint8_t indicie;
+    uint32_t indicie = 0;
     for (size_t i = start_index; i < line.length(); i++){
         if(line[i] == '/'){
             uint32_t value = parse_to_uint32(&line[i+1], &i);
             if(value_index <= 1){
-                result[indicie].texture_index = value;
+                values[indicie] = value;
                 value_index++;
+                indicie++;
             }else if(value_index > 1){
-                result[indicie].normal_index = value;
+                values[indicie] = value;
+                indicie++;
             }
             continue;
         }
         else if(line[i] == ' '){
             uint32_t value = parse_to_uint32(&line[i+1], &i);
             if(value_index <= 0){
-                result[indicie].texture_index = value;
+                values[indicie] = value;
                 value_index++;
+                indicie++;
             }else{
                 value_index = 1;
-                result[indicie].texture_index = value;
+                values[indicie] = value;
+                indicie++;
             }
             continue;
         }
     }
-    // return t;
 }
 
 static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, MemArena& memory_arena){
@@ -305,23 +314,45 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
 
     // size_t file_size = file_stream.tellg();
     // file_stream.seekg(0);
-    size_t mem_index = memory_arena.index;//Funky idea where I overdide my old memory with the actual data to reduce memory allocation
+    // //Funky idea where I overdide my old memory with the actual data to reduce memory allocation
+    //
+    size_t mem_index = memory_arena.index;
 
     //file_stream.read((char*)memory_arena[mem_index], file_size);
     size_t vertex_end = mem_index;
+    size_t indicie_start = 0;
     std::string line;
     while(getline(file_stream, line)){
-        if(line[0] != 'v' || line[1] != ' ') continue;
+        if(line[0] == 'v'){
+            size_t index = arena_alloc_memory(memory_arena, sizeof(Vertex));
 
-        size_t index = arena_alloc_memory(memory_arena, sizeof(Vertex));
-
-        Vertex* write_to = (Vertex*)memory_arena[index];
-        *write_to = parse_vertex(line, 1);
-        vertex_end = index;
+            Vertex* write_to = (Vertex*)memory_arena[index];
+            *write_to = parse_vertex(line, 1);
+            vertex_end = index;
+        }
+        else if(line[0] == 'f' && line[1] == ' '){
+            size_t indicie_index = arena_alloc_memory(memory_arena, sizeof(uint32_t) * 9);
+            uint32_t* indicies = (uint32_t*)memory_arena[indicie_index];
+            if(indicie_start == 0)  indicie_start = indicie_index;
+            parse_indicie(line, 1, indicies);
+        }
     }
 
     model_vertices.amount = (vertex_end - mem_index) / sizeof(Vertex);
     model_vertices.values = (Vertex*)memory_arena[mem_index];
+
+    std::vector<uint32_t> temp;
+
+    for (size_t i = 0;(memory_arena.index - indicie_start) / (sizeof(uint32_t)*3) > i; i++) {
+        temp.push_back(*(uint32_t*)memory_arena[indicie_start + sizeof(uint32_t) * i]);
+
+    }
+
+    model_indicies.amount = (memory_arena.index - indicie_start) / (sizeof(uint32_t)*3);
+    free_arena(memory_arena, indicie_start);//Temp
+    model_indicies.values = (uint32_t*)memory_arena[arena_alloc_memory(memory_arena, model_indicies.amount * sizeof(uint32_t))];
+
+    memcpy(model_indicies.values, temp.data(), sizeof(uint32_t) * temp.size()-1);
 
     file_stream.close();
 

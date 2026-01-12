@@ -1,5 +1,5 @@
 #pragma once
-#include <cstring>
+#include <string.h>
 #include "../platform.h"
 #include "../debugger/debugger.h"
 

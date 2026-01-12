@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
-#include <cstdlib>
 #include "../../../additional_things/arena.h"
 #include "../../device/vulkan/device.cpp"
 #include "../../texture/vulkan/texture.cpp"
@@ -268,6 +268,61 @@ void bind_pipeline(VkCommandBuffer& command_buffer, VkPipeline pipeline, VkExten
     scissor.offset = {0, 0};
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+}
+
+void create_offscreen_framebuffer(Device& device ,VkExtent2D size){
+
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+
+    Texture::create_image(
+        device,
+        size,
+        VK_FORMAT_D16_UNORM,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        depth_image,
+        depth_image_memory
+    );
+
+
+    VkImageView image_view;
+    VkImageViewCreateInfo image_view_create_info{};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.image = depth_image;
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = VK_FORMAT_D16_UNORM;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount = 1;
+
+
+    VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &image_view);
+
+
+    VkSampler sampler;
+    VkFilter shadowmap_filter = VK_FILTER_LINEAR;
+
+    VkSamplerCreateInfo sampler_create_info;
+    sampler_create_info.magFilter = VK_FILTER_LINEAR;
+    sampler_create_info.minFilter = VK_FILTER_LINEAR;
+    sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.mipLodBias = 0.f;
+    sampler_create_info.maxAnisotropy = 1.f;
+    sampler_create_info.minLod = 0.f;
+    sampler_create_info.maxLod = 1.f;
+    sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &sampler);
+
+
+
 }
 
 struct OffScreenImage{

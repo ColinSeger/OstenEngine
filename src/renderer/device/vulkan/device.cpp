@@ -1,6 +1,5 @@
 #pragma once
 #include <cstddef>
-#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <vulkan/vulkan.h>
