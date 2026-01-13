@@ -6,6 +6,7 @@
 #include <processthreadsapi.h>
 #include <psapi.h>
 
+auto start_time = std::chrono::high_resolution_clock::now();
 
 float platform_memory_mb(){
     PROCESS_MEMORY_COUNTERS memory_counters;
@@ -30,7 +31,14 @@ void platform_free_memory(void* pointer, unsigned long long size)
     VirtualFree(pointer, size, MEM_DECOMMIT);
 }
 
+double get_time_since_start(){
+    auto current_time = std::chrono::high_resolution_clock::now();
+
+    return std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
+}
+
 OstenEngine start(uint32_t width, uint32_t height, const char* name){
+    start_time = std::chrono::high_resolution_clock::now();
     return OstenEngine(width, height, name);
 }
 

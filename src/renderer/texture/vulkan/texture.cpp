@@ -1,4 +1,5 @@
-#ifndef TEXTURE_IMPLEMENTATION
+#pragma once
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -6,7 +7,6 @@
 #include <vector>
 #include "../../device/vulkan/device.cpp"
 #include "../../../../external/image_loader/stb_image.h"
-
 
 typedef struct
 {
@@ -16,6 +16,12 @@ typedef struct
     VkDeviceMemory texture_image_memory;
     uint8_t mip_levels;
 } TextureImage;
+
+struct TextureArray{
+    size_t arena_index;
+    uint16_t amount;
+    uint16_t capacity;
+};
 
 std::unordered_map<std::string, uint32_t> loaded_textures_index;
 std::vector<TextureImage> loaded_textures;
@@ -131,8 +137,8 @@ namespace Texture
         CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
     }
 
-    void create_image(  Device& device,
-                        VkExtent2D& image_size,
+    void create_image(  const Device& device,
+                        const VkExtent2D image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
                         VkImageUsageFlags usage_flags,
@@ -520,5 +526,3 @@ namespace Texture
         return loaded_textures_index[texture_location];
     }
 }
-#define TEXTURE_IMPLEMENTATION
-#endif

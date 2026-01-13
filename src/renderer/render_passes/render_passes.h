@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include "../device/vulkan/device.cpp"
 #include "../texture/vulkan/texture.cpp"
+#include "vulkan/vulkan_core.h"
 
 static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){
     VkSubpassDependency dependency{};
@@ -61,7 +62,7 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     return vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass);
 }
 
-static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){
+static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, const Device& device){
     VkSubpassDependency dependencies[2]{};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -108,4 +109,79 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, V
     render_pass_info.pDependencies = dependencies;
 
     return vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass);
+}
+
+struct ShadowPass{
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView image_view;
+    VkSampler sampler;
+    VkRenderPass render_pass;
+    VkFramebuffer framebuffer;
+};
+
+//Temporaraly placed here
+static inline void create_offscreen_framebuffer(const Device& device, const VkExtent2D size, ShadowPass* shadow_pass){
+    VkImage& depth_image = shadow_pass->depth_image;
+    VkDeviceMemory& depth_image_memory = shadow_pass->depth_image_memory;
+    VkImageView& image_view = shadow_pass->image_view;
+    VkSampler& sampler = shadow_pass->sampler;
+    VkRenderPass* render_pass = &shadow_pass->render_pass;
+
+    Texture::create_image(
+        device,
+        size,
+        VK_FORMAT_D16_UNORM,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        depth_image,
+        depth_image_memory
+    );
+
+    VkImageViewCreateInfo image_view_create_info{};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.image = depth_image;
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = VK_FORMAT_D16_UNORM;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount = 1;
+
+
+    VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &image_view);
+
+
+    VkFilter shadowmap_filter = VK_FILTER_LINEAR;
+
+    VkSamplerCreateInfo sampler_create_info{};
+    sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_create_info.magFilter = VK_FILTER_LINEAR;
+    sampler_create_info.minFilter = VK_FILTER_LINEAR;
+    sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_create_info.mipLodBias = 0.f;
+    sampler_create_info.maxAnisotropy = 1.f;
+    sampler_create_info.minLod = 0.f;
+    sampler_create_info.maxLod = 1.f;
+    sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &sampler);
+
+    create_offscreen_render_pass(render_pass, device);
+
+    VkFramebufferCreateInfo frame_buffer_create_info{};
+    frame_buffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    frame_buffer_create_info.renderPass = *render_pass;
+    frame_buffer_create_info.attachmentCount = 1;
+    frame_buffer_create_info.pAttachments = &image_view;
+    frame_buffer_create_info.width = size.width;
+    frame_buffer_create_info.height = size.height;
+    frame_buffer_create_info.layers = 1;
+
+    vkCreateFramebuffer(device.virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
 }

@@ -59,6 +59,10 @@ struct RenderPipeline
     //RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena);
     //~RenderPipeline();
 
+    //TEMP
+    // SHADOWPASS
+    ShadowPass shadow_pass;
+
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
 
@@ -314,6 +318,7 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
+    create_offscreen_framebuffer(result.device, {1024, 1024}, &result.shadow_pass);
 
     setup_render_pipeline(result.device.virtual_device, result.swap_chain, result.render_pass, result.pipeline_layout, &result.graphics_pipeline, memory_arena);
 
@@ -372,6 +377,8 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderDescriptors& 
 int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena)
 {
     static uint8_t current_frame = 0;//TODO Make better
+
+    constexpr vec3_t light = {1.0f, -3.0f, -1.0f};
 
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
