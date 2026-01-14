@@ -231,7 +231,7 @@ VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_dev
     return VK_SUCCESS;
 }
 
-void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, VkExtent2D viewport_extent){
+void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass,const VkExtent2D viewport_extent){
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

@@ -6,8 +6,7 @@
 
 constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
-typedef struct
-{
+typedef struct{
     VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
@@ -15,8 +14,7 @@ typedef struct
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
 } RenderDescriptors;
 
-typedef struct
-{
+typedef struct{
     mat4_t model;
     mat4_t view;
     mat4_t projection;
