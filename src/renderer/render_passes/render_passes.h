@@ -84,7 +84,7 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     depth_attachment.format = VK_FORMAT_D16_UNORM;
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -124,9 +124,6 @@ struct ShadowPass{
 static inline void create_offscreen_framebuffer(const Device& device, const VkExtent2D size, ShadowPass* shadow_pass){
     VkImage& depth_image = shadow_pass->depth_image;
     VkDeviceMemory& depth_image_memory = shadow_pass->depth_image_memory;
-    VkImageView& image_view = shadow_pass->image_view;
-    VkSampler& sampler = shadow_pass->sampler;
-    VkRenderPass* render_pass = &shadow_pass->render_pass;
 
     Texture::create_image(
         device,
@@ -150,11 +147,7 @@ static inline void create_offscreen_framebuffer(const Device& device, const VkEx
     image_view_create_info.subresourceRange.baseArrayLayer = 0;
     image_view_create_info.subresourceRange.layerCount = 1;
 
-
-    VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &image_view);
-
-
-    VkFilter shadowmap_filter = VK_FILTER_LINEAR;
+    VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
 
     VkSamplerCreateInfo sampler_create_info{};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -170,18 +163,19 @@ static inline void create_offscreen_framebuffer(const Device& device, const VkEx
     sampler_create_info.maxLod = 1.f;
     sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-    creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &sampler);
+    creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
 
-    create_offscreen_render_pass(render_pass, device);
+    create_offscreen_render_pass(&shadow_pass->render_pass, device);
 
     VkFramebufferCreateInfo frame_buffer_create_info{};
     frame_buffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    frame_buffer_create_info.renderPass = *render_pass;
+    frame_buffer_create_info.renderPass = shadow_pass->render_pass;
     frame_buffer_create_info.attachmentCount = 1;
-    frame_buffer_create_info.pAttachments = &image_view;
+    frame_buffer_create_info.pAttachments = &shadow_pass->image_view;
     frame_buffer_create_info.width = size.width;
     frame_buffer_create_info.height = size.height;
     frame_buffer_create_info.layers = 1;
+    frame_buffer_create_info.flags = 0;
 
     vkCreateFramebuffer(device.virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
 }
