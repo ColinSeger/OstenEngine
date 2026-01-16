@@ -190,4 +190,6 @@ void OstenEngine::cleanup()
     render_cleanup(render_pipeline, memory_arena);
     vkDestroyInstance(inst, nullptr);
     ImGui::DestroyContext();
+
+    destroy_arena(memory_arena);
 }

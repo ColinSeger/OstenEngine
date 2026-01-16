@@ -14,7 +14,7 @@ layout(location = 0) out vec3 frag_color;
 layout(location = 1) out vec2 frag_tex_cord;
 
 const vec3 DIRECTION_TO_LIGHT = normalize(vec3(1.0, -3.0, -1.0));
-const float AMBIENT = 0.02;
+const float AMBIENT = 0.08;
 
 const vec3 COLOR = vec3(1,1,1);
 

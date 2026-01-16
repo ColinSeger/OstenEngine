@@ -72,22 +72,10 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
     ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
 
-    VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device, memory_arena);
-    VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device, memory_arena);
+    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
+    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
     free_arena(memory_arena, vertex_shader.arena_index);
     free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
-
-    VkPipelineShaderStageCreateInfo vertex_stage_info{};
-    vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertex_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertex_stage_info.module = vertex_module;
-    vertex_stage_info.pName = "main";
-
-    VkPipelineShaderStageCreateInfo fragment_state_info{};
-    fragment_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragment_state_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragment_state_info.module = fragment_module;
-    fragment_state_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
@@ -194,32 +182,18 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
         throw "Failed to create pipeline";
     }
 
-    vkDestroyShaderModule(virtual_device, fragment_module, nullptr);
-    vkDestroyShaderModule(virtual_device, vertex_module, nullptr);
+    vkDestroyShaderModule(virtual_device, fragment_state_info.module, nullptr);
+    vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
 }
 
-void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, MemArena& memory_arena)
-{
+void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, MemArena& memory_arena){
+    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", memory_arena);
+    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/quad.frag.spv", memory_arena);
 
-    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
-    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
-
-    VkShaderModule vertex_module = create_shader(vertex_shader, virtual_device, memory_arena);
-    VkShaderModule fragment_module = create_shader(fragment_shader, virtual_device, memory_arena);
+    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
+    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
     free_arena(memory_arena, vertex_shader.arena_index);
     free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
-
-    VkPipelineShaderStageCreateInfo vertex_stage_info{};
-    vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertex_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertex_stage_info.module = vertex_module;
-    vertex_stage_info.pName = "main";
-
-    VkPipelineShaderStageCreateInfo fragment_state_info{};
-    fragment_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragment_state_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragment_state_info.module = fragment_module;
-    fragment_state_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
@@ -230,7 +204,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(sizeof(attribute_descriptions.array) / sizeof(attribute_descriptions.array[0]));
+    vertex_input_info.vertexAttributeDescriptionCount = 1;
     vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.array;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
@@ -251,7 +225,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     //For if you want to draw wireframe
     rasterizer.lineWidth = 1.0f;
 
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -264,7 +238,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil.depthTestEnable = VK_TRUE;
     depth_stencil.depthWriteEnable = VK_TRUE;
-    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
     depth_stencil.minDepthBounds = 0.0f; // Optional
     depth_stencil.maxDepthBounds = 1.0f; // Optional
@@ -322,7 +296,8 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
 
     VkResult s_result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, shadow_pipeline);
 
-
+    vkDestroyShaderModule(virtual_device, fragment_state_info.module, nullptr);
+    vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
 }
 
 void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, MemArena& memory_arena)
@@ -462,7 +437,10 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     }
     create_offscreen_framebuffer(result.device, {1024, 1024}, &result.shadow_pass);
 
+    setup_shadow_pipe(result.device.virtual_device, result.pipeline_layout, &result.shadow_pipeline, result.shadow_pass.render_pass, memory_arena);
+
     setup_render_pipeline(result.device.virtual_device, result.render_pass, result.pipeline_layout, &result.graphics_pipeline, memory_arena);
+
 
     create_sync_objects(result.device.virtual_device, &result.render_data);
     //create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
@@ -529,18 +507,17 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
     }
 }
 
-void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline& shadow_pipe, VkPipelineLayout layout, std::vector<RenderDescriptors> descriptors, const uint8_t frame){
+void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, std::vector<RenderDescriptors> descriptors, const uint8_t frame){
     //Begining of render pass
+    VkClearValue clear_values[1]{};
+    clear_values[0].depthStencil = {1.0f, 0};
+
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     render_pass_info.renderPass = render_pass;
     render_pass_info.framebuffer = frame_buffer;
     render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent = viewport_extent;
-
-    VkClearValue clear_values[1]{};
-    clear_values[0].depthStencil = {1.0f, 0};
-
     render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
     render_pass_info.pClearValues = clear_values;
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
@@ -595,9 +572,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
 
-    //start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
 
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
     vkResetFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame]);
 
@@ -605,6 +580,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
+
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
