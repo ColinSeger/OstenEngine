@@ -120,6 +120,13 @@ void OstenEngine::main_game_loop()
 
     VkDescriptorSet imgui_texture = VK_NULL_HANDLE;
 
+    imgui_texture =
+    ImGui_ImplVulkan_AddTexture(
+        render_pipeline.shadow_pass.sampler,
+        render_pipeline.shadow_pass.image_view,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();
 
@@ -147,7 +154,7 @@ void OstenEngine::main_game_loop()
             ImGui::Begin("Viewport");
             ImGui::Image(
                 (ImTextureID)imgui_texture,
-                ImVec2(1280, 920)
+                ImVec2(1024, 1024)
             );
             ImGui::End();
         }

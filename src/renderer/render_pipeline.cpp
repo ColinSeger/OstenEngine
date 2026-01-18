@@ -484,7 +484,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
     // VkBuffer vertex_buffers[] = {model.vertex_buffer};
     VkDeviceSize offsets[] = {0};
 
-    if(loaded_models.size() < 0){
+    if(loaded_models.size() <= 0){
         return;
     }
 
@@ -570,7 +570,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     if (result != VK_SUCCESS)
         return result;
 
-    update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
 
 
 
@@ -581,6 +580,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
+    update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
     start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
