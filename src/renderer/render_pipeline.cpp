@@ -188,14 +188,15 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
 
 void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, MemArena& memory_arena){
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", memory_arena);
-    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/quad.frag.spv", memory_arena);
+    //ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/quad.frag.spv", memory_arena);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
-    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
+    //VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
     free_arena(memory_arena, vertex_shader.arena_index);
-    free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
+    //free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
 
-    VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
+    VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info};
+    constexpr uint8_t shader_amount = sizeof(shader_stages) / sizeof(shader_stages[0]);
 
     VkVertexInputBindingDescription binding_description = get_binding_description();
     VertexAttributes attribute_descriptions = get_attribute_descriptions();
@@ -278,7 +279,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
 
     VkGraphicsPipelineCreateInfo pipeline_info{};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = 2;
+    pipeline_info.stageCount = shader_amount;
     pipeline_info.pStages = shader_stages;
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
@@ -296,7 +297,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
 
     VkResult s_result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, shadow_pipeline);
 
-    vkDestroyShaderModule(virtual_device, fragment_state_info.module, nullptr);
+    //vkDestroyShaderModule(virtual_device, fragment_state_info.module, nullptr);
     vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
 }
 

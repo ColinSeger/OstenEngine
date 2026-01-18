@@ -30,7 +30,7 @@ static inline ShaderMemoryIndexing load_shader(const char* file_name, MemArena& 
     return result;
 }
 
-static inline VkPipelineShaderStageCreateInfo create_shader(const ShaderMemoryIndexing& code,const VkShaderStageFlagBits shader_flags, VkDevice virtual_device, MemArena& memory_arena) {
+static inline VkPipelineShaderStageCreateInfo create_shader(const ShaderMemoryIndexing& code,const VkShaderStageFlagBits shader_stages, VkDevice virtual_device, MemArena& memory_arena) {
     VkShaderModule shader_result;
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -43,7 +43,8 @@ static inline VkPipelineShaderStageCreateInfo create_shader(const ShaderMemoryIn
 
     VkPipelineShaderStageCreateInfo vertex_stage_info{};
     vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertex_stage_info.stage = shader_flags;
+    vertex_stage_info.flags = 0;
+    vertex_stage_info.stage = shader_stages;
     vertex_stage_info.module = shader_result;
     vertex_stage_info.pName = "main";
 
