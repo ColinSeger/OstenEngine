@@ -122,7 +122,7 @@ void OstenEngine::main_game_loop()
 
     imgui_texture =
     ImGui_ImplVulkan_AddTexture(
-        render_pipeline.shadow_pass.sampler,
+        render_pipeline.shadow_pass.debug_sampler,
         render_pipeline.shadow_pass.image_view,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
@@ -150,11 +150,12 @@ void OstenEngine::main_game_loop()
         start_file_explorer(file_explorer, &render_pipeline);
 
         end_file_explorer();
+        vkDeviceWaitIdle(render_pipeline.device.virtual_device);
         if(imgui_texture != VK_NULL_HANDLE){
             ImGui::Begin("Viewport");
             ImGui::Image(
                 (ImTextureID)imgui_texture,
-                ImVec2(1024, 1024)
+                ImVec2(256, 256)
             );
             ImGui::End();
         }

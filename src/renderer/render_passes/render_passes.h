@@ -63,6 +63,24 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
 }
 
 static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, const Device& device){
+    VkSubpassDependency dependencies[2]{};
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    // Shadow pass → external (for sampling)
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
     VkAttachmentDescription depth_attachment{};
     depth_attachment.format = VK_FORMAT_D32_SFLOAT;
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -88,8 +106,8 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     render_pass_info.pAttachments = &depth_attachment;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &sub_pass;
-    render_pass_info.dependencyCount = 0;
-    render_pass_info.pDependencies = 0;
+    render_pass_info.dependencyCount = 2;
+    render_pass_info.pDependencies = dependencies;
 
     return vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass);
 }
@@ -101,12 +119,11 @@ struct ShadowPass{
     VkSampler sampler;
     VkRenderPass render_pass;
     VkFramebuffer framebuffer;
+    VkSampler debug_sampler;
 };
 
 //Temporaraly placed here
 static inline void create_offscreen_framebuffer(const Device device, const VkExtent2D size, ShadowPass* shadow_pass){
-    VkImage& depth_image = shadow_pass->depth_image;
-    VkDeviceMemory& depth_image_memory = shadow_pass->depth_image_memory;
 
     Texture::create_image(
         device,
@@ -115,13 +132,13 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        depth_image,
-        depth_image_memory
+        shadow_pass->depth_image,
+        shadow_pass->depth_image_memory
     );
 
     VkImageViewCreateInfo image_view_create_info{};
     image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    image_view_create_info.image = depth_image;
+    image_view_create_info.image = shadow_pass->depth_image;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = VK_FORMAT_D32_SFLOAT;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -134,6 +151,8 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
 
     VkSamplerCreateInfo sampler_create_info{};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_create_info.compareEnable = VK_TRUE;
+    sampler_create_info.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     sampler_create_info.magFilter = VK_FILTER_LINEAR;
     sampler_create_info.minFilter = VK_FILTER_LINEAR;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -146,7 +165,22 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
     sampler_create_info.maxLod = 1.f;
     sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
+    VkSamplerCreateInfo debug_sampler{};
+    debug_sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    debug_sampler.compareEnable = VK_FALSE;
+    debug_sampler.minFilter = VK_FILTER_LINEAR;
+    debug_sampler.magFilter = VK_FILTER_LINEAR;
+    debug_sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    debug_sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    debug_sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    debug_sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    debug_sampler.minLod = 0.0f;
+    debug_sampler.maxLod = 1.0f;
+    debug_sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+
     creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
+    creation_status = vkCreateSampler(device.virtual_device, &debug_sampler, nullptr, &shadow_pass->debug_sampler);
 
     create_offscreen_render_pass(&shadow_pass->render_pass, device);
 

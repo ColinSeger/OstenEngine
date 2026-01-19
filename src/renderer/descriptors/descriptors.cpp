@@ -143,6 +143,13 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     sampler_layout_binding.pImmutableSamplers = nullptr;
     sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+   /*  VkDescriptorSetLayoutBinding shadow_sampler_layout_binding{};
+    sampler_layout_binding.binding = 2;
+    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sampler_layout_binding.pImmutableSamplers = nullptr;
+    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+*/
     VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, sampler_layout_binding };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -153,6 +160,15 @@ void create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout
     VkResult result = vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, &descriptor_set_layout);
     if(result != VK_SUCCESS)
         throw("Failed to create descriptor layout");
+}
+
+void create_shadow_descriptor_layout(){
+    VkDescriptorSetLayoutBinding ubo_layout_binding{};
+    ubo_layout_binding.binding = 0;
+    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorCount = 1;
+    ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout_binding.pImmutableSamplers = nullptr; // Optional
 }
 
 static void create_descriptor_sets(

@@ -232,6 +232,10 @@ VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_dev
 }
 
 void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass,const VkExtent2D viewport_extent){
+    VkClearValue clear_values[2]{};
+    clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
+
     //Begining of render pass
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -239,13 +243,9 @@ void start_render_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     render_pass_info.framebuffer = frame_buffer;
     render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent = viewport_extent;
-
-    VkClearValue clear_values[2]{};
-    clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clear_values[1].depthStencil = {1.0f, 0};
-
     render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
     render_pass_info.pClearValues = clear_values;
+
     vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 inline VkResult end_render_pass(VkCommandBuffer& command_buffer){

@@ -205,7 +205,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.vertexAttributeDescriptionCount = 1;
+    vertex_input_info.vertexAttributeDescriptionCount = 3;
     vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.array;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
@@ -221,19 +221,14 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    //For if you want to draw wireframe
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;//For if you want to draw wireframe
     rasterizer.lineWidth = 1.0f;
-
     rasterizer.cullMode = VK_CULL_MODE_NONE;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-    rasterizer.depthBiasEnable = VK_FALSE;
-    //Things that might be good for shadow mapping
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasEnable = VK_TRUE;//Things that might be good for shadow mapping
+    rasterizer.depthBiasConstantFactor = 1.25f; // Optional
     rasterizer.depthBiasClamp = 0.0f; // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 1.75f; // Optional
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil{};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -256,17 +251,6 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
     multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment{};
-    color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    color_blend_attachment.blendEnable = VK_FALSE;
-    //More settings exist
-
-    VkPipelineColorBlendStateCreateInfo color_blending{};
-    color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    color_blending.logicOpEnable = VK_FALSE;
-    color_blending.attachmentCount = 1;
-    color_blending.pAttachments = &color_blend_attachment;
-
     constexpr VkDynamicState dynamic_states[] = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
@@ -287,7 +271,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
-    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pColorBlendState = 0;
     pipeline_info.pDynamicState = &dynamic_state;
     pipeline_info.layout = pipeline_layout;
     pipeline_info.subpass = 0;
@@ -483,7 +467,7 @@ void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
 
 static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderDescriptors> descriptors, VkPipelineLayout pipeline_layout, const uint8_t frame){
     // VkBuffer vertex_buffers[] = {model.vertex_buffer};
-    VkDeviceSize offsets[] = {0};
+    constexpr VkDeviceSize offsets[] = {0};
 
     if(loaded_models.size() <= 0){
         return;
@@ -521,8 +505,8 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     render_pass_info.renderArea.extent = viewport_extent;
     render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
     render_pass_info.pClearValues = clear_values;
-    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
+    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -564,15 +548,11 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
-
     static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, render_data.image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
     if (result != VK_SUCCESS)
         return result;
-
-
-
 
     vkResetFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame]);
 
@@ -581,9 +561,21 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
+    //update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
+/*
+
+    VkSubmitInfo shadow_info {};
+    shadow_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    shadow_info.waitSemaphoreCount = 0;
+    shadow_info.pWaitSemaphores = 0;
+    shadow_info.pWaitDstStageMask = 0;
+    shadow_info.commandBufferCount = 1;
+    shadow_info.pCommandBuffers = &command_buffers[current_frame];
+    shadow_info.signalSemaphoreCount = 0;
+    shadow_info.pSignalSemaphores = 0;
+ */
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
@@ -631,16 +623,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     present_info.pResults = nullptr; // Optional
 
     result = vkQueuePresentKHR(device.present_queue, &present_info);
-
-    //VkSampler sampler = Texture::create_texture_sampler(device);
-
-    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-    /*imgui_texture =
-    ImGui_ImplVulkan_AddTexture(
-        sampler,
-        offscreen_image.swap_chain_image_view,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        );*/
 
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
