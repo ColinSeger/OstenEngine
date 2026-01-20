@@ -63,6 +63,8 @@ struct RenderPipeline
     //TEMP
     // SHADOWPASS
     ShadowPass shadow_pass;
+    VkPipelineLayout shadow_pipe_layout;
+    VkDescriptorSetLayout shadow_layout;
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
@@ -236,8 +238,6 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     depth_stencil.depthWriteEnable = VK_TRUE;
     depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.minDepthBounds = 0.0f; // Optional
-    depth_stencil.maxDepthBounds = 1.0f; // Optional
     depth_stencil.stencilTestEnable = VK_FALSE;
     depth_stencil.front = {}; // Optional
     depth_stencil.back = {}; // Optional
@@ -405,7 +405,8 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
 
     restart_swap_chain(result, screen_size, memory_arena);
 
-    create_descriptor_set_layout(result.device.virtual_device, result.descriptor_set_layout);
+    create_descriptor_set_layout(result.device.virtual_device, &result.descriptor_set_layout);
+    create_shadow_descriptor_layout(result.device.virtual_device, &result.shadow_layout);
 
     create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
     create_descriptor_pool(result.descriptor_pool, result.device.virtual_device, 100);
@@ -420,12 +421,15 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
+    pipeline_layout_info.pSetLayouts = &result.shadow_layout;
+    if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.shadow_pipe_layout) != VK_SUCCESS){
+        throw "Failed to create pipeline";
+    }
     create_offscreen_framebuffer(result.device, {1024, 1024}, &result.shadow_pass);
 
-    setup_shadow_pipe(result.device.virtual_device, result.pipeline_layout, &result.shadow_pipeline, result.shadow_pass.render_pass, memory_arena);
+    setup_shadow_pipe(result.device.virtual_device, result.shadow_pipe_layout, &result.shadow_pipeline, result.shadow_pass.render_pass, memory_arena);
 
     setup_render_pipeline(result.device.virtual_device, result.render_pass, result.pipeline_layout, &result.graphics_pipeline, memory_arena);
-
 
     create_sync_objects(result.device.virtual_device, &result.render_data);
     //create_offscreen_image(device, screen_size, render_pass, swap_chain_images.depth_image_view);
@@ -466,7 +470,6 @@ void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
 }
 
 static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderDescriptors> descriptors, VkPipelineLayout pipeline_layout, const uint8_t frame){
-    // VkBuffer vertex_buffers[] = {model.vertex_buffer};
     constexpr VkDeviceSize offsets[] = {0};
 
     if(loaded_models.size() <= 0){
@@ -493,7 +496,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
 }
 
 void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, std::vector<RenderDescriptors> descriptors, const uint8_t frame){
-    //Begining of render pass
+    //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
 
@@ -523,8 +526,29 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipe);
+    if(loaded_models.size() <= 0){
+        vkCmdEndRenderPass(command_buffer);
+        return;
+    }
+    constexpr VkDeviceSize offsets[] = {0};
 
-    swap_draw_frame(command_buffer, descriptors, layout, frame);
+    ComponentSystem* render =  get_component_system(RENDER);
+
+    for (int i = 0; i < render->amount; i++) {
+        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
+
+        Model model = loaded_models[comp.mesh_id];
+
+        if(model.index_amount > 0){
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+
+            vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptors[comp.descriptor_id].shadow_sets[frame], 0, nullptr);
+
+            vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
+        }
+    }
 
     vkCmdEndRenderPass(command_buffer);
 }
@@ -563,19 +587,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     //update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, pipeline_layout, render_data.render_descriptors, current_frame);
-/*
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_data.render_descriptors, current_frame);
 
-    VkSubmitInfo shadow_info {};
-    shadow_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    shadow_info.waitSemaphoreCount = 0;
-    shadow_info.pWaitSemaphores = 0;
-    shadow_info.pWaitDstStageMask = 0;
-    shadow_info.commandBufferCount = 1;
-    shadow_info.pCommandBuffers = &command_buffers[current_frame];
-    shadow_info.signalSemaphoreCount = 0;
-    shadow_info.pSignalSemaphores = 0;
- */
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);

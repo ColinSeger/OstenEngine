@@ -124,7 +124,7 @@ void OstenEngine::main_game_loop()
     ImGui_ImplVulkan_AddTexture(
         render_pipeline.shadow_pass.debug_sampler,
         render_pipeline.shadow_pass.image_view,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
         );
 
     while(!glfwWindowShouldClose(main_window)) {
