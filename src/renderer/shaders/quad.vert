@@ -8,17 +8,15 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(location = 0) in vec3 in_position;
 
-layout (location = 0) out vec2 out_uv;
-
 void main()
 {
-	//gl_Position = ubo.proj * ubo.view * ubo.model * vec4(in_position, 1.0f);
-	//gl_Position = vec4(in_position.xy, 0.5, 1.0);
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(in_position, 1.0f);
+    //gl_Position = vec4(in_position.xy, 0.5, 1.0);
 
-	gl_Position = vec4(
-        (gl_VertexIndex == 0) ? -1.0 : 3.0,
-        (gl_VertexIndex == 2) ? -1.0 : 3.0,
-        0.5,
-        1.0
-    );
+    // gl_Position = vec4(
+    //        (gl_VertexIndex == 0) ? -1.0 : 3.0,
+    //        (gl_VertexIndex == 2) ? -1.0 : 3.0,
+    //        0.5,
+    //        1.0
+    //    );
 }

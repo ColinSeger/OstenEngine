@@ -405,7 +405,7 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
 
     restart_swap_chain(result, screen_size, memory_arena);
 
-    create_descriptor_set_layout(result.device.virtual_device, &result.descriptor_set_layout);
+    create_forward_descriptor_set_layout(result.device.virtual_device, &result.descriptor_set_layout);
     create_shadow_descriptor_layout(result.device.virtual_device, &result.shadow_layout);
 
     create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
@@ -585,14 +585,16 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    //update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
+    update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
+
     start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_data.render_descriptors, current_frame);
+
+    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
-
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
     Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;

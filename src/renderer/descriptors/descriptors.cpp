@@ -42,6 +42,7 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device, c
 }
 
 void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler){
+    return;
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -77,7 +78,7 @@ void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     }
 }
 
-VkResult create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
+VkResult create_forward_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
     ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -87,7 +88,7 @@ VkResult create_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLa
 
     VkDescriptorSetLayoutBinding sampler_layout_binding{};
     sampler_layout_binding.binding = 1;
-    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.descriptorCount = 2;
     sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     sampler_layout_binding.pImmutableSamplers = nullptr;
     sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -158,7 +159,7 @@ VkResult create_shadow_sets(VkDevice virtual_device, RenderDescriptors& render_t
     return status;
 }
 
-void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, VkImageView image_view, VkSampler sampler) {
+void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, VkImageView image_view, VkSampler sampler, VkImageView shadow_view, VkSampler shadow_sampler) {
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -179,6 +180,13 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
     image_info.sampler = sampler;
+
+    VkDescriptorImageInfo shadow_info{};
+    shadow_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    shadow_info.imageView = shadow_view;
+    shadow_info.sampler = shadow_sampler;
+
+    VkDescriptorImageInfo image_descriptors_info[] = {image_info, shadow_info};
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
@@ -203,8 +211,8 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
         descriptor_writes[1].dstBinding = 1;
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pImageInfo = &image_info;
+        descriptor_writes[1].descriptorCount = 2;
+        descriptor_writes[1].pImageInfo = image_descriptors_info;
 
         vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
