@@ -371,8 +371,11 @@ static void update_uniform_buffer_light(const vec3_t camera, const uint8_t curre
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
-
-    vec3_t forward_vector =  v3_add(camera, Transformations::forward_vector(Transform{}));
+    Transform test{};
+    test.position = camera;
+    test.rotation = {0,1.3f,0};
+    test.scale = {1,1,1};
+    vec3_t forward_vector =  v3_add(camera, Transformations::forward_vector(test));
 
     mat4_t view_matrix = m4_look_at(camera, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(45.f, aspect_ratio, 1.f, 2000.0f);
@@ -557,7 +560,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 {
     static uint8_t current_frame = 0;//TODO Make better
 
-    constexpr vec3_t light = {1.0f, -3.0f, -1.0f};
+    constexpr vec3_t light = {10.0f, 0, 2};
 
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
@@ -585,7 +588,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light, current_frame, 1024.f / 1024.f, render_data.render_descriptors.data());
+    update_uniform_buffer_light(light, current_frame, 1, render_data.render_descriptors.data());
 
     start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_data.render_descriptors, current_frame);
 
