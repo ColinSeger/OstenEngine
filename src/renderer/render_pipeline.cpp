@@ -65,6 +65,9 @@ struct RenderPipeline
     ShadowPass shadow_pass;
     VkPipelineLayout shadow_pipe_layout;
     VkDescriptorSetLayout shadow_layout;
+    CameraDescriptor camera_descript;
+
+    Light light;
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
@@ -190,12 +193,10 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
 
 void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, MemArena& memory_arena){
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", memory_arena);
-    //ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/quad.frag.spv", memory_arena);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
-    //VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
+
     free_arena(memory_arena, vertex_shader.arena_index);
-    //free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info};
     constexpr uint8_t shader_amount = sizeof(shader_stages) / sizeof(shader_stages[0]);
@@ -349,6 +350,11 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(camera.field_of_view, aspect_ratio, 1.f, 2000.0f);
 
+    CameraUbo uniform_buffer{
+        view_matrix,
+        projection
+    };
+
     for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
@@ -357,19 +363,13 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
 
         mat4_t model = Transformations::get_model_matrix(transform);
 
-        UniformBufferObject uniform_buffer{
-            model,
-            view_matrix,
-            projection
-        };
-
-        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(uniform_buffer));
+        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
     }
 }
 
-static void update_uniform_buffer_light(const vec3_t camera, const uint8_t current_image, const float aspect_ratio, RenderDescriptors* to_render) {
+static void update_uniform_buffer_light(const vec3_t camera, const uint8_t current_image, const float aspect_ratio, Light* to_render) {
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    /*ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
     Transform test{};
     test.position = camera;
@@ -380,7 +380,7 @@ static void update_uniform_buffer_light(const vec3_t camera, const uint8_t curre
     mat4_t view_matrix = m4_look_at(camera, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(45.f, aspect_ratio, 1.f, 2000.0f);
 
-    for (size_t render_index = 0; render_index < render->amount; render_index++)
+    for (size_t render_index = 0; render_index < 1; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
 
@@ -388,14 +388,14 @@ static void update_uniform_buffer_light(const vec3_t camera, const uint8_t curre
 
         mat4_t model = Transformations::get_model_matrix(transform);
 
-        UniformBufferObject uniform_buffer{
+        CameraUbo uniform_buffer{
             model,
             view_matrix,
             projection
         };
 
-        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(uniform_buffer));
-    }
+        memcpy(to_render[0].uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(uniform_buffer));
+    }*/
 }
 
 RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
@@ -412,6 +412,8 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     create_shadow_descriptor_layout(result.device.virtual_device, &result.shadow_layout);
 
     create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
+    create_camera_uniform_buffer(result.camera_descript, result.device);
+    create_light_uniform_buffer(&result.light, result.device);
     create_descriptor_pool(result.descriptor_pool, result.device.virtual_device, 100);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
@@ -498,7 +500,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
     }
 }
 
-void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, std::vector<RenderDescriptors> descriptors, const uint8_t frame){
+void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, Light light, const uint8_t frame){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
@@ -547,7 +549,7 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
 
             vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptors[comp.descriptor_id].shadow_sets[frame], 0, nullptr);
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &light.light_descriptor_sets[frame], 0, nullptr);
 
             vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
         }
@@ -560,7 +562,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 {
     static uint8_t current_frame = 0;//TODO Make better
 
-    constexpr vec3_t light = {10.0f, 0, 2};
+    constexpr vec3_t light_pos = {10.0f, 0, 2};
 
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
@@ -588,11 +590,10 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light, current_frame, 1, render_data.render_descriptors.data());
+    update_uniform_buffer_light(light_pos, current_frame, 1, &light);
 
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_data.render_descriptors, current_frame);
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, light, current_frame);
 
-    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
 

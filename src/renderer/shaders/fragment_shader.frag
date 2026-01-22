@@ -1,5 +1,5 @@
 #version 450
-layout(binding = 1) uniform sampler2D textures[];
+layout(set = 0, binding = 2) uniform sampler2D textures[];
 
 layout(location = 0) in vec3 frag_normal;
 layout(location = 1) in vec2 frag_tex_cord;

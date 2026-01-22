@@ -23,8 +23,8 @@ static void create_entity(struct RenderPipeline* render_pipeline, const char* na
     uint32_t index = Texture::load_texture(render_pipeline->device, ".png", render_pipeline->command_pool);
     TextureImage texture = loaded_textures[index];
 
-    create_descriptor_set(render_pipeline->device.virtual_device, render_pipeline->render_data.render_descriptors.back(), render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler, render_pipeline->shadow_pass.image_view, render_pipeline->shadow_pass.sampler);
-    create_shadow_sets(render_pipeline->device.virtual_device, render_pipeline->render_data.render_descriptors.back(), render_pipeline->descriptor_pool, render_pipeline->shadow_layout);
+    create_descriptor_set(render_pipeline->device.virtual_device, render_pipeline->render_data.render_descriptors.back(), render_pipeline->camera_descript, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler, render_pipeline->shadow_pass.image_view, render_pipeline->shadow_pass.sampler);
+    create_shadow_sets(render_pipeline->device.virtual_device, render_pipeline->light, render_pipeline->descriptor_pool, render_pipeline->shadow_layout);
 
     Entity entity{};
     EntityManager::add_entity(entity, name);

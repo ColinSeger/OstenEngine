@@ -1,10 +1,13 @@
-#version 450
+#version 460
 
-layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
+layout(set = 0, binding = 0) uniform CameraBuffer {
     mat4 view;
     mat4 proj;
-} ubo;
+} camera_buffer;
+
+layout(set = 0, binding = 1) readonly buffer ModelBuffer {
+    mat4 model_matrix[];
+} model_buffer;
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
@@ -19,9 +22,9 @@ const float AMBIENT = 0.08;
 const vec3 COLOR = vec3(1, 1, 1);
 
 void main() {
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(in_position, 1.0);
+    gl_Position = camera_buffer.proj * camera_buffer.view * model_buffer.model_matrix[gl_BaseInstance] * vec4(in_position, 1.0);
 
-    vec3 normal_world_space = normalize(mat3(ubo.model) * in_normal);
+    vec3 normal_world_space = normalize(mat3(model_buffer.model_matrix[gl_BaseInstance]) * in_normal);
 
     float light_intensity = AMBIENT + max(dot(normal_world_space, DIRECTION_TO_LIGHT), 0);
 
