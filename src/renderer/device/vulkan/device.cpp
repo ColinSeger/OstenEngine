@@ -410,7 +410,11 @@ namespace CommandBuffer
             throw("Buffer Memory Allocation Failed");
         }
 
-        vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
+        result = vkBindBufferMemory(device.virtual_device, buffer, buffer_memory, 0);
+
+        if(result != VK_SUCCESS){
+            throw("Buffer Memory Allocation Failed");
+        }
     }
 
     void create_vertex_buffer(Device& device, VertexArray& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)

@@ -24,7 +24,7 @@ typedef struct{
 } Light;
 
 typedef struct{
-    VkDescriptorSet light_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
+    VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
@@ -112,12 +112,12 @@ VkResult create_forward_descriptor_set_layout(VkDevice virtual_device, VkDescrip
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout_binding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding ubo2_layout_binding{};
-    ubo2_layout_binding.binding = 1;
-    ubo2_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    ubo2_layout_binding.descriptorCount = 1;
-    ubo2_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo2_layout_binding.pImmutableSamplers = nullptr; // Optional
+    VkDescriptorSetLayoutBinding model_layout_binding{};
+    model_layout_binding.binding = 1;
+    model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    model_layout_binding.descriptorCount = 1;
+    model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    model_layout_binding.pImmutableSamplers = nullptr; // Optional
 
     VkDescriptorSetLayoutBinding sampler_layout_binding{};
     sampler_layout_binding.binding = 2;
@@ -126,7 +126,7 @@ VkResult create_forward_descriptor_set_layout(VkDevice virtual_device, VkDescrip
     sampler_layout_binding.pImmutableSamplers = nullptr;
     sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, ubo2_layout_binding, sampler_layout_binding };
+    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, model_layout_binding, sampler_layout_binding };
     constexpr size_t bindings_amount = sizeof(bindings) / sizeof(bindings[0]);
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -144,7 +144,13 @@ VkResult create_shadow_descriptor_layout(VkDevice virtual_device, VkDescriptorSe
     ubo_layout_binding.descriptorCount = 1;
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding };
+    VkDescriptorSetLayoutBinding model_layout_binding{};
+    model_layout_binding.binding = 1;
+    model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    model_layout_binding.descriptorCount = 1;
+    model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding , model_layout_binding};
     constexpr size_t bindings_amount = sizeof(bindings) / sizeof(bindings[0]);
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -155,7 +161,7 @@ VkResult create_shadow_descriptor_layout(VkDevice virtual_device, VkDescriptorSe
     return vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, descriptor_set_layout);
 }
 
-VkResult create_shadow_sets(VkDevice virtual_device, Light& lighy, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout){
+VkResult create_shadow_sets(VkDevice virtual_device, Light& lighy, RenderDescriptors& render_this, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout){
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -167,28 +173,42 @@ VkResult create_shadow_sets(VkDevice virtual_device, Light& lighy, VkDescriptorP
     allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts;
 
-    VkResult status = vkAllocateDescriptorSets(virtual_device, &allocInfo, lighy.light_descriptor_sets);
+    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets);
+    allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, lighy.light_descriptor_sets);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo camera_info{};
+        camera_info.offset = 0;
+        camera_info.range = sizeof(CameraUbo);
+        camera_info.buffer = lighy.uniform_buffers[i];
+
         VkDescriptorBufferInfo buffer_info{};
-        buffer_info.buffer = lighy.uniform_buffers[i];
         buffer_info.offset = 0;
         buffer_info.range = sizeof(ObjectUBO);
+        buffer_info.buffer = render_this.uniform_buffers[i];
 
-        constexpr uint8_t descriptor_size = 1;
+        constexpr uint32_t descriptor_size = 2;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = lighy.light_descriptor_sets[i];
+        descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &buffer_info;
+        descriptor_writes[0].pBufferInfo = &camera_info;
+
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pBufferInfo = &buffer_info;
 
         vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
 
-    return status;
+    return allocation_status;
 }
 
 void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, CameraDescriptor& camera_descriptor, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, VkImageView image_view, VkSampler sampler, VkImageView shadow_view, VkSampler shadow_sampler) {
@@ -204,6 +224,7 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     allocInfo.pSetLayouts = layouts;
 
     VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets);
+    allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, camera_descriptor.descriptor_sets);
 
     if(allocation_status != VK_SUCCESS)
         throw("Failed to create descriptor sets");
@@ -219,30 +240,29 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
     shadow_info.sampler = shadow_sampler;
 
     VkDescriptorImageInfo image_descriptors_info[] = {image_info, shadow_info};
+    constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo buffer_info{};
-        buffer_info.buffer = camera_descriptor.uniform_buffers[i];
-        buffer_info.offset = 0;
-        buffer_info.range = sizeof(CameraUbo);
+        VkDescriptorBufferInfo camera_info{};
+        camera_info.offset = 0;
+        camera_info.range = sizeof(CameraUbo);
+        camera_info.buffer = camera_descriptor.uniform_buffers[i];
 
-        VkDescriptorBufferInfo buffer_info2{};
-        buffer_info.buffer = render_this.uniform_buffers[i];
+        VkDescriptorBufferInfo buffer_info{};
         buffer_info.offset = 0;
         buffer_info.range = sizeof(ObjectUBO);
+        buffer_info.buffer = render_this.uniform_buffers[i];
 
-        constexpr uint8_t descriptor_size = 3;
+        constexpr uint32_t descriptor_size = 3;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &buffer_info;
-        descriptor_writes[0].pImageInfo = nullptr; // Optional
-        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
-
+        descriptor_writes[0].pBufferInfo = &camera_info;
 
         descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
@@ -250,17 +270,14 @@ void create_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_th
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pBufferInfo = &buffer_info2;
-        descriptor_writes[1].pImageInfo = nullptr; // Optional
-        descriptor_writes[1].pTexelBufferView = nullptr; // Optional
-
+        descriptor_writes[1].pBufferInfo = &buffer_info;
 
         descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[2].dstSet = render_this.descriptor_sets[i];
         descriptor_writes[2].dstBinding = 2;
         descriptor_writes[2].dstArrayElement = 0;
         descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[2].descriptorCount = 2;
+        descriptor_writes[2].descriptorCount = image_amount;
         descriptor_writes[2].pImageInfo = image_descriptors_info;
 
         vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
@@ -274,8 +291,22 @@ static void create_descriptor_sets(
         VkImageView image_view,
         VkSampler sampler,
         RenderDescriptors* render_descriptors,
-        uint32_t amount
+        uint32_t amount,
+        CameraDescriptor& camera,
+        VkImage image
     ){
+
+    VkDescriptorImageInfo image_info{};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
+
+    // VkDescriptorImageInfo shadow_info{};
+    // shadow_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    // shadow_info.imageView = shadow_view;
+    // shadow_info.sampler = shadow_sampler;
+
+    VkDescriptorImageInfo image_descriptors_info[] = {image_info};
     for (size_t render_index = 0; render_index < amount; render_index++)
     {
         RenderDescriptors& render_this = render_descriptors[render_index];
@@ -297,14 +328,14 @@ static void create_descriptor_sets(
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo buffer_info{};
-            buffer_info.buffer = camera_descriptor.uniform_buffers[i];
+            buffer_info.buffer = camera.uniform_buffers[i];
             buffer_info.offset = 0;
             buffer_info.range = sizeof(CameraUbo);
 
             VkDescriptorBufferInfo buffer_info2{};
             buffer_info.buffer = render_this.uniform_buffers[i];
             buffer_info.offset = 0;
-            buffer_info.range = sizeof(ObjectUBO);
+            buffer_info.range = sizeof(ObjectUBO) *2;
 
             constexpr uint8_t descriptor_size = 3;
             VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
@@ -335,7 +366,7 @@ static void create_descriptor_sets(
             descriptor_writes[2].dstBinding = 2;
             descriptor_writes[2].dstArrayElement = 0;
             descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptor_writes[2].descriptorCount = 2;
+            descriptor_writes[2].descriptorCount = 1;
             descriptor_writes[2].pImageInfo = image_descriptors_info;
 
             vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
@@ -364,19 +395,19 @@ void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amou
 }
 
 void create_uniform_buffer(RenderDescriptors& render_descriptor, Device& device) {
-    VkDeviceSize bufferSize = sizeof(ObjectUBO);
+    constexpr VkDeviceSize bufferSize = sizeof(ObjectUBO);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
             device,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             bufferSize,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             render_descriptor.uniform_buffers[i],
             render_descriptor.uniform_buffers_memory[i]
         );
 
-        vkMapMemory(device.virtual_device, render_descriptor.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptor.uniform_buffers_mapped[i]);
+        VkResult result = vkMapMemory(device.virtual_device, render_descriptor.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptor.uniform_buffers_mapped[i]);
     }
 }
 
@@ -398,7 +429,7 @@ void create_light_uniform_buffer(Light* light_descriptor, Device& device) {
 }
 
 void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, Device& device) {
-    VkDeviceSize bufferSize = sizeof(ObjectUBO);
+    VkDeviceSize bufferSize = sizeof(CameraUbo);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(

@@ -347,13 +347,6 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
 
     vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
 
-    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(camera.field_of_view, aspect_ratio, 1.f, 2000.0f);
-
-    CameraUbo uniform_buffer{
-        view_matrix,
-        projection
-    };
 
     for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
@@ -367,18 +360,19 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-static void update_uniform_buffer_light(const vec3_t camera, const uint8_t current_image, const float aspect_ratio, Light* to_render) {
+static void update_uniform_buffer_light(const vec3_t light, const uint8_t current_image, Light* to_render, CameraDescriptor& camera_descript) {
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    /*ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    return;
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
     Transform test{};
-    test.position = camera;
+    test.position = light;
     test.rotation = {0,1.3f,0};
     test.scale = {1,1,1};
-    vec3_t forward_vector =  v3_add(camera, Transformations::forward_vector(test));
+    vec3_t forward_vector =  v3_add(light, Transformations::forward_vector(test));
 
-    mat4_t view_matrix = m4_look_at(camera, forward_vector, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(45.f, aspect_ratio, 1.f, 2000.0f);
+    mat4_t view_matrix = m4_look_at(light, forward_vector, {0, 0, 1});
+    mat4_t projection = m4_perspective_matrix(45.f, 1, 1.f, 2000.0f);
 
     for (size_t render_index = 0; render_index < 1; render_index++)
     {
@@ -388,14 +382,13 @@ static void update_uniform_buffer_light(const vec3_t camera, const uint8_t curre
 
         mat4_t model = Transformations::get_model_matrix(transform);
 
-        CameraUbo uniform_buffer{
-            model,
+        LightUbo uniform_buffer{
             view_matrix,
             projection
         };
 
-        memcpy(to_render[0].uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(uniform_buffer));
-    }*/
+        memcpy(to_render->uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(Light));
+    }
 }
 
 RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
@@ -566,9 +559,21 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
+    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+
+    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
 
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     //Solving this wait should bring great benefits
+    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
+    mat4_t projection = m4_perspective_matrix(camera.field_of_view, 1, 1.f, 2000.0f);
+
+    CameraUbo uniform_buffer{
+        view_matrix,
+        projection
+    };
+
+    memcpy(camera_descript.uniform_buffers_mapped[current_frame], &uniform_buffer, sizeof(CameraUbo));
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
@@ -590,15 +595,16 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light_pos, current_frame, 1, &light);
-
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, light, current_frame);
 
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
 
+    update_uniform_buffer_light(light_pos, current_frame, &light, camera_descript);
+
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, light, current_frame);
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
-   // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
+
+    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
     Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
