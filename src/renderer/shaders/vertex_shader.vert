@@ -22,9 +22,9 @@ const float AMBIENT = 0.08;
 const vec3 COLOR = vec3(1, 1, 1);
 
 void main() {
-    gl_Position = camera_buffer.proj * camera_buffer.view * model_buffer.model_matrix[0] * vec4(in_position, 1.0);
+    gl_Position = camera_buffer.proj * camera_buffer.view * model_buffer.model_matrix[gl_InstanceIndex] * vec4(in_position, 1.0);
 
-    vec3 normal_world_space = normalize(mat3(model_buffer.model_matrix[0]) * in_normal);
+    vec3 normal_world_space = normalize(mat3(model_buffer.model_matrix[gl_InstanceIndex]) * in_normal);
 
     float light_intensity = AMBIENT + max(dot(normal_world_space, DIRECTION_TO_LIGHT), 0);
 

@@ -31,5 +31,5 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map)
 }
 
 void main() {
-    out_color = (vec4(frag_normal, 1) * texture(textures[0], frag_tex_cord));
+    out_color = (vec4(frag_normal, 1) * texture(textures[0], frag_tex_cord)) * compute_shadow_factor(vec4(frag_normal, 1), textures[0]);
 }

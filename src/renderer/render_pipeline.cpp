@@ -72,10 +72,13 @@ struct RenderPipeline
     Light light;
 
     RenderingDescriptor render_descripts;
+    RenderingDescriptor test_lights_desc;
 
     RenderDescriptors test_descriptor;
 
     TextureDescriptor texture_descriptor;
+
+    CameraDescriptor light_test;
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
@@ -413,6 +416,7 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
 
     //create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
     create_camera_uniform_buffer(result.camera_descript, result.device);
+    create_camera_uniform_buffer(result.light_test, result.device);
     create_light_uniform_buffer(&result.light, result.device);
     create_descriptor_pool(result.descriptor_pool, result.device.virtual_device, 100);
 
@@ -423,6 +427,7 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
 
     create_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, texture.image_view, texture.texture_sampler);
     create_descriptor_set(result.device.virtual_device, result.render_descripts, result.descriptor_pool, result.descriptor_set_layout, result.camera_descript, result.test_descriptor);
+    create_descriptor_set(result.device.virtual_device, result.test_lights_desc, result.descriptor_pool, result.descriptor_set_layout, result.light_test, result.test_descriptor);
 
     VkDescriptorSetLayout layouts[] = { result.descriptor_set_layout, result.fragment_layout};
 
@@ -582,11 +587,11 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     ComponentSystem* render =  get_component_system(RENDER);
     Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
-    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
+    vec3_t forward_vector =  v3_add(light_pos, Transformations::forward_vector(camera_transform));
 
     vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     //Solving this wait should bring great benefits
-    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
+    mat4_t view_matrix = m4_look_at(light_pos, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(camera.field_of_view, 1, 1.f, 2000.0f);
 
     CameraUbo uniform_buffer{
@@ -594,7 +599,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
         projection
     };
 
-    memcpy(camera_descript.uniform_buffers_mapped[current_frame], &uniform_buffer, sizeof(CameraUbo));
+    memcpy(light_test.uniform_buffers_mapped[current_frame], &uniform_buffer, sizeof(CameraUbo));
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
@@ -616,9 +621,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light_pos, current_frame, test_descriptor, camera_descript);
+    update_uniform_buffer_light(light_pos, current_frame, test_descriptor, light_test);
 
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_descripts, current_frame);
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, current_frame);
 
     update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, test_descriptor, camera_descript);
 
@@ -635,7 +640,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
 
     vkCmdEndRenderPass(command_buffer);
-    vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     vkEndCommandBuffer(command_buffer);
 
     VkSemaphore wait_semaphores[] = {render_data.image_available_semaphores[current_frame]};
