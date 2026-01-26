@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
@@ -65,9 +66,16 @@ struct RenderPipeline
     ShadowPass shadow_pass;
     VkPipelineLayout shadow_pipe_layout;
     VkDescriptorSetLayout shadow_layout;
+    VkDescriptorSetLayout fragment_layout;
     CameraDescriptor camera_descript;
 
     Light light;
+
+    RenderingDescriptor render_descripts;
+
+    RenderDescriptors test_descriptor;
+
+    TextureDescriptor texture_descriptor;
 
     int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
 };
@@ -107,19 +115,11 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    //For if you want to draw wireframe
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;//For if you want to draw wireframe
     rasterizer.lineWidth = 1.0f;
-
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
     rasterizer.depthBiasEnable = VK_FALSE;
-    //Things that might be good for shadow mapping
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-    rasterizer.depthBiasClamp = 0.0f; // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil{};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -127,20 +127,12 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
     depth_stencil.depthWriteEnable = VK_TRUE;
     depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.minDepthBounds = 0.0f; // Optional
-    depth_stencil.maxDepthBounds = 1.0f; // Optional
     depth_stencil.stencilTestEnable = VK_FALSE;
-    depth_stencil.front = {}; // Optional
-    depth_stencil.back = {}; // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f; // Optional
-    multisampling.pSampleMask = nullptr; // Optional
-    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-    multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
     VkPipelineColorBlendAttachmentState color_blend_attachment{};
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -339,7 +331,7 @@ static void create_sync_objects(VkDevice virtual_device, RenderData* render_pipe
     }
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, RenderDescriptors* to_render) {
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, RenderDescriptors& to_render, CameraDescriptor cam_descript) {
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
@@ -347,8 +339,17 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
 
     vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
 
+    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
+    mat4_t projection = m4_perspective_matrix(45.f, aspect_ratio, 1.f, 2000.0f);
 
-    for (size_t render_index = 0; render_index < render->amount; render_index++)
+    LightUbo uniform_buffer{
+        view_matrix,
+        projection
+    };
+
+    memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
+
+    for (size_t render_index = 0; render_index < 1; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
 
@@ -356,11 +357,11 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
 
         mat4_t model = Transformations::get_model_matrix(transform);
 
-        memcpy(to_render[render_component->descriptor_id].uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
+        memcpy(to_render.uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
     }
 }
 
-static void update_uniform_buffer_light(const vec3_t light, const uint8_t current_image, Light* to_render, CameraDescriptor& camera_descript) {
+static void update_uniform_buffer_light(const vec3_t light, const uint8_t current_image, RenderDescriptors& to_render, CameraDescriptor& camera_descript) {
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     return;
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
@@ -374,6 +375,13 @@ static void update_uniform_buffer_light(const vec3_t light, const uint8_t curren
     mat4_t view_matrix = m4_look_at(light, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(45.f, 1, 1.f, 2000.0f);
 
+    LightUbo uniform_buffer{
+        view_matrix,
+        projection
+    };
+
+    memcpy(camera_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
+
     for (size_t render_index = 0; render_index < 1; render_index++)
     {
         RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
@@ -382,12 +390,8 @@ static void update_uniform_buffer_light(const vec3_t light, const uint8_t curren
 
         mat4_t model = Transformations::get_model_matrix(transform);
 
-        LightUbo uniform_buffer{
-            view_matrix,
-            projection
-        };
 
-        memcpy(to_render->uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(Light));
+        memcpy(to_render.uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
     }
 }
 
@@ -404,21 +408,35 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     create_forward_descriptor_set_layout(result.device.virtual_device, &result.descriptor_set_layout);
     create_shadow_descriptor_layout(result.device.virtual_device, &result.shadow_layout);
 
-    create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
+    VkResult tes = create_fragment_layout(result.device.virtual_device, &result.fragment_layout);
+    result.test_descriptor.object_amount = 5;
+
+    //create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
     create_camera_uniform_buffer(result.camera_descript, result.device);
     create_light_uniform_buffer(&result.light, result.device);
     create_descriptor_pool(result.descriptor_pool, result.device.virtual_device, 100);
 
+    create_uniform_buffers(&result.test_descriptor, result.test_descriptor.object_amount, result.device);
+
+    uint32_t index = Texture::load_texture(result.device, ".png", result.command_pool);
+    TextureImage texture = loaded_textures[index];
+
+    create_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, texture.image_view, texture.texture_sampler);
+    create_descriptor_set(result.device.virtual_device, result.render_descripts, result.descriptor_pool, result.descriptor_set_layout, result.camera_descript, result.test_descriptor);
+
+    VkDescriptorSetLayout layouts[] = { result.descriptor_set_layout, result.fragment_layout};
+
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 1;
-    pipeline_layout_info.pSetLayouts = &result.descriptor_set_layout;
+    pipeline_layout_info.setLayoutCount = 2;
+    pipeline_layout_info.pSetLayouts = layouts;
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
     if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
+    pipeline_layout_info.setLayoutCount = 1;
     pipeline_layout_info.pSetLayouts = &result.shadow_layout;
     if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.shadow_pipe_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
@@ -467,7 +485,7 @@ void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderDescriptors> descriptors, VkPipelineLayout pipeline_layout, const uint8_t frame){
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, VkPipelineLayout pipeline_layout, const uint8_t frame){
     constexpr VkDeviceSize offsets[] = {0};
 
     if(loaded_models.size() <= 0){
@@ -475,6 +493,11 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
     }
 
     ComponentSystem* render =  get_component_system(RENDER);
+
+    VkDescriptorSet des[] = {descriptors.descriptor_sets[frame], textures.descriptor_sets[frame]};
+    constexpr size_t descriptor_amount = sizeof(des) / sizeof(des[0]);
+
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, des, 0, nullptr);
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
@@ -486,14 +509,12 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, std::vector<RenderD
 
             vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptors[comp.descriptor_id].descriptor_sets[frame], 0, nullptr);
-
             vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
         }
     }
 }
 
-void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, Light light, const uint8_t frame){
+void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor render_data, const uint8_t frame){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
@@ -542,7 +563,7 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
 
             vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &light.light_descriptor_sets[frame], 0, nullptr);
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &render_data.descriptor_sets[frame], 0, nullptr);
 
             vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
         }
@@ -577,7 +598,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
-        update_descriptor_set(device.virtual_device, render_data.render_descriptors[comp->descriptor_id], loaded_textures[comp->texture_id].image_view, loaded_textures[comp->texture_id].texture_sampler);
+        //update_descriptor_set(device.virtual_device, render_data.render_descriptors[comp->descriptor_id], loaded_textures[comp->texture_id].image_view, loaded_textures[comp->texture_id].texture_sampler);
     }
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
@@ -595,12 +616,11 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     CommandBuffer::record_command_buffer(command_buffer);
 
+    update_uniform_buffer_light(light_pos, current_frame, test_descriptor, camera_descript);
 
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, render_data.render_descriptors.data());
+    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, render_descripts, current_frame);
 
-    update_uniform_buffer_light(light_pos, current_frame, &light, camera_descript);
-
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, light, current_frame);
+    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, test_descriptor, camera_descript);
 
     start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
 
@@ -609,12 +629,13 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
-    swap_draw_frame(command_buffer, render_data.render_descriptors, pipeline_layout, current_frame);
+    swap_draw_frame(command_buffer, render_descripts, texture_descriptor, pipeline_layout, current_frame);
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
 
     vkCmdEndRenderPass(command_buffer);
+    vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     vkEndCommandBuffer(command_buffer);
 
     VkSemaphore wait_semaphores[] = {render_data.image_available_semaphores[current_frame]};

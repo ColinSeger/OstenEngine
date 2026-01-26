@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <vulkan/vulkan.h>
 #include "../device/vulkan/device.cpp"
 #include "../texture/vulkan/texture.cpp"
@@ -35,6 +36,7 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
+    uint32_t description_amount = sizeof(description_attachments) / sizeof(description_attachments[0]);
 
     VkAttachmentReference color_attachment_ref{};
     color_attachment_ref.attachment = 0;
@@ -52,7 +54,7 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
 
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = sizeof(description_attachments) / sizeof(description_attachments[0]);
+    render_pass_info.attachmentCount = description_amount;
     render_pass_info.pAttachments = description_attachments;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &sub_pass;

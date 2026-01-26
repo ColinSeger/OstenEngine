@@ -1,5 +1,5 @@
 #version 450
-layout(set = 0, binding = 2) uniform sampler2D textures[];
+layout(set = 1, binding = 0) uniform sampler2D textures[];
 
 layout(location = 0) in vec3 frag_normal;
 layout(location = 1) in vec2 frag_tex_cord;
@@ -31,5 +31,5 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map)
 }
 
 void main() {
-    out_color = (vec4(frag_normal, 1) * texture(textures[0], frag_tex_cord)) * compute_shadow_factor(vec4(frag_normal, 1), textures[1]);
+    out_color = (vec4(frag_normal, 1) * texture(textures[0], frag_tex_cord));
 }
