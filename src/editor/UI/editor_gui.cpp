@@ -198,7 +198,6 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
                 }
             }
 
-
             ImGui::TreePop();
         }
     ImGui::End();
@@ -258,6 +257,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
 
     for (size_t i = 0; i < cameras.amount; i++)
     {
+        ImGui::PushID(i);
         ComponentSystem* transform_system = get_component_system(TRANSFORM);
         CameraComponent* camera = (CameraComponent*)get_component_by_id(&cameras, i);
 
@@ -265,6 +265,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
         ImGui::DragFloat3("Camera Position", &camera_transform.position.x, 0.1f);
         ImGui::DragFloat3("Camera Rotation", &camera_transform.rotation.x, 0.1f);
         ImGui::DragFloat("Fov", &camera->field_of_view, 0.1f);
+        ImGui::PopID();
     }
 
     show_loaded_assets();

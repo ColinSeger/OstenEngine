@@ -71,45 +71,6 @@ void create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device, c
         throw("Descriptor failed to create");
     }
 }
-/*
-
-void update_descriptor_set(VkDevice virtual_device, RenderDescriptors& render_this, VkImageView image_view, VkSampler sampler){
-    return;
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = image_view;
-    image_info.sampler = sampler;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo buffer_info{};
-        buffer_info.buffer = render_this.uniform_buffers[i];
-        buffer_info.offset = 0;
-        buffer_info.range = sizeof(ObjectUBO);
-
-        constexpr uint8_t descriptor_size = 2;
-        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = render_this.descriptor_sets[i];
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &buffer_info;
-        descriptor_writes[0].pImageInfo = nullptr; // Optional
-        descriptor_writes[0].pTexelBufferView = nullptr; // Optional
-
-        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = render_this.descriptor_sets[i];
-        descriptor_writes[1].dstBinding = 2;
-        descriptor_writes[1].dstArrayElement = 0;
-        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pImageInfo = &image_info;
-
-        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
-    }
-}
-*/
 
 VkResult create_forward_descriptor_set_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
@@ -186,15 +147,7 @@ VkResult create_shadow_sets(VkDevice virtual_device, Light& lighy, RenderDescrip
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
     }
-/*
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts;
 
-    //VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_this.descriptor_sets);
- */
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
@@ -322,6 +275,41 @@ void create_descriptor_set(VkDevice virtual_device, RenderingDescriptor& renderi
     }
 }
 
+void update_descriptor_set(VkDevice virtual_device, RenderingDescriptor& rendering_descriptor, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, CameraDescriptor& camera, RenderDescriptors& objects) {
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo camera_info{};
+        camera_info.offset = 0;
+        camera_info.range = sizeof(CameraUbo);
+        camera_info.buffer = camera.uniform_buffers[i];
+
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(ObjectUBO) * objects.object_amount;
+        buffer_info.buffer = objects.uniform_buffers[i];
+
+        constexpr uint32_t descriptor_size = 2;
+        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = rendering_descriptor.descriptor_sets[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &camera_info;
+
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = rendering_descriptor.descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pBufferInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
+    }
+}
 
 void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amount, Device device) {
     VkDeviceSize bufferSize = sizeof(ObjectUBO) * amount;
@@ -338,7 +326,6 @@ void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amou
 
         vkMapMemory(device.virtual_device, render_descriptors->uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptors->uniform_buffers_mapped[i]);
     }
-
 }
 
 void create_uniform_buffer(RenderDescriptors& render_descriptor, Device& device) {

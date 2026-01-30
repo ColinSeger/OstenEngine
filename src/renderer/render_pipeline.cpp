@@ -80,8 +80,41 @@ struct RenderPipeline
 
     CameraDescriptor light_test;
 
-    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena);
+    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena&, CameraComponent light_source);
 };
+
+void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
+{
+    vkDeviceWaitIdle(pipeline.device.virtual_device);
+
+    for(Model model : loaded_models){
+        vkDestroyBuffer(pipeline.device.virtual_device, model.index_buffer, nullptr);
+        vkDestroyBuffer(pipeline.device.virtual_device, model.vertex_buffer, nullptr);
+    }
+
+    for(int i = 0; i < loaded_textures.size(); i++){
+        vkDestroyImageView(pipeline.device.virtual_device, loaded_textures[i].image_view, nullptr);
+        vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
+    }
+
+    clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images, memory_arena);
+    vkDestroyPipeline(pipeline.device.virtual_device, pipeline.graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(pipeline.device.virtual_device, pipeline.pipeline_layout, nullptr);
+    vkDestroyRenderPass(pipeline.device.virtual_device, pipeline.render_pass, nullptr);
+
+    vkDestroyDescriptorPool(pipeline.device.virtual_device, pipeline.descriptor_pool, nullptr);
+    vkDestroyDescriptorSetLayout(pipeline.device.virtual_device, pipeline.descriptor_set_layout, nullptr);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.render_data.image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.render_data.render_finished_semaphores[i], nullptr);
+        vkDestroyFence(pipeline.device.virtual_device, pipeline.render_data.in_flight_fences[i], nullptr);
+    }
+
+    vkDeviceWaitIdle(pipeline.device.virtual_device);
+
+    vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
+}
 
 static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena){
     //Move this later
@@ -334,11 +367,11 @@ static void create_sync_objects(VkDevice virtual_device, RenderData* render_pipe
     }
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, const float aspect_ratio, RenderDescriptors& to_render, CameraDescriptor cam_descript) {
+static void update_view_buffer(uint32_t transform_id ,CameraDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio){
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
-    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
+    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, transform_id))->transform;
 
     vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
 
@@ -351,50 +384,21 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     };
 
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
-
-    for (size_t render_index = 0; render_index < 1; render_index++)
-    {
-        RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
-
-        Transform transform = static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform;
-
-        mat4_t model = Transformations::get_model_matrix(transform);
-
-        memcpy(to_render.uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
-    }
 }
 
-static void update_uniform_buffer_light(const vec3_t light, const uint8_t current_image, RenderDescriptors& to_render, CameraDescriptor& camera_descript) {
-    //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    return;
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, RenderDescriptors& to_render) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
-    Transform test{};
-    test.position = light;
-    test.rotation = {0,1.3f,0};
-    test.scale = {1,1,1};
-    vec3_t forward_vector =  v3_add(light, Transformations::forward_vector(test));
 
-    mat4_t view_matrix = m4_look_at(light, forward_vector, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(45.f, 1, 1.f, 2000.0f);
+    ObjectUBO* model_buffer = (ObjectUBO*)to_render.uniform_buffers_mapped[current_image];
 
-    LightUbo uniform_buffer{
-        view_matrix,
-        projection
-    };
-
-    memcpy(camera_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
-
-    for (size_t render_index = 0; render_index < 1; render_index++)
+    for (size_t render_index = 0; render_index < render->amount; render_index++)
     {
-        RenderComponent* render_component = reinterpret_cast<RenderComponent*>(get_component_by_id(render, render_index));
+        RenderComponent* render_component = (RenderComponent*)(get_component_by_id(render, render_index));
 
-        Transform transform = static_cast<TransformComponent*>(get_component_by_id(transform_system, render_component->transform_id))->transform;
+        Transform transform = ((TransformComponent*)get_component_by_id(transform_system, render_component->transform_id))->transform;
 
-        mat4_t model = Transformations::get_model_matrix(transform);
-
-
-        memcpy(to_render.uniform_buffers_mapped[current_image], &model, sizeof(ObjectUBO));
+        model_buffer[render_index].model = Transformations::get_model_matrix(transform);
     }
 }
 
@@ -457,39 +461,6 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     return result;
 }
 
-void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
-{
-    vkDeviceWaitIdle(pipeline.device.virtual_device);
-
-    for(Model model : loaded_models){
-        vkDestroyBuffer(pipeline.device.virtual_device, model.index_buffer, nullptr);
-        vkDestroyBuffer(pipeline.device.virtual_device, model.vertex_buffer, nullptr);
-    }
-
-    for(int i = 0; i < loaded_textures.size(); i++){
-        vkDestroyImageView(pipeline.device.virtual_device, loaded_textures[i].image_view, nullptr);
-        vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
-    }
-
-    clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images, memory_arena);
-    vkDestroyPipeline(pipeline.device.virtual_device, pipeline.graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(pipeline.device.virtual_device, pipeline.pipeline_layout, nullptr);
-    vkDestroyRenderPass(pipeline.device.virtual_device, pipeline.render_pass, nullptr);
-
-    vkDestroyDescriptorPool(pipeline.device.virtual_device, pipeline.descriptor_pool, nullptr);
-    vkDestroyDescriptorSetLayout(pipeline.device.virtual_device, pipeline.descriptor_set_layout, nullptr);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
-        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.render_data.image_available_semaphores[i], nullptr);
-        vkDestroySemaphore(pipeline.device.virtual_device, pipeline.render_data.render_finished_semaphores[i], nullptr);
-        vkDestroyFence(pipeline.device.virtual_device, pipeline.render_data.in_flight_fences[i], nullptr);
-    }
-
-    vkDeviceWaitIdle(pipeline.device.virtual_device);
-
-    vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
-}
-
 static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, VkPipelineLayout pipeline_layout, const uint8_t frame){
     constexpr VkDeviceSize offsets[] = {0};
 
@@ -499,23 +470,24 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
 
     ComponentSystem* render =  get_component_system(RENDER);
 
-    VkDescriptorSet des[] = {descriptors.descriptor_sets[frame], textures.descriptor_sets[frame]};
-    constexpr size_t descriptor_amount = sizeof(des) / sizeof(des[0]);
+    VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], textures.descriptor_sets[frame]};
+    constexpr size_t descriptor_amount = sizeof(passed_descriptors) / sizeof(passed_descriptors[0]);
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, des, 0, nullptr);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, passed_descriptors, 0, nullptr);
+
+    RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
+
+    Model model = loaded_models[comp.mesh_id];
+
+    if(model.index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+    }
 
     for (int i = 0; i < render->amount; i++) {
-        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
-
-        Model model = loaded_models[comp.mesh_id];
-
-        if(model.index_amount > 0){
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
-
-            vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
-        }
     }
 }
 
@@ -557,6 +529,7 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     constexpr VkDeviceSize offsets[] = {0};
 
     ComponentSystem* render =  get_component_system(RENDER);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &render_data.descriptor_sets[frame], 0, nullptr);
 
     for (int i = 0; i < render->amount; i++) {
         RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
@@ -568,8 +541,6 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
 
             vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &render_data.descriptor_sets[frame], 0, nullptr);
-
             vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
         }
     }
@@ -577,38 +548,23 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     vkCmdEndRenderPass(command_buffer);
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena)
+int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena, CameraComponent light_source)
 {
     static uint8_t current_frame = 0;//TODO Make better
-
-    constexpr vec3_t light_pos = {10.0f, 0, 2};
+    static uint32_t image_index;
 
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
-    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
-    vec3_t forward_vector =  v3_add(light_pos, Transformations::forward_vector(camera_transform));
-
-    vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     //Solving this wait should bring great benefits
-    mat4_t view_matrix = m4_look_at(light_pos, forward_vector, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(camera.field_of_view, 1, 1.f, 2000.0f);
 
-    CameraUbo uniform_buffer{
-        view_matrix,
-        projection
-    };
-
-    memcpy(light_test.uniform_buffers_mapped[current_frame], &uniform_buffer, sizeof(CameraUbo));
-
-    for (int i = 0; i < render->amount; i++) {
-        RenderComponent* comp = (RenderComponent*)get_component_by_id(render, i);
-        //update_descriptor_set(device.virtual_device, render_data.render_descriptors[comp->descriptor_id], loaded_textures[comp->texture_id].image_view, loaded_textures[comp->texture_id].texture_sampler);
-    }
+    update_view_buffer(light_source.transform_id, light_test, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height);
+    update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height);
+    update_uniform_buffer(camera, current_frame, test_descriptor);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
-    static uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device.virtual_device, swap_chain.swap_chain, UINT64_MAX, render_data.image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
     if (result != VK_SUCCESS)
@@ -616,23 +572,16 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
 
     vkResetFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame]);
 
-    vkResetCommandBuffer(command_buffers[current_frame], 0);
-
     VkCommandBuffer command_buffer = command_buffers[current_frame];
+    vkResetCommandBuffer(command_buffer, 0);
+
     CommandBuffer::record_command_buffer(command_buffer);
 
-    update_uniform_buffer_light(light_pos, current_frame, test_descriptor, light_test);
+    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, current_frame);
 
-    start_shadow_pass(command_buffers[current_frame], shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, current_frame);
+    start_render_pass(command_buffer, ((VkFramebuffer*)memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
 
-    update_uniform_buffer(camera, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, test_descriptor, camera_descript);
-
-    start_render_pass(command_buffer, static_cast<VkFramebuffer*>(memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
-
-    // start_render_pass(command_buffer, *offscreen_image.swap_chain_frame_buffers, render_pass, swap_chain.screen_extent);
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
-
-    Transform render_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, camera.transform_id))->transform;
 
     swap_draw_frame(command_buffer, render_descripts, texture_descriptor, pipeline_layout, current_frame);
 
@@ -640,7 +589,6 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);
 
     vkCmdEndRenderPass(command_buffer);
-    //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     vkEndCommandBuffer(command_buffer);
 
     VkSemaphore wait_semaphores[] = {render_data.image_available_semaphores[current_frame]};

@@ -98,7 +98,7 @@ void OstenEngine::main_game_loop()
 
 
     create_transform_system(100, &memory_arena);
-    create_camera_system(1, &memory_arena);
+    create_camera_system(2, &memory_arena);
     create_render_component_system(50, &memory_arena);
 
     Message default_texture{
@@ -162,9 +162,11 @@ void OstenEngine::main_game_loop()
 
         ComponentSystem* cameras = get_component_system(0);
         int32_t result = 0;
-        for (size_t i = 0; i < cameras->amount; i++)
+        //for (size_t i = 0; i < cameras->amount; i++)
         {
-            result = render_pipeline.draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
+            CameraComponent* camera = (CameraComponent*)get_component_by_id(cameras, 0);
+            CameraComponent* light_source = (CameraComponent*)get_component_by_id(cameras, 1);
+            result = render_pipeline.draw_frame(*camera, imgui_texture, memory_arena, *light_source);
 
             if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
                 resized = false;
@@ -176,7 +178,7 @@ void OstenEngine::main_game_loop()
                     glfwWaitEvents();
                 }
                 restart_swap_chain(render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, memory_arena);
-                result = render_pipeline.draw_frame(*static_cast<CameraComponent*>(get_component_by_id(cameras, i)), imgui_texture, memory_arena);
+                result = render_pipeline.draw_frame(*camera, imgui_texture, memory_arena, *light_source);
             }
         }
 

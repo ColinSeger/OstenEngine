@@ -11,24 +11,32 @@ enum class MessageType : uint8_t
     LoadModel,
     CreateEntity,
     LoadTexture,
-    SerializeOBJ
+    SerializeOBJ,
+    UpdateTexture
 };
 
 static void create_entity(struct RenderPipeline* render_pipeline, const char* name){
      vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     render_pipeline->render_data.render_descriptors.emplace_back();
 
-    create_uniform_buffer(render_pipeline->render_data.render_descriptors.back(), render_pipeline->device);
+    //create_uniform_buffer(render_pipeline->render_data.render_descriptors.back(), render_pipeline->device);
 
     uint32_t index = Texture::load_texture(render_pipeline->device, ".png", render_pipeline->command_pool);
     TextureImage texture = loaded_textures[index];
 
-    //create_descriptor_set(render_pipeline->device.virtual_device, render_pipeline->render_data.render_descriptors.back(), render_pipeline->camera_descript, render_pipeline->descriptor_pool, render_pipeline->descriptor_set_layout, texture.image_view, texture.texture_sampler, render_pipeline->shadow_pass.image_view, render_pipeline->shadow_pass.sampler);
-    //create_descriptor_set(render_pipeline->device.virtual_device, render_pipeline->render_data.render_descriptors.back(), render_pipeline->camera_descript, render_pipeline->descriptor_pool, render_pipeline->shadow_layout, texture.image_view, texture.texture_sampler, render_pipeline->shadow_pass.image_view, render_pipeline->shadow_pass.sampler);
-    //create_shadow_sets(render_pipeline->device.virtual_device, render_pipeline->light, render_pipeline->render_data.render_descriptors.back(), render_pipeline->descriptor_pool, render_pipeline->shadow_layout);
 
     Entity entity{};
     EntityManager::add_entity(entity, name);
+}
+
+static void update_texture(struct RenderPipeline* render_pipeline, const char* texture_name, uint32_t entity_id){
+    vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
+
+    uint32_t index = Texture::load_texture(render_pipeline->device, texture_name, render_pipeline->command_pool);
+    TextureImage texture = loaded_textures[index];
+
+    //render_pipeline.de
+    // TODO make the texture actually update
 }
 
 void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, MemArena& memory_arena)
@@ -86,6 +94,10 @@ void handle_message(struct RenderPipeline* render_pipeline, MemArena& memory_are
     break;
     case MessageType::SerializeOBJ :
         ModelLoader::serialize(action, memory_arena);
+    break;
+    case MessageType::UpdateTexture:
+        //TODO
+        //update_texture(render_pipeline, action, uint32_t entity_id)
     break;
     default:
         break;
