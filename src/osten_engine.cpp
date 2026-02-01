@@ -101,13 +101,6 @@ void OstenEngine::main_game_loop()
     create_camera_system(2, &memory_arena);
     create_render_component_system(50, &memory_arena);
 
-    Message default_texture{
-        0,
-        MessageType::LoadTexture,
-        (void*)".png"
-    };
-    add_message(default_texture);
-
     Message empty_entity{
         0,
         MessageType::CreateEntity,

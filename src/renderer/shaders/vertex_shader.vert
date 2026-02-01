@@ -9,26 +9,24 @@ layout(set = 0, binding = 1) readonly buffer ModelBuffer {
     mat4 model_matrix[];
 } model_buffer;
 
+layout(set = 0, binding = 2) uniform LightBuffer {
+    mat4 light_view_proj;
+} light_buffer;
+
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_tex_cord;
 
-layout(location = 0) out vec3 frag_color;
+layout(location = 0) out vec3 frag_normal;
 layout(location = 1) out vec2 frag_tex_cord;
-
-const vec3 DIRECTION_TO_LIGHT = normalize(vec3(1.0, -3.0, -1.0));
-const float AMBIENT = 0.08;
-
-const vec3 COLOR = vec3(1, 1, 1);
+layout(location = 2) out vec4 frag_pos_light_space;
 
 void main() {
-    gl_Position = camera_buffer.proj * camera_buffer.view * model_buffer.model_matrix[gl_InstanceIndex] * vec4(in_position, 1.0);
+    mat4 model = model_buffer.model_matrix[gl_InstanceIndex];
 
-    vec3 normal_world_space = normalize(mat3(model_buffer.model_matrix[gl_InstanceIndex]) * in_normal);
+    gl_Position = camera_buffer.proj * camera_buffer.view * model * vec4(in_position, 1.0);
 
-    float light_intensity = AMBIENT + max(dot(normal_world_space, DIRECTION_TO_LIGHT), 0);
-
-    frag_color = COLOR * light_intensity;
-
+    frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
+    frag_pos_light_space = light_buffer.light_view_proj * model * vec4(in_position, 1.0);
 }

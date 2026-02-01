@@ -416,7 +416,7 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     create_shadow_descriptor_layout(result.device.virtual_device, &result.shadow_layout);
 
     VkResult tes = create_fragment_layout(result.device.virtual_device, &result.fragment_layout);
-    result.test_descriptor.object_amount = 5;
+    result.test_descriptor.object_amount = 1024;//Magic value is max supported renderables
 
     //create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
     create_camera_uniform_buffer(result.camera_descript, result.device);
@@ -430,8 +430,8 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     TextureImage texture = loaded_textures[index];
 
     create_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, texture.image_view, texture.texture_sampler);
-    create_descriptor_set(result.device.virtual_device, result.render_descripts, result.descriptor_pool, result.descriptor_set_layout, result.camera_descript, result.test_descriptor);
-    create_descriptor_set(result.device.virtual_device, result.test_lights_desc, result.descriptor_pool, result.descriptor_set_layout, result.light_test, result.test_descriptor);
+    create_descriptor_set(result.device.virtual_device, result.render_descripts, result.descriptor_pool, result.descriptor_set_layout, result.camera_descript, result.test_descriptor, result.light_test);
+    create_shadow_sets(result.device.virtual_device, result.light_test, result.test_descriptor, result.test_lights_desc, result.descriptor_pool, result.shadow_layout);
 
     VkDescriptorSetLayout layouts[] = { result.descriptor_set_layout, result.fragment_layout};
 
@@ -531,18 +531,18 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     ComponentSystem* render =  get_component_system(RENDER);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &render_data.descriptor_sets[frame], 0, nullptr);
 
+    RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
+
+    Model model = loaded_models[comp.mesh_id];
+
+    if(model.index_amount > 0){
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+    }
     for (int i = 0; i < render->amount; i++) {
-        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, i));
-
-        Model model = loaded_models[comp.mesh_id];
-
-        if(model.index_amount > 0){
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
-
-            vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(command_buffer, model.index_amount, 1, 0, 0, 0);
-        }
     }
 
     vkCmdEndRenderPass(command_buffer);
