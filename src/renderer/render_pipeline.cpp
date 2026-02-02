@@ -254,7 +254,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;//For if you want to draw wireframe
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_TRUE;//Things that might be good for shadow mapping
     rasterizer.depthBiasConstantFactor = 1.25f; // Optional
@@ -367,16 +367,17 @@ static void create_sync_objects(VkDevice virtual_device, RenderData* render_pipe
     }
 }
 
-static void update_view_buffer(uint32_t transform_id ,CameraDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio){
+static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view){
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
     Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, transform_id))->transform;
 
-    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::forward_vector(camera_transform));
+    //Camera is placeholder name
+    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::v3_forward_vector(camera_transform));
 
     mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
-    mat4_t projection = m4_perspective_matrix(45.f, aspect_ratio, 1.f, 2000.0f);
+    mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, 50.0f);
 
     LightUbo uniform_buffer{
         view_matrix,
@@ -429,7 +430,23 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     uint32_t index = Texture::load_texture(result.device, ".png", result.command_pool);
     TextureImage texture = loaded_textures[index];
 
-    create_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, texture.image_view, texture.texture_sampler);
+    VkBuffer lisght;
+    VkDeviceMemory mem;
+    void* tts;
+
+    CommandBuffer::create_buffer(
+        result.device,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        sizeof(vec3_t),
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        lisght,
+        mem
+    );
+
+    vkMapMemory(result.device.virtual_device, mem, 0, sizeof(vec3_t), 0, &tts);
+    vec3_t assd = v3_norm({10, 0 , 2});
+    memcpy(tts, &assd, sizeof(vec3_t));
+
     create_descriptor_set(result.device.virtual_device, result.render_descripts, result.descriptor_pool, result.descriptor_set_layout, result.camera_descript, result.test_descriptor, result.light_test);
     create_shadow_sets(result.device.virtual_device, result.light_test, result.test_descriptor, result.test_lights_desc, result.descriptor_pool, result.shadow_layout);
 
@@ -437,20 +454,22 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
 
     VkPipelineLayoutCreateInfo pipeline_layout_info{};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 2;
-    pipeline_layout_info.pSetLayouts = layouts;
     pipeline_layout_info.pushConstantRangeCount = 0; // Optional
     pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
-    if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
-        throw "Failed to create pipeline";
-    }
     pipeline_layout_info.setLayoutCount = 1;
     pipeline_layout_info.pSetLayouts = &result.shadow_layout;
     if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.shadow_pipe_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
     create_offscreen_framebuffer(result.device, {1024, 1024}, &result.shadow_pass);
+    create_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler, lisght);
+
+    pipeline_layout_info.setLayoutCount = 2;
+    pipeline_layout_info.pSetLayouts = layouts;
+    if(vkCreatePipelineLayout(result.device.virtual_device, &pipeline_layout_info, nullptr, &result.pipeline_layout) != VK_SUCCESS){
+        throw "Failed to create pipeline";
+    }
 
     setup_shadow_pipe(result.device.virtual_device, result.shadow_pipe_layout, &result.shadow_pipeline, result.shadow_pass.render_pass, memory_arena);
 
@@ -485,9 +504,6 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
         vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
-    }
-
-    for (int i = 0; i < render->amount; i++) {
     }
 }
 
@@ -559,8 +575,8 @@ int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgu
     //vkDeviceWaitIdle(device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
     //Solving this wait should bring great benefits
 
-    update_view_buffer(light_source.transform_id, light_test, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height);
-    update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height);
+    update_view_buffer(light_source.transform_id, light_test, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, light_source.field_of_view);
+    update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view);
     update_uniform_buffer(camera, current_frame, test_descriptor);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);

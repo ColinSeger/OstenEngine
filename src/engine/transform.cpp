@@ -29,15 +29,19 @@ namespace Transformations
         return model;
     }
 
-
-    vec3_t forward_vector(Transform transform){
-        return {
-            cos(transform.rotation.z) * sin(transform.rotation.y),
-            -sin(transform.rotation.z),
-            cos(transform.rotation.z) * cos(transform.rotation.y)
+    vec3_t v3_forward_vector(Transform transform){
+        float pitch = transform.rotation.x;
+        float yaw = transform.rotation.y;
+        vec3_t vector = {
+            (float)cos(pitch) * (float)cos(yaw),
+            (float)sin(pitch),
+            (float)cos(pitch) * (float)sin(yaw)
         };
-    }
 
+        return v3_norm(vector);
+    }
+/*
+ *
     vec3_t right_vector(Transform transform){
         return
         {
@@ -57,4 +61,5 @@ namespace Transformations
 
         return {res.x, res.y, res.z};
     }
+ */
 }

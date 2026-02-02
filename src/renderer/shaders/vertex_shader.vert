@@ -23,10 +23,11 @@ layout(location = 2) out vec4 frag_pos_light_space;
 
 void main() {
     mat4 model = model_buffer.model_matrix[gl_InstanceIndex];
+    vec4 world_pos = model * vec4(in_position, 1.0);
 
-    gl_Position = camera_buffer.proj * camera_buffer.view * model * vec4(in_position, 1.0);
+    gl_Position = camera_buffer.proj * camera_buffer.view * world_pos;
 
     frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
-    frag_pos_light_space = light_buffer.light_view_proj * model * vec4(in_position, 1.0);
+    frag_pos_light_space = light_buffer.light_view_proj * world_pos;
 }

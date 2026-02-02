@@ -1,5 +1,11 @@
 #version 450
-layout(set = 1, binding = 0) uniform sampler2D textures[]; //Index 0 is shadowmap index 1 is texture
+layout(set = 1, binding = 0) uniform sampler2D textures;
+
+layout(set = 1, binding = 1) uniform sampler2D shadow_map;
+
+layout(set = 1, binding = 2) uniform LightParams {
+    vec3 light_dir;
+} light;
 
 layout(location = 0) in vec3 frag_normal;
 layout(location = 1) in vec2 frag_tex_cord;
@@ -7,59 +13,56 @@ layout(location = 2) in vec4 frag_pos_light_space;
 
 layout(location = 0) out vec4 out_color;
 
-const vec3 DIRECTION_TO_LIGHT = normalize(vec3(10.0, 0.0, 2.0));
 const float AMBIENT = 0.08;
 
-float calculate_shadow(vec4 frag_pos_light_space, vec3 normal)
+float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 {
-    // Perspective divide
-    vec3 proj_coords = frag_pos_light_space.xyz / frag_pos_light_space.w;
+   // Convert light space position to NDC
+   vec3 light_space_ndc = light_space_pos.xyz /= light_space_pos.w;
 
-    // Transform to [0,1] range
-    proj_coords = proj_coords * 0.5 + 0.5;
+   // If the fragment is outside the light's projection then it is outside
+   // the light's influence, which means it is in the shadow (notice that
+   // such sample would be outside the shadow map image)
+   if (abs(light_space_ndc.x) > 1.0 ||
+       abs(light_space_ndc.y) > 1.0 ||
+       abs(light_space_ndc.z) > 1.0)
+      return 0.0;
 
-    // Outside shadow map → no shadow
-    if (proj_coords.z > 1.0)
-        return 0.0;
+   // Translate from NDC to shadow map space (Vulkan's Z is already in [0..1])
+   vec2 shadow_map_coord = light_space_ndc.xy * 0.5 + 0.5;
 
-    float current_depth = proj_coords.z;
+   // Check if the sample is in the light or in the shadow
+   if (light_space_ndc.z > texture(shadow_map1, shadow_map_coord.xy).x)
+      return 0.0; // In the shadow
 
-    // Bias to prevent shadow acne
-    float bias = max(0.005 * (1.0 - dot(normal, -DIRECTION_TO_LIGHT)), 0.0005);
+   // In the light
+   return 1.0;
+}
 
-    // Manual PCF (3x3)
-    float shadow = 0.0;
-    vec2 texel_size = 1.0 / textureSize(textures[0], 0);
+float compute_shadow(vec4 ligt_space_pos)
+{
+    vec3 projected_cords = ligt_space_pos.xyz / ligt_space_pos.w;
 
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float closest_depth = texture(
-                    textures[0],
-                    proj_coords.xy + vec2(x, y) * texel_size
-                ).r;
+    projected_cords = projected_cords * 0.5 + 0.5;
 
-            shadow += current_depth - bias > closest_depth ? 1.0 : 0.0;
-        }
-    }
+    if (projected_cords.x < 0 || projected_cords.x > 1 ||
+        projected_cords.y < 0 || projected_cords.y > 1)
+        return 1.0;
 
-    shadow /= 9.0;
-    return shadow;
+
+    return 0;//texture(shadow_map, projected_cords);
 }
 
 void main()
 {
-    vec3 albedo = texture(textures[1], frag_tex_cord).rgb;
-    vec3 normal = normalize(frag_normal);
+    //vec3 albedo = texture(textures, frag_tex_cord).rgb;
+    vec3 normal = normalize(frag_normal);//Do I even need to do this?
 
-    // Lighting
-    float diff = max(dot(normal, -DIRECTION_TO_LIGHT), 0.0);
-    vec3 diffuse = diff * vec3(1);
+    float dont_know_name = max(dot(normal, light.light_dir), 0.0);
 
-    float shadow = calculate_shadow(frag_pos_light_space, frag_normal);
+    float shadow = compute_shadow_factor(frag_pos_light_space, shadow_map);
 
-    vec3 lighting = (AMBIENT + (1.0 - shadow) * diffuse) * albedo;
+    //vec3 lighting = AMBIENT + ((albedo * dont_know_name) * shadow);
 
-    out_color = vec4(lighting, 1.0);
+    out_color = vec4(vec3(shadow), 1);
 }

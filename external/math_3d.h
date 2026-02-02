@@ -446,14 +446,14 @@ mat4_t m4_perspective(float vertical_field_of_view_in_deg, float aspect_ratio, f
 
 mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//MADE BY ME FOR VULKAN
 {
-    float fov_in_rad = fov / 180 * M_PI;
-	float half_fov = tanf(fov_in_rad / 2.0f);
+    float fov_in_rad = fov * (M_PI / 180.0f);
+	float half_fov = tanf(fov_in_rad * 0.5f);
 
     return mat4(
         1.f / (aspect * half_fov),  0,  0,  0,
         0,  -1.f / half_fov,  0,  0,
-        0,  0,  -(zFar + zNear)/(zFar - zNear),  -1,
-        0,  0, -(zFar * zNear) / (zFar - zNear),  0
+        0,  0,  zFar / (zNear - zFar),  -1,
+        0,  0, (zNear * zFar) / (zNear - zFar),  0
     );
 }
 
