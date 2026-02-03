@@ -23,7 +23,7 @@ struct OstenEngine
 
     FileExplorer file_explorer;
 
-    MemArena memory_arena;
+    HeapStack memory_arena;
 
     bool resized = false;
     static void resize_callback(GLFWwindow* main_window, int width, int height) {

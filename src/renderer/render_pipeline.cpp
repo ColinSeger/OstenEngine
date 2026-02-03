@@ -80,10 +80,10 @@ struct RenderPipeline
 
     CameraDescriptor light_test;
 
-    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena&, CameraComponent light_source);
+    int32_t draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, HeapStack& heap_stack, CameraComponent light_source);
 };
 
-void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
+void render_cleanup(struct RenderPipeline& pipeline, HeapStack& memory_stack)
 {
     vkDeviceWaitIdle(pipeline.device.virtual_device);
 
@@ -97,7 +97,7 @@ void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
         vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
     }
 
-    clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images, memory_arena);
+    clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images, memory_stack);
     vkDestroyPipeline(pipeline.device.virtual_device, pipeline.graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(pipeline.device.virtual_device, pipeline.pipeline_layout, nullptr);
     vkDestroyRenderPass(pipeline.device.virtual_device, pipeline.render_pass, nullptr);
@@ -116,7 +116,7 @@ void render_cleanup(struct RenderPipeline& pipeline, MemArena& memory_arena)
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 }
 
-static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, MemArena& memory_arena){
+static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, HeapStack& memory_arena){
     //Move this later
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
     ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
@@ -219,7 +219,7 @@ static void setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_p
     vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
 }
 
-void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, MemArena& memory_arena){
+void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, HeapStack& memory_arena){
     ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", memory_arena);
 
     VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
@@ -314,7 +314,7 @@ void setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout
     vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
 }
 
-void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, MemArena& memory_arena)
+void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, HeapStack& memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
@@ -403,7 +403,7 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, MemArena& memory_arena)
+RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, HeapStack& memory_arena)
 {
     struct RenderPipeline result{};
 
@@ -563,7 +563,7 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     vkCmdEndRenderPass(command_buffer);
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, MemArena& memory_arena, CameraComponent light_source)
+int32_t RenderPipeline::draw_frame(CameraComponent camera, VkDescriptorSet& imgui_texture, HeapStack& memory_arena, CameraComponent light_source)
 {
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index;

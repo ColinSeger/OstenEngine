@@ -35,7 +35,7 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, MemArena& memory_arena)
+void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, HeapStack& memory_arena)
 {
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;

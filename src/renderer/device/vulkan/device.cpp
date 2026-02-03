@@ -104,7 +104,7 @@ constexpr VertexAttributes get_attribute_descriptions() {
     return attribute_descriptions;
 }
 
-QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, MemArena& memory_arena){
+QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack& memory_arena){
     QueueFamilyIndicies indices;
     // Logic to find queue family indices to populate struct
     uint32_t queue_family_amount = 0;
@@ -140,7 +140,7 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
     return indices;
 }
 
-SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, MemArena& memory_arena){
+SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack& memory_arena){
     SwapChainSupportDetails swap_chain_details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
 
@@ -171,7 +171,7 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     return swap_chain_details;
 }
 
-static bool check_device_extension_support(VkPhysicalDevice device, MemArena& memory_arena){
+static bool check_device_extension_support(VkPhysicalDevice device, HeapStack& memory_arena){
     uint32_t extension_count = 0;
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
@@ -198,7 +198,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, MemArena& me
     // return required_extensions.empty();
 }
 
-static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, MemArena& memory_arena){//Can improve later
+static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, HeapStack& memory_arena){//Can improve later
     QueueFamilyIndicies indices = find_queue_families(device, surface, memory_arena);
 
     bool has_extention_support = check_device_extension_support(device, memory_arena);
@@ -225,7 +225,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const u
     return false;
 }
 
-static void create_virtual_device(Device& device, VkSurfaceKHR surface, MemArena& memory_arena){
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStack& memory_arena){
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface, memory_arena);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 
@@ -283,7 +283,7 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, MemArena
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, MemArena& memory_arena)
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, HeapStack& memory_arena)
 {
     uint32_t device_amount = 0;
 
@@ -519,7 +519,7 @@ namespace CommandBuffer
         }
     }
 
-    VkCommandPool create_command_pool(Device& device, VkSurfaceKHR surface, MemArena& memory_arena)
+    VkCommandPool create_command_pool(Device& device, VkSurfaceKHR surface, HeapStack& memory_arena)
     {
         VkCommandPool command_pool;
         QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface, memory_arena);

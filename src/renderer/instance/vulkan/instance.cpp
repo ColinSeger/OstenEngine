@@ -13,7 +13,7 @@ typedef struct {
 
 namespace Instance
 {
-    static bool check_validation_layer_support(MemArena& memory_arena)
+    static bool check_validation_layer_support(HeapStack& memory_arena)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -39,7 +39,7 @@ namespace Instance
         return true;
     }
 
-    VkInstance create_instance(const char* name, WindowExtentions window_extensions, MemArena& memory_arena)
+    VkInstance create_instance(const char* name, WindowExtentions window_extensions, HeapStack& memory_arena)
     {
         if(window_extensions.window_extensions == NULL) throw;
         VkInstance instance = VK_NULL_HANDLE;

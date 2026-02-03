@@ -3,7 +3,7 @@
 #include "../platform.h"
 #include "../debugger/debugger.h"
 
-struct MemArena{
+struct HeapStack{
     unsigned long long capacity;
     unsigned long long index;
     unsigned char* data;
@@ -13,15 +13,15 @@ struct MemArena{
     }
 };
 
-inline MemArena init_mem_arena(unsigned long long capacity){
-    return MemArena{
+inline HeapStack init_mem_arena(unsigned long long capacity){
+    return HeapStack{
         capacity,
         0,
         (unsigned char*) platform_alloc_memory(capacity* sizeof(unsigned char))
     };
 }
 
-inline bool arena_expand(MemArena& arena, unsigned long long passed_in){
+inline bool arena_expand(HeapStack& arena, unsigned long long passed_in){
     Debug::log((char*)"Arena Expanded, Consider increasing base size");
     unsigned long long new_size = arena.capacity * 2;
     while (arena.index + passed_in > new_size) {
@@ -38,20 +38,20 @@ inline bool arena_expand(MemArena& arena, unsigned long long passed_in){
 }
 
 //Reserves the requested size and return it's index to you
-inline unsigned long long arena_alloc_memory(MemArena& arena, unsigned long long size){
+inline unsigned long long arena_alloc_memory(HeapStack& arena, unsigned long long size){
     while(arena.capacity < size + arena.index) arena_expand(arena, size);
     arena.index += size;
     return arena.index - size;
 }
 
 //This will free all values after index
-inline void free_arena(MemArena& arena, unsigned long long index){
+inline void free_arena(HeapStack& arena, unsigned long long index){
     if(index > arena.capacity) throw;
     if(index > arena.index) return;
     arena.index = index;
 }
 
-inline void destroy_arena(MemArena& arena){
+inline void destroy_arena(HeapStack& arena){
     arena.capacity = 0;
     arena.index = 0;
     platform_free_memory(arena.data, arena.capacity);

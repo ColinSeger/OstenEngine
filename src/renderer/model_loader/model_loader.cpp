@@ -31,7 +31,7 @@ std::vector<Model> loaded_models;
 
 namespace ModelLoader
 {
-    static void serialize(const char* filename, MemArena& memory_arena){
+    static void serialize(const char* filename, HeapStack& memory_arena){
         VertexArray vertices;
         Uint32Array indices;
 
@@ -60,7 +60,7 @@ namespace ModelLoader
     }
 
     //This Returns a size_t from the memory arena index
-    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, MemArena& memory_arena){
+    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, HeapStack& memory_arena){
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
@@ -94,7 +94,7 @@ namespace ModelLoader
         return mem_index;
     }
 
-    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, MemArena& memory_arena)
+    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack& memory_arena)
     {
         Model model{};
         auto contains = loaded_model_index.find(file_name);

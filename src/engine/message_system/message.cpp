@@ -39,7 +39,7 @@ static void update_texture(struct RenderPipeline* render_pipeline, const char* t
     // TODO make the texture actually update
 }
 
-void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, MemArena& memory_arena)
+void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack& memory_arena)
 {
     std::string filename = file_name;
     char extention[3];
@@ -75,7 +75,7 @@ void add_message(Message message){
     messages.emplace_back(message);
 }
 
-void handle_message(struct RenderPipeline* render_pipeline, MemArena& memory_arena){
+void handle_message(struct RenderPipeline* render_pipeline, HeapStack& memory_arena){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);

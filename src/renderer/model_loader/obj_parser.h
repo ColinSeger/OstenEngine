@@ -87,7 +87,7 @@ static float parse_float_test(const char* character, size_t& index_jump) {//floa
 }
 
 
-static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, MemArena& memory_arena)
+static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack& memory_arena)
 {
     Debug::profile_time_start();
     std::ifstream file_stream(path_of_obj, std::ios_base::in | std::ios_base::ate);
@@ -299,7 +299,7 @@ static inline void parse_indicie(const std::string& line, const uint16_t start_i
     }
 }
 
-static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, MemArena& memory_arena){
+static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack& memory_arena){
     Debug::profile_time_start();
     std::ifstream file_stream(path_of_obj, std::ios_base::in);
 

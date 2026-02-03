@@ -10,7 +10,7 @@ typedef struct
     size_t amount;
 } ShaderMemoryIndexing;
 
-static inline ShaderMemoryIndexing load_shader(const char* file_name, MemArena& memory_arena)
+static inline ShaderMemoryIndexing load_shader(const char* file_name, HeapStack& memory_arena)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
@@ -30,7 +30,7 @@ static inline ShaderMemoryIndexing load_shader(const char* file_name, MemArena& 
     return result;
 }
 
-static inline VkPipelineShaderStageCreateInfo create_shader(const ShaderMemoryIndexing& code,const VkShaderStageFlagBits shader_stages, VkDevice virtual_device, MemArena& memory_arena) {
+static inline VkPipelineShaderStageCreateInfo create_shader(const ShaderMemoryIndexing& code,const VkShaderStageFlagBits shader_stages, VkDevice virtual_device, HeapStack& memory_arena) {
     VkShaderModule shader_result;
     VkShaderModuleCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
