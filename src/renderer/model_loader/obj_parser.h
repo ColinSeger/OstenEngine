@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "../../../external/math_3d.h"
 #include "../device/vulkan/device.cpp"
 #include "../../debugger/debugger.h"
 
@@ -39,53 +40,6 @@ static constexpr void next_valid(char* file, size_t* current_value, size_t max_v
         *current_value = i+1;
     }
 }
-
-static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
-    uint32_t result = 0;
-    while (*start >= '0' && *start <= '9') {
-        index_jump++;
-        result = result * 10 + (*start - '0');
-        ++start;
-    }
-    return result;
-}
-
-#include <stdint.h>
-
-static float parse_float_test(const char* character, size_t& index_jump) {//float parser made by chatgpt but modified by me
-    uint32_t int_part = 0;
-    uint32_t frac_part = 0;
-    uint32_t frac_div = 1;
-    int sign = 1;
-    uint8_t jump = 0;
-
-    if (*character == '-') {
-        sign = -1;
-        character++;
-        jump++;
-    }
-
-    if (*character < '0' || *character > '9') return 0;
-
-    while (*character >= '0' && *character <= '9') {
-        int_part = int_part * 10 + (*character - '0');
-        character++;
-        jump++;
-    }
-
-    if (*character == '.') {
-        character++;
-        while (*character >= '0' && *character <= '9') {
-            frac_part = frac_part * 10 + (*character - '0');
-            frac_div *= 10;
-            character++;
-            jump++;
-        }
-    }
-    index_jump += jump;
-    return (sign * ((float)int_part + (float)frac_part / frac_div));
-}
-
 
 static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack& memory_arena)
 {
@@ -143,7 +97,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){
-            value_to_add.vertex_to_add[char_index] = parse_float_test(&file[i+1], index);
+            value_to_add.vertex_to_add[char_index] = parse_float(&file[i+1], index);
             char_index ++;
         }
     }
@@ -164,7 +118,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){
-            value_to_add.texture_cord[char_index] = parse_float_test(&file[i+1], index);
+            value_to_add.texture_cord[char_index] = parse_float(&file[i+1], index);
             char_index ++;
         }
     }
@@ -182,7 +136,7 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
             }
         }
         if(file[i] == ' '){//TODO
-            value_to_add.normal_cords[char_index] = parse_float_test(&file[i+1], index);
+            value_to_add.normal_cords[char_index] = parse_float(&file[i+1], index);
             char_index ++;
         }
     }
@@ -259,7 +213,7 @@ static inline Vertex parse_vertex(const std::string& line, const uint16_t start_
     uint8_t cord_index = 0;
     for (size_t i = start_index; i < line.length(); i++){
         if(line[i] == ' '){
-            result[cord_index] = parse_float_test(&line[i+1], i);
+            result[cord_index] = parse_float(&line[i+1], i);
 
             cord_index ++;
             if(cord_index >= 3)break;
@@ -355,8 +309,6 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
     memcpy(model_indicies.values, temp.data(), sizeof(uint32_t) * temp.size()-1);
 
     file_stream.close();
-
-
 
     Debug::profile_time_end();
     return mem_index;

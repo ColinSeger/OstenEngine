@@ -1,6 +1,7 @@
+#pragma once
 #include "platform.h"
-#include "osten_engine.cpp"
 #include <cstdint>
+#include "osten_engine.cpp"
 #include <windows.h>
 #include <memoryapi.h>
 #include <processthreadsapi.h>

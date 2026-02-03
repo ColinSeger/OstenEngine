@@ -11,37 +11,37 @@
 #include "../../engine/message_system/message.cpp"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
+#include "vulkan/vulkan_core.h"
 
 static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
 {
     VkDescriptorPool imgui_pool;
 
     VkDescriptorPoolSize pool_sizes[] = {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          100 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         100 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         100 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER,                100 },
     };
 
     VkDescriptorPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000;
-    pool_info.poolSizeCount = std::size(pool_sizes);
+    pool_info.maxSets = 100;
+    pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(pool_sizes[0]);
     pool_info.pPoolSizes = pool_sizes;
 
     vkCreateDescriptorPool(virtual_device, &pool_info, nullptr, &imgui_pool);
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, HeapStack& memory_arena)
+void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack& memory_arena)
 {
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
     VkDevice virtual_device = render_pipeline->device.virtual_device;
 
-    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -60,12 +60,11 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
-    // io.WantCaptureMouse = true;
 
     ImGui_ImplGlfw_InitForVulkan(main_window, true);
 
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = render_pipeline->my_instance;
+    init_info.Instance = instance;
     init_info.PhysicalDevice = physical_device;
     init_info.Device = virtual_device;
     init_info.QueueFamily = find_queue_families(physical_device, render_pipeline->my_surface, memory_arena).graphics_family.number;
@@ -79,7 +78,6 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     init_info.PipelineInfoMain.RenderPass = render_pipeline->render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    // init_info.CheckVkResultFn = check_vk_result;
 
     ImGui_ImplVulkan_Init(&init_info);
 }
@@ -130,6 +128,12 @@ void inspect(uint8_t type, uint16_t id)
                     if (ImGui::Button(value.first.c_str()))
                     {
                         component->texture_id = value.second;
+
+                        Message update_texture{};
+                        update_texture.size = 0;
+                        update_texture.type = MessageType::UpdateTexture;
+                        update_texture.value = (void*)value.first.c_str();
+                        add_message(update_texture);
                     }
                 }
                 ImGui::EndCombo();
@@ -237,17 +241,13 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
         ImGui_ImplGlfw_Sleep(10);
-        // continue;
     }
-    /**/
-    // Start the Dear ImGui frame
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("My Thing", &is_open);
-    ImGui::Text("My Thing! (%s) (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
-    ImGui::Spacing();
+    ImGui::Begin("Window", &is_open);
 
     ImGui::Text("(%f)", ((float)fps));
 

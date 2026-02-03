@@ -109,23 +109,6 @@ ComponentSystem* get_component_system(uint8_t system_id)
         break;
     }
 }
-// ComponentSystem* get_component_system(void* system_component)
-// {
-//     uint16_t type = reinterpret_cast<Component*>(system_component)->id;
-//     switch (type)
-//     {
-//     case 0:
-//         return &cameras;
-//         break;
-//     case 1:
-//         return &transforms;
-//         break;
-
-//     default:
-//         return nullptr;
-//         break;
-//     }
-// }
 
 void create_transform_system(uint8_t transform_amount, HeapStack* memory_arena){
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
@@ -196,7 +179,7 @@ void create_camera_system(uint8_t camera_amount, HeapStack* memory_arena){
         transform->transform.position.x = 10;
         transform->transform.position.z = 2;
 
-        transform->transform.rotation.y = 1.3f;
+        transform->transform.rotation.y = 0;
     }
 }
 

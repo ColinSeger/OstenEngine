@@ -137,7 +137,7 @@ namespace Texture
         CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
     }
 
-    void create_image(  const Device& device,
+    VkResult create_image(  const Device& device,
                         const VkExtent2D image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
@@ -166,7 +166,7 @@ namespace Texture
         VkResult result = vkCreateImage(device.virtual_device, &image_info, nullptr, &image);
 
         if(result != VK_SUCCESS)
-            throw("Failed to create image");
+            return result;
 
         VkMemoryRequirements memory_requirements;
         vkGetImageMemoryRequirements(device.virtual_device, image, &memory_requirements);
@@ -179,9 +179,9 @@ namespace Texture
         result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &image_memory);
 
         if(result != VK_SUCCESS)
-            throw("Failed allocate memory image");
+            return result;
 
-        vkBindImageMemory(device.virtual_device, image, image_memory, 0);
+        return vkBindImageMemory(device.virtual_device, image, image_memory, 0);
     }
 
     VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)

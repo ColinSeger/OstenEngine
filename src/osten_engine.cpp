@@ -15,11 +15,16 @@
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
 
+constexpr uint32_t KB = 1024;
+constexpr uint32_t MB = KB * 1024;
+constexpr uint32_t GB = MB * 1024;
+
 struct OstenEngine
 {
-    GLFWwindow* main_window = nullptr;
-    const char* application_name = "";
     struct RenderPipeline render_pipeline;
+
+    GLFWwindow* main_window = nullptr;
+    VkInstance instance;
 
     FileExplorer file_explorer;
 
@@ -39,9 +44,9 @@ struct OstenEngine
     void cleanup();
 };
 
-OstenEngine::OstenEngine(const int width, const int height, const char* name) : application_name { name }
+OstenEngine::OstenEngine(const int width, const int height, const char* application_name)
 {
-    memory_arena = init_mem_arena(1024 * 1024);
+    memory_arena = init_mem_arena(128*MB);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");
@@ -53,30 +58,33 @@ OstenEngine::OstenEngine(const int width, const int height, const char* name) : 
     glfwSetWindowUserPointer(main_window, this);
     glfwSetFramebufferSizeCallback(main_window, resize_callback);
 
+    VkExtent2D window_size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
     uint32_t glfw_extention_count = 0;
 
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
-    WindowExtentions window_extentions{
-        glfw_extensions,
-        glfw_extention_count
-    };
+    WindowExtentions window_extentions{ glfw_extensions, glfw_extention_count };
 
     //Investigate Why so slow
-    VkInstance instance = Instance::create_instance(application_name, window_extentions, memory_arena);
+    Instance::create_instance(instance, application_name, window_extentions, memory_arena);
 
     VkSurfaceKHR surface;
 
     VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
     if(result != VK_SUCCESS){
-        throw("Failed to create surface");
+        throw "Failed to create surface";
     }
 
-    this->render_pipeline = RenderPipeline(VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, instance, surface, memory_arena);
+    result = create_render_pipeline(window_size, instance, surface, this->render_pipeline, memory_arena);
 
-    init_imgui(main_window, &render_pipeline, memory_arena);
+    if(result != VK_SUCCESS){
+        throw "Failed to create render pipeline";
+    }
+
+    init_imgui(main_window, &render_pipeline, instance, memory_arena);
 
     file_explorer = init_file_explorer();
 }
@@ -184,14 +192,13 @@ void OstenEngine::main_game_loop()
 
 void OstenEngine::cleanup()
 {
-    VkInstance inst = render_pipeline.my_instance;
     VkSurfaceKHR surf = render_pipeline.my_surface;
 
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplVulkan_Shutdown();
     render_cleanup(render_pipeline, memory_arena);
-    vkDestroySurfaceKHR(inst, surf, nullptr);
-    vkDestroyInstance(inst, nullptr);
+    vkDestroySurfaceKHR(instance, surf, nullptr);
+    vkDestroyInstance(instance, nullptr);
     ImGui::DestroyContext();
 
     destroy_arena(memory_arena);

@@ -15,9 +15,16 @@ enum class MessageType : uint8_t
     UpdateTexture
 };
 
+enum class SupportedFiles : uint8_t
+{
+    bin,
+    obj,
+    png,
+    jpg
+};
+
 static void create_entity(struct RenderPipeline* render_pipeline, const char* name){
      vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-    render_pipeline->render_data.render_descriptors.emplace_back();
 
     //create_uniform_buffer(render_pipeline->render_data.render_descriptors.back(), render_pipeline->device);
 
@@ -34,9 +41,9 @@ static void update_texture(struct RenderPipeline* render_pipeline, const char* t
 
     uint32_t index = Texture::load_texture(render_pipeline->device, texture_name, render_pipeline->command_pool);
     TextureImage texture = loaded_textures[index];
+    struct RenderPipeline& result = *render_pipeline;
 
-    //render_pipeline.de
-    // TODO make the texture actually update
+    update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
 }
 
 void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack& memory_arena)
@@ -97,7 +104,8 @@ void handle_message(struct RenderPipeline* render_pipeline, HeapStack& memory_ar
     break;
     case MessageType::UpdateTexture:
         //TODO
-        //update_texture(render_pipeline, action, uint32_t entity_id)
+
+        update_texture(render_pipeline, action, message.size);
     break;
     default:
         break;

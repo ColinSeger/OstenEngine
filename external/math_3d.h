@@ -76,6 +76,7 @@ v1.0  2016-02-15  Initial release
 
 #include <math.h>
 #include <stdio.h>
+#include <stdint.h>
 
 
 // Define PI directly because we would need to define the _BSD_SOURCE or
@@ -113,6 +114,54 @@ static inline float  v3_dot   (vec3_t a, vec3_t b)          { return a.x*b.x + a
 static inline vec3_t v3_proj  (vec3_t v, vec3_t onto);
 static inline vec3_t v3_cross (vec3_t a, vec3_t b);
 static inline float  v3_angle_between(vec3_t a, vec3_t b);
+
+
+//OstenCode
+
+inline float parse_float(const char* character, size_t& index_jump) {
+    uint32_t int_part = 0;
+    uint32_t frac_part = 0;
+    uint32_t frac_div = 1;
+    int sign = 1;
+    uint8_t jump = 0;
+
+    if (*character == '-') {
+        sign = -1;
+        character++;
+        jump++;
+    }
+
+    if (*character < '0' || *character > '9') return 0;
+
+    while (*character >= '0' && *character <= '9') {
+        int_part = int_part * 10 + (*character - '0');
+        character++;
+        jump++;
+    }
+
+    if (*character == '.') {
+        character++;
+        while (*character >= '0' && *character <= '9') {
+            frac_part = frac_part * 10 + (*character - '0');
+            frac_div *= 10;
+            character++;
+            jump++;
+        }
+    }
+    index_jump += jump;
+    return (sign * ((float)int_part + (float)frac_part / frac_div));
+}
+
+static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
+    uint32_t result = 0;
+    while (*start >= '0' && *start <= '9') {
+        index_jump++;
+        result = result * 10 + (*start - '0');
+        ++start;
+    }
+    return result;
+}
+//
 
 
 //
@@ -444,19 +493,6 @@ mat4_t m4_perspective(float vertical_field_of_view_in_deg, float aspect_ratio, f
 	);
 }
 
-mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//MADE BY ME FOR VULKAN
-{
-    float fov_in_rad = fov * (M_PI / 180.0f);
-	float half_fov = tanf(fov_in_rad * 0.5f);
-
-    return mat4(
-        1.f / (aspect * half_fov),  0,  0,  0,
-        0,  -1.f / half_fov,  0,  0,
-        0,  0,  zFar / (zNear - zFar),  -1,
-        0,  0, (zNear * zFar) / (zNear - zFar),  0
-    );
-}
-
 /**
  * Builds a transformation matrix for a camera that looks from `from` towards
  * `to`. `up` defines the direction that's upwards for the camera. All three
@@ -639,6 +675,21 @@ void m4_fprintp(FILE* stream, mat4_t matrix, int width, int precision) {
 			w, p, m.m[0][r], w, p, m.m[1][r], w, p, m.m[2][r], w, p, m.m[3][r]
 		);
 	}
+}
+
+//Code By Osten
+
+mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//MADE BY ME FOR VULKAN
+{
+    float fov_in_rad = fov * (M_PI / 180.0f);
+	float half_fov = tanf(fov_in_rad * 0.5f);
+
+    return mat4(
+        1.f / (aspect * half_fov),  0,  0,  0,
+        0,  -1.f / half_fov,  0,  0,
+        0,  0,  zFar / (zNear - zFar),  -1,
+        0,  0, (zNear * zFar) / (zNear - zFar),  0
+    );
 }
 
 #endif // MATH_3D_IMPLEMENTATION

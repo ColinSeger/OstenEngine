@@ -5,6 +5,7 @@
 #include <cstring>
 #include "../../../additional_things/arena.h"
 #include "../../validation.h"
+#include "vulkan/vulkan_core.h"
 
 typedef struct {
     const char** window_extensions;
@@ -39,13 +40,13 @@ namespace Instance
         return true;
     }
 
-    VkInstance create_instance(const char* name, WindowExtentions window_extensions, HeapStack& memory_arena)
+    VkResult create_instance(VkInstance& instance, const char* name, WindowExtentions window_extensions, HeapStack& memory_arena)
     {
-        if(window_extensions.window_extensions == NULL) throw;
-        VkInstance instance = VK_NULL_HANDLE;
+        if(window_extensions.window_extensions == 0) return VK_ERROR_EXTENSION_NOT_PRESENT;
         if(validation_amount > 0){
             if(!check_validation_layer_support(memory_arena)){
-                throw("Validation layers requested but could not be found");
+                return VK_ERROR_VALIDATION_FAILED;
+                //("Validation layers requested but could not be found");
             }
         }
 
@@ -76,10 +77,6 @@ namespace Instance
             create_info.enabledLayerCount = 0;
         }
 
-        if(vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS){
-            throw("Failed to create instance");
-        }
-
-        return instance;
+        return vkCreateInstance(&create_info, nullptr, &instance);
     }
 };
