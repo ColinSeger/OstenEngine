@@ -419,7 +419,6 @@ RenderPipeline RenderPipeline(const VkExtent2D screen_size, VkInstance instance,
     VkResult tes = create_fragment_layout(result.device.virtual_device, &result.fragment_layout);
     result.test_descriptor.object_amount = 1024;//Magic value is max supported renderables
 
-    //create_uniform_buffers(result.render_data.render_descriptors.data(), result.render_data.render_descriptors.size(), result.device);
     create_camera_uniform_buffer(result.camera_descript, result.device);
     create_camera_uniform_buffer(result.light_test, result.device);
     create_light_uniform_buffer(&result.light, result.device);

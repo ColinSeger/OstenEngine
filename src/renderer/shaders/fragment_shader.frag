@@ -18,14 +18,11 @@ const float AMBIENT = 0.08;
 float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 {
    // Convert light space position to NDC
-   vec3 light_space_ndc = light_space_pos.xyz /= light_space_pos.w;
+   vec3 light_space_ndc = frag_pos_light_space.xyz / frag_pos_light_space.w;
 
-   // If the fragment is outside the light's projection then it is outside
-   // the light's influence, which means it is in the shadow (notice that
-   // such sample would be outside the shadow map image)
-   if (abs(light_space_ndc.x) > 1.0 ||
-       abs(light_space_ndc.y) > 1.0 ||
-       abs(light_space_ndc.z) > 1.0)
+   if (light_space_ndc.x > 1.0 ||
+       light_space_ndc.y > 1.0 ||
+       light_space_ndc.z > 1.0)
       return 0.0;
 
    // Translate from NDC to shadow map space (Vulkan's Z is already in [0..1])
@@ -39,30 +36,17 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
    return 1.0;
 }
 
-float compute_shadow(vec4 ligt_space_pos)
-{
-    vec3 projected_cords = ligt_space_pos.xyz / ligt_space_pos.w;
-
-    projected_cords = projected_cords * 0.5 + 0.5;
-
-    if (projected_cords.x < 0 || projected_cords.x > 1 ||
-        projected_cords.y < 0 || projected_cords.y > 1)
-        return 1.0;
-
-
-    return 0;//texture(shadow_map, projected_cords);
-}
-
 void main()
 {
-    //vec3 albedo = texture(textures, frag_tex_cord).rgb;
+    vec3 albedo = texture(textures, frag_tex_cord).rgb;
     vec3 normal = normalize(frag_normal);//Do I even need to do this?
 
     float dont_know_name = max(dot(normal, light.light_dir), 0.0);
 
     float shadow = compute_shadow_factor(frag_pos_light_space, shadow_map);
 
-    //vec3 lighting = AMBIENT + ((albedo * dont_know_name) * shadow);
+    vec3 lighting = AMBIENT + ((albedo * dont_know_name) * shadow);
 
-    out_color = vec4(vec3(shadow), 1);
+    out_color = vec4(lighting, 1);
+
 }

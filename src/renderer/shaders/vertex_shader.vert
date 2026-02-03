@@ -10,7 +10,8 @@ layout(set = 0, binding = 1) readonly buffer ModelBuffer {
 } model_buffer;
 
 layout(set = 0, binding = 2) uniform LightBuffer {
-    mat4 light_view_proj;
+    mat4 light_view;
+    mat4 proj;
 } light_buffer;
 
 layout(location = 0) in vec3 in_position;
@@ -29,5 +30,7 @@ void main() {
 
     frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
-    frag_pos_light_space = light_buffer.light_view_proj * world_pos;
+
+
+    frag_pos_light_space = light_buffer.proj * light_buffer.light_view * world_pos;
 }
