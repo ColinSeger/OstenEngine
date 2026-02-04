@@ -20,7 +20,7 @@ struct RenderData{
     VkSemaphore image_available_semaphores[MAX_FRAMES_IN_FLIGHT];
     VkSemaphore render_finished_semaphores[MAX_FRAMES_IN_FLIGHT];
     VkFence in_flight_fences[MAX_FRAMES_IN_FLIGHT];
-    uint32_t descriptor_usage = 0;
+    //uint32_t descriptor_usage = 0;
 };
 
 struct RenderPipeline
@@ -393,13 +393,13 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack& memory_arena)
+VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack& heap_stack)
 {
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
-    create_device(render_pipeline.device, instance, surface, memory_arena);
+    create_device(render_pipeline.device, instance, surface, heap_stack);
 
-    restart_swap_chain(render_pipeline, screen_size, memory_arena);
+    restart_swap_chain(render_pipeline, screen_size, heap_stack);
 
     create_forward_descriptor_set_layout(render_pipeline.device.virtual_device, &render_pipeline.descriptor_set_layout);
     create_shadow_set_layout(render_pipeline.device.virtual_device, &render_pipeline.shadow_layout);
@@ -410,7 +410,7 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
 
     render_pipeline.model_render_data.object_capacity = 1024 * 10;
 
-    result = init_model_data(render_pipeline.model_render_data, render_pipeline.device, memory_arena);
+    result = init_model_data(render_pipeline.model_render_data, render_pipeline.device, heap_stack);
 
     //render_pipeline.test_descriptor.object_amount = 1024 * 10;//Magic value is max supported renderables
 
@@ -454,11 +454,13 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
     memcpy(tts, &assd, sizeof(vec3_t));
     //End Move out
 
-    //result = create_descriptor_set(render_pipeline.device.virtual_device, render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, render_pipeline.camera_descript, render_pipeline.test_descriptor, render_pipeline.light_test);
+    create_model_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.model_set_layout, render_pipeline.model_render_data, heap_stack);
+
+    result = create_descriptor_set(render_pipeline.device.virtual_device, render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, render_pipeline.camera_descript, render_pipeline.light_test);
     if(result != VK_SUCCESS)
         return result;
 
-    //result = create_shadow_sets(render_pipeline.device.virtual_device, render_pipeline.light_test, render_pipeline.test_descriptor, render_pipeline.test_lights_desc, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
+    result = create_shadow_sets(render_pipeline.device.virtual_device, render_pipeline.light_test, render_pipeline.test_lights_desc, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
 
     if(result != VK_SUCCESS)
         return result;
@@ -486,43 +488,45 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
         throw "Failed to create pipeline";
     }
 
-    setup_shadow_pipe(render_pipeline.device.virtual_device, render_pipeline.shadow_pipe_layout, &render_pipeline.shadow_pipeline, render_pipeline.shadow_pass.render_pass, memory_arena);
+    setup_shadow_pipe(render_pipeline.device.virtual_device, render_pipeline.shadow_pipe_layout, &render_pipeline.shadow_pipeline, render_pipeline.shadow_pass.render_pass, heap_stack);
 
-    setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline, memory_arena);
+    setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline, heap_stack);
 
     create_sync_objects(render_pipeline.device.virtual_device, render_pipeline.render_data);
     return VK_SUCCESS;
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, VkPipelineLayout pipeline_layout, const uint8_t frame){
-
-    if(loaded_models.size() <= 0) return;
-
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, const uint8_t frame, HeapStack& heap_stack){
+    if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
     ComponentSystem* render =  get_component_system(RENDER);
 
-    VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], textures.descriptor_sets[frame]};
-    constexpr size_t descriptor_amount = sizeof(passed_descriptors) / sizeof(passed_descriptors[0]);
+    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
 
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, passed_descriptors, 0, nullptr);
+    for(uint16_t render_index = 0; render_index <= model_data.renderable_amount; render_index++){
 
-    RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
+        VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], render_data->descriptor_sets[frame], textures.descriptor_sets[frame]};
+        constexpr size_t descriptor_amount = sizeof(passed_descriptors) / sizeof(passed_descriptors[0]);
 
-    Model model = loaded_models[comp.mesh_id];
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, passed_descriptors, 0, nullptr);
 
-    if(model.index_amount <= 0) return;
+        RenderComponent comp = *(RenderComponent*)(get_component_by_id(render, 0));
 
-    constexpr VkDeviceSize offsets[] = {0};
+        Model model = loaded_models[comp.mesh_id];
 
-    vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+        if(model.index_amount <= 0) return;
 
-    vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        constexpr VkDeviceSize offsets[] = {0};
 
-    vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
+        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+    }
 }
 
-void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor render_data, const uint8_t frame){
+void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor& light, ModelData model_data, const uint8_t frame, HeapStack heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
@@ -553,26 +557,34 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipe);
-    if(loaded_models.size() <= 0){
+    if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0){
         vkCmdEndRenderPass(command_buffer);
         return;
     }
     constexpr VkDeviceSize offsets[] = {0};
 
     ComponentSystem* render =  get_component_system(RENDER);
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &render_data.descriptor_sets[frame], 0, nullptr);
+    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    for(uint16_t render_index = 0; render_index <= model_data.renderable_amount; render_index++)
+    {
+        VkDescriptorSet descriptors[] = { light.descriptor_sets[frame], render_data[render_index].descriptor_sets[frame]};
+        uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
-    RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_amount, descriptors, 0, nullptr);
 
-    Model model = loaded_models[comp.mesh_id];
+        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
 
-    if(model.index_amount > 0){
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+        Model model = loaded_models[comp.mesh_id];
 
-        vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        if(model.index_amount > 0){
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
-        vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+            vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdDrawIndexed(command_buffer, model.index_amount, render_data[render_index].instance_amount, 0, 0, 0);
+        }
     }
+
 
     vkCmdEndRenderPass(command_buffer);
 }
@@ -602,13 +614,13 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
         throw result;
     }
 
-    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, current_frame);
+    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, model_render_data, current_frame, memory_arena);
 
     start_render_pass(command_buffer, ((VkFramebuffer*)memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    swap_draw_frame(command_buffer, render_descripts, texture_descriptor, pipeline_layout, current_frame);
+    swap_draw_frame(command_buffer, render_descripts, texture_descriptor, model_render_data, pipeline_layout, current_frame, memory_arena);
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);

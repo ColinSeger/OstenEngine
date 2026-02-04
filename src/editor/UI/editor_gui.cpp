@@ -235,6 +235,34 @@ static inline void show_loaded_assets(){
         ImGui::Spacing();
         ImGui::PopID();
     }
+
+    ImGui::Text("Existing Renderables");
+    static uint32_t selected_model;
+    static uint32_t selected_texture;
+    if(ImGui::Button("Create Renderable")){
+
+    }
+    if(ImGui::BeginCombo("Models", "")){
+        for (auto const& value : loaded_model_index)
+        {
+            if (ImGui::Button(value.first.c_str()))
+            {
+                selected_model = value.second;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if(ImGui::BeginCombo("Textures", "")){
+        for (auto const& value : loaded_textures_index)
+        {
+            if (ImGui::Button(value.first.c_str()))
+            {
+                selected_texture = value.second;
+            }
+        }
+        ImGui::EndCombo();
+    }
+
 }
 
 void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting)
@@ -322,10 +350,10 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
-                    static_cast<uint32_t>(add_render_component(render_pipeline->render_data.descriptor_usage)),
+                    static_cast<uint32_t>(add_render_component(render_pipeline->model_render_data.renderable_amount)),
                     static_cast<uint16_t>(RENDER)
                 };
-                render_pipeline->render_data.descriptor_usage++;
+                render_pipeline->model_render_data.renderable_amount++;
                 entities[inspecting].components.emplace_back(render);
                 //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
