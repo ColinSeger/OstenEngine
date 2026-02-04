@@ -6,8 +6,6 @@
 #include <unordered_map>
 // #include "entity_system.cpp"
 
-static void stub(){}
-
 struct TempID
 {
     uint32_t index = 0;
@@ -17,7 +15,6 @@ struct TempID
 struct Entity{
     uint32_t id;
     std::vector<TempID> components;
-    // void (*test)() = stub;
 };
 
 namespace EntityManager

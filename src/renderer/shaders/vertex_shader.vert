@@ -5,11 +5,11 @@ layout(set = 0, binding = 0) uniform CameraBuffer {
     mat4 proj;
 } camera_buffer;
 
-layout(set = 0, binding = 1) readonly buffer ModelBuffer {
+layout(set = 1, binding = 0) readonly buffer ModelBuffer {
     mat4 model_matrix[];
 } model_buffer;
 
-layout(set = 0, binding = 2) uniform LightBuffer {
+layout(set = 0, binding = 1) uniform LightBuffer {
     mat4 light_view;
     mat4 proj;
 } light_buffer;
@@ -30,7 +30,6 @@ void main() {
 
     frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
-
 
     frag_pos_light_space = light_buffer.proj * light_buffer.light_view * world_pos;
 }

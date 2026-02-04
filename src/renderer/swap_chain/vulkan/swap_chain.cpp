@@ -321,6 +321,8 @@ OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRende
 
     VkResult creation_status = vkCreateImageView(device.virtual_device, &create_info, nullptr, &offscreen_image.swap_chain_image_view);
 
+    if(creation_status != VK_SUCCESS) throw;
+
     VkImageView attachments[2] = {
         offscreen_image.swap_chain_image_view,
         depth_image
@@ -336,6 +338,8 @@ OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRende
     framebuffer_info.layers = 1;
 
     creation_status = vkCreateFramebuffer(device.virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(memory_arena[offscreen_image.mem_index_frame_buffer]));
+
+    if(creation_status != VK_SUCCESS) throw;
 
     return offscreen_image;
 }

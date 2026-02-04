@@ -23,15 +23,7 @@ enum class SupportedFiles : uint8_t
     jpg
 };
 
-static void create_entity(struct RenderPipeline* render_pipeline, const char* name){
-     vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-
-    //create_uniform_buffer(render_pipeline->render_data.render_descriptors.back(), render_pipeline->device);
-
-    uint32_t index = Texture::load_texture(render_pipeline->device, ".png", render_pipeline->command_pool);
-    TextureImage texture = loaded_textures[index];
-
-
+static void create_entity(const char* name){
     Entity entity{};
     EntityManager::add_entity(entity, name);
 }
@@ -94,7 +86,7 @@ void handle_message(struct RenderPipeline* render_pipeline, HeapStack& memory_ar
     break;
 
     case MessageType::CreateEntity :
-        create_entity(render_pipeline, action);
+        create_entity(action);
     break;
     case MessageType::LoadTexture :
         load_asset(action, *render_pipeline, memory_arena);

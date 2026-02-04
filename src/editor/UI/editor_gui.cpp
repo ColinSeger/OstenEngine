@@ -1,5 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -295,7 +296,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
         {
             if(entity.second == entities[inspecting].id){
                 char buffer[64] = {};
-                for (int i = 0; i < entity.first.length(); i++) {
+                for (size_t i = 0; i < entity.first.length(); i++) {
                     buffer[i] = entity.first[i];
                 }
                 ImGui::InputText("Name" , buffer , 64, 0);

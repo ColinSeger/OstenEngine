@@ -191,12 +191,10 @@ static inline void parse_obj(const char* path_of_obj, VertexArray& model_vertice
         uint32_t vertex_index = indicies[i].vertex_index-1;
         uint32_t texture_index = indicies[i].texture_index-1;
         uint32_t normal_index = indicies[i].normal_index-1;
-        if(vertex_index >= 0 && texture_index >= 0){
-            vertex[vertex_index].texture_cord = texture_cords[texture_index];
-            vertex[vertex_index].normals = vertex_normals[normal_index];
-            model_indicies.values[model_indicies.amount] = vertex_index;
-            model_indicies.amount++;
-        }
+        vertex[vertex_index].texture_cord = texture_cords[texture_index];
+        vertex[vertex_index].normals = vertex_normals[normal_index];
+        model_indicies.values[model_indicies.amount] = vertex_index;
+        model_indicies.amount++;
     }
 
     model_vertices.values = (Vertex*)malloc(sizeof(Vertex) * vertex.size());

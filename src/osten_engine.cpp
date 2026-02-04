@@ -15,9 +15,9 @@
 #define MATH_3D_IMPLEMENTATION
 #include "../external/math_3d.h"
 
-constexpr uint32_t KB = 1024;
-constexpr uint32_t MB = KB * 1024;
-constexpr uint32_t GB = MB * 1024;
+constexpr size_t KB = 1024;
+constexpr size_t MB = KB * 1024;
+constexpr size_t GB = MB * 1024;
 
 struct OstenEngine
 {
@@ -132,7 +132,7 @@ void OstenEngine::main_game_loop()
         glfwPollEvents();
 
         auto current_time = std::chrono::high_resolution_clock::now();
-        double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
+        //double delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
         double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
 
         handle_message(&render_pipeline, memory_arena);

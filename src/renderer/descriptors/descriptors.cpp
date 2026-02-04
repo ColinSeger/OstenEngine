@@ -29,6 +29,24 @@ typedef struct{
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
 } CameraDescriptor;
 
+struct RenderAble{
+    VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
+    uint32_t capacity;
+    uint32_t instance_amount;
+    uint16_t model_index;
+    uint16_t texture_index;
+};
+
+struct ModelData{
+    VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
+    void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
+    size_t renderable_memory_index;
+    uint32_t object_capacity;
+    uint16_t renderable_amount;
+    uint16_t renderable_capacity;
+};
+
 typedef struct{
     VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 } RenderingDescriptor;
@@ -75,24 +93,40 @@ VkResult create_forward_descriptor_set_layout(VkDevice virtual_device, VkDescrip
     ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.descriptorCount = 1;
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo_layout_binding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding model_layout_binding{};
-    model_layout_binding.binding = 1;
-    model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    model_layout_binding.descriptorCount = 1;
-    model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    model_layout_binding.pImmutableSamplers = nullptr; // Optional
+    // VkDescriptorSetLayoutBinding model_layout_binding{};
+    // model_layout_binding.binding = 1;
+    // model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    // model_layout_binding.descriptorCount = 1;
+    // model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkDescriptorSetLayoutBinding ubo_light_layout_binding{};
-    ubo_light_layout_binding.binding = 2;
+    ubo_light_layout_binding.binding = 1;
     ubo_light_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_light_layout_binding.descriptorCount = 1;
     ubo_light_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo_light_layout_binding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, model_layout_binding, ubo_light_layout_binding };
+    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, ubo_light_layout_binding };
     constexpr size_t bindings_amount = sizeof(bindings) / sizeof(bindings[0]);
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = bindings_amount;
+    layoutInfo.pBindings = bindings;
+
+    return vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, descriptor_set_layout);
+}
+
+VkResult create_model_set_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
+
+    VkDescriptorSetLayoutBinding model_layout_binding{};
+    model_layout_binding.binding = 0;
+    model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    model_layout_binding.descriptorCount = 1;
+    model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding bindings[] = { model_layout_binding };
+    constexpr uint32_t bindings_amount = sizeof(bindings) / sizeof(bindings[0]);
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -134,20 +168,20 @@ VkResult create_fragment_layout(VkDevice virtual_device, VkDescriptorSetLayout* 
     return vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, descriptor_set_layout);
 }
 
-VkResult create_shadow_descriptor_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
+VkResult create_shadow_set_layout(VkDevice virtual_device, VkDescriptorSetLayout* descriptor_set_layout){
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
     ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.descriptorCount = 1;
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    VkDescriptorSetLayoutBinding model_layout_binding{};
-    model_layout_binding.binding = 1;
-    model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    model_layout_binding.descriptorCount = 1;
-    model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    // VkDescriptorSetLayoutBinding model_layout_binding{};
+    // model_layout_binding.binding = 1;
+    // model_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    // model_layout_binding.descriptorCount = 1;
+    // model_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding , model_layout_binding };
+    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding };
     constexpr size_t bindings_amount = sizeof(bindings) / sizeof(bindings[0]);
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -176,7 +210,7 @@ VkResult create_shadow_sets(VkDevice virtual_device, CameraDescriptor light, Ren
         return allocation_status;
 
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(CameraUbo);
@@ -226,6 +260,8 @@ void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_po
 
     VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, descriptor.descriptor_sets);
 
+    if(allocation_status != VK_SUCCESS) return;
+
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -236,10 +272,10 @@ void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_po
     texture_info.imageView = texture.image_view;
     texture_info.sampler = texture.texture_sampler;
 
-    VkDescriptorImageInfo image_descriptors_info[] = {image_info, texture_info};
-    constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
+    //VkDescriptorImageInfo image_descriptors_info[] = {image_info, texture_info};
+    //constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(vec3_t);
@@ -287,10 +323,10 @@ void update_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_po
     texture_info.imageView = texture.image_view;
     texture_info.sampler = texture.texture_sampler;
 
-    VkDescriptorImageInfo image_descriptors_info[] = {image_info, texture_info};
-    constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
+    //VkDescriptorImageInfo image_descriptors_info[] = {image_info, texture_info};
+    //constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(vec3_t);
@@ -345,7 +381,7 @@ VkResult create_descriptor_set(VkDevice virtual_device, RenderingDescriptor& ren
         return allocation_status;
 
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(CameraUbo);
@@ -393,9 +429,28 @@ VkResult create_descriptor_set(VkDevice virtual_device, RenderingDescriptor& ren
     return VK_SUCCESS;
 }
 
+VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, HeapStack& heap_stack){
+    VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
+    for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+        layouts[i] = descriptor_set_layout;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptor_pool;
+    allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
+    allocInfo.pSetLayouts = layouts;
+
+    RenderAble* render_able = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_able->descriptor_sets);
+    if(allocation_status) return allocation_status;
+
+    return VK_SUCCESS;
+}
+
 void update_descriptor_set(VkDevice virtual_device, RenderingDescriptor& rendering_descriptor, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, CameraDescriptor& camera, RenderDescriptors& objects) {
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(CameraUbo);
@@ -429,27 +484,27 @@ void update_descriptor_set(VkDevice virtual_device, RenderingDescriptor& renderi
     }
 }
 
-void create_uniform_buffers(RenderDescriptors* render_descriptors, uint32_t amount, Device device) {
+void create_uniform_buffers(RenderDescriptors& render_descriptors, uint32_t amount, Device device) {
     VkDeviceSize bufferSize = sizeof(ObjectUBO) * amount;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             bufferSize,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            render_descriptors->uniform_buffers[i],
-            render_descriptors->uniform_buffers_memory[i]
+            render_descriptors.uniform_buffers[i],
+            render_descriptors.uniform_buffers_memory[i]
         );
 
-        vkMapMemory(device.virtual_device, render_descriptors->uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptors->uniform_buffers_mapped[i]);
+        vkMapMemory(device.virtual_device, render_descriptors.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptors.uniform_buffers_mapped[i]);
     }
 }
 
-void create_uniform_buffer(RenderDescriptors& render_descriptor, Device& device) {
+VkResult create_uniform_buffer(RenderDescriptors& render_descriptor, Device& device) {
     constexpr VkDeviceSize bufferSize = sizeof(ObjectUBO);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -460,13 +515,16 @@ void create_uniform_buffer(RenderDescriptors& render_descriptor, Device& device)
         );
 
         VkResult result = vkMapMemory(device.virtual_device, render_descriptor.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptor.uniform_buffers_mapped[i]);
+
+        if(result != VK_SUCCESS) return result;
     }
+    return VK_SUCCESS;
 }
 
 void create_light_uniform_buffer(Light* light_descriptor, Device& device) {
     VkDeviceSize bufferSize = sizeof(LightUbo);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -483,7 +541,7 @@ void create_light_uniform_buffer(Light* light_descriptor, Device& device) {
 void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, Device& device) {
     VkDeviceSize bufferSize = sizeof(CameraUbo);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -495,6 +553,30 @@ void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, Device& d
 
         vkMapMemory(device.virtual_device, render_descriptor.uniform_buffers_memory[i], 0, bufferSize, 0, &render_descriptor.uniform_buffers_mapped[i]);
     }
+}
+
+VkResult init_model_data(ModelData& model_data, Device& device, HeapStack& heap_stack){
+    VkDeviceSize bufferSize = sizeof(ObjectUBO) * model_data.object_capacity;
+    model_data.renderable_amount = 0;
+
+    model_data.renderable_memory_index = arena_alloc_memory(heap_stack, model_data.renderable_capacity);
+
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkResult result = CommandBuffer::create_buffer(
+            device,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            bufferSize,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            model_data.uniform_buffers[i],
+            model_data.uniform_buffers_memory[i]
+        );
+
+        if(result != VK_SUCCESS) return result;
+
+        vkMapMemory(device.virtual_device, model_data.uniform_buffers_memory[i], 0, bufferSize, 0, &model_data.uniform_buffers_mapped[i]);
+    }
+
+    return VK_SUCCESS;
 }
 
 #endif

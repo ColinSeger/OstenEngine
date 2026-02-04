@@ -113,7 +113,7 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families);
 
     uint32_t index = 0;
-    for (int i = 0; i < queue_family_amount; i++) {
+    for (uint32_t i = 0; i < queue_family_amount; i++) {
         if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics_family.number = index;
             indices.graphics_family.has_value = true;
@@ -181,7 +181,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, HeapStack& m
     uint32_t extension_amount = sizeof(device_extensions) / sizeof(device_extensions[0]);
     uint32_t found_amount = 0;
 
-    for (int i = 0; i < extension_count; i++) {
+    for (uint32_t i = 0; i < extension_count; i++) {
         //Improve Later
         if(!strcmp(device_extensions[0], available_extensions[i].extensionName)){
             found_amount++;
@@ -214,7 +214,7 @@ static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, He
 }
 
 static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const uint32_t compare, const uint32_t amount){
-    for (int i = 0; i < amount; i++) {
+    for (uint32_t i = 0; i < amount; i++) {
         if(queue_create_infos[i].queueFamilyIndex == compare){
             return true;
         }
@@ -227,16 +227,17 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStac
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 
     VkDeviceQueueCreateInfo queue_create_infos[sizeof(family_array) / sizeof(family_array[0])];
+    constexpr uint32_t create_info_amount = sizeof(queue_create_infos) / sizeof(queue_create_infos[0]);
     uint8_t queue_create_info_amount = 0;
 
     float queuePriority = 1.0f;
 
-    for (int i = 0; i < sizeof(queue_create_infos) / sizeof(queue_create_infos[0]); i++) {
+    for (uint32_t i = 0; i < create_info_amount; i++) {
         queue_create_infos[i].queueFamilyIndex = UINT32_MAX;
     }
 
     for (uint32_t queue_family : family_array) {
-        if(contains(queue_create_infos, queue_family, sizeof(queue_create_infos) / sizeof(queue_create_infos[0]))) continue;
+        if(contains(queue_create_infos, queue_family, create_info_amount)) continue;
 
         VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -292,7 +293,7 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
     VkPhysicalDevice* devices = (VkPhysicalDevice*)memory_arena[mem_index];
     vkEnumeratePhysicalDevices(instance, &device_amount, devices);
 
-    for (int i = 0; i < device_amount; i++) {
+    for (uint32_t i = 0; i < device_amount; i++) {
         if (is_device_suitable(devices[i], surface_reference, memory_arena)) {
             device.physical_device = devices[i];
             break;

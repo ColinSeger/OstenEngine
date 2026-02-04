@@ -5,7 +5,7 @@ layout(set = 0, binding = 0) uniform LightBuffer {
     mat4 proj;
 } light_buffer;
 
-layout(set = 0, binding = 1) readonly buffer ModelBuffer {
+layout(set = 1, binding = 0) readonly buffer ModelBuffer {
     mat4 model_matrix[];
 } model_buffer;
 

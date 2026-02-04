@@ -20,7 +20,7 @@ struct TransformComponent
 {
     const uint16_t id = 1;
     Transform transform {};
-    TransformComponent operator=(TransformComponent transform){
+    TransformComponent& operator=(TransformComponent& transform){
         this->transform = transform.transform;
         return *this;
     }
@@ -41,7 +41,7 @@ struct CameraComponent
     uint16_t transform_id = 0;
     float field_of_view = 45.f;
 
-    CameraComponent operator=(CameraComponent camera){
+    CameraComponent& operator=(CameraComponent camera){
         this->transform_id = camera.transform_id;
         this->field_of_view = camera.field_of_view;
         return *this;

@@ -124,7 +124,7 @@ struct ShadowPass{
 };
 
 //Temporaraly placed here
-static inline void create_offscreen_framebuffer(const Device device, const VkExtent2D size, ShadowPass* shadow_pass){
+static inline VkResult create_offscreen_framebuffer(const Device device, const VkExtent2D size, ShadowPass* shadow_pass){
 
     Texture::create_image(
         device,
@@ -149,6 +149,7 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
     image_view_create_info.subresourceRange.layerCount = 1;
 
     VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
+    if(creation_status != VK_SUCCESS) return creation_status;
 
     VkSamplerCreateInfo sampler_create_info{};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -181,7 +182,9 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
 
 
     creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
+    if(creation_status != VK_SUCCESS) return creation_status;
     creation_status = vkCreateSampler(device.virtual_device, &debug_sampler, nullptr, &shadow_pass->debug_sampler);
+    if(creation_status != VK_SUCCESS) return creation_status;
 
     create_offscreen_render_pass(&shadow_pass->render_pass, device);
 
@@ -196,4 +199,5 @@ static inline void create_offscreen_framebuffer(const Device device, const VkExt
     frame_buffer_create_info.flags = 0;
 
     vkCreateFramebuffer(device.virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
+    return VK_SUCCESS;
 }
