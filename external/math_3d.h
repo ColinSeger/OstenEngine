@@ -118,6 +118,11 @@ static inline float  v3_angle_between(vec3_t a, vec3_t b);
 
 //OstenCode
 
+struct vec2_uint_t{
+    uint32_t x;
+    uint32_t y;
+};
+
 inline float parse_float(const char* character, size_t& index_jump) {
     uint32_t int_part = 0;
     uint32_t frac_part = 0;

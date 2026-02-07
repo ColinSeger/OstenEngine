@@ -12,7 +12,8 @@ enum class MessageType : uint8_t
     CreateEntity,
     LoadTexture,
     SerializeOBJ,
-    UpdateTexture
+    UpdateTexture,
+    CreateRenderable
 };
 
 enum class SupportedFiles : uint8_t
@@ -35,10 +36,22 @@ static void update_texture(struct RenderPipeline* render_pipeline, const char* t
     TextureImage texture = loaded_textures[index];
     struct RenderPipeline& result = *render_pipeline;
 
-    update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
+    //update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
 }
 
-void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack& memory_arena)
+static void create_renderable(struct RenderPipeline* render_pipeline, vec2_uint_t* asset_index, HeapStack& heap_stack){
+    RenderAble* renderable = (RenderAble*)heap_stack[render_pipeline->model_render_data.renderable_memory_index];
+    renderable->model_index = asset_index->x;
+    renderable->texture_index = asset_index->y;
+    renderable->capacity = 50;
+    renderable->instance_amount = 1;
+
+    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, heap_stack);
+
+    render_pipeline->model_render_data.renderable_amount++;
+}
+
+static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack& memory_arena)
 {
     std::string filename = file_name;
     char extention[3];
@@ -51,7 +64,9 @@ void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, H
     }else if(extention[0] == 'b' || extention[0] == 'B'){
         ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
     }else if(extention[0] == 'p' || extention[0] == 'P'){
-        Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
+        uint32_t ts = Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
+        auto t = loaded_textures[ts];
+        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, t, ts);
     }
 }
 
@@ -74,7 +89,7 @@ void add_message(Message message){
     messages.emplace_back(message);
 }
 
-void handle_message(struct RenderPipeline* render_pipeline, HeapStack& memory_arena){
+void handle_message(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
@@ -82,22 +97,23 @@ void handle_message(struct RenderPipeline* render_pipeline, HeapStack& memory_ar
     switch (message.type)
     {
     case MessageType::LoadModel :
-        load_asset(action, *render_pipeline, memory_arena);
+        load_asset(action, *render_pipeline, heap_stack);
     break;
 
     case MessageType::CreateEntity :
         create_entity(action);
     break;
     case MessageType::LoadTexture :
-        load_asset(action, *render_pipeline, memory_arena);
+        load_asset(action, *render_pipeline, heap_stack);
     break;
     case MessageType::SerializeOBJ :
-        ModelLoader::serialize(action, memory_arena);
+        ModelLoader::serialize(action, heap_stack);
     break;
     case MessageType::UpdateTexture:
-        //TODO
-
         update_texture(render_pipeline, action, message.size);
+    break;
+    case MessageType::CreateRenderable:
+        create_renderable(render_pipeline, (vec2_uint_t*)message.value, heap_stack);
     break;
     default:
         break;

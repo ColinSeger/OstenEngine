@@ -1,5 +1,5 @@
 #version 450
-layout(set = 2, binding = 0) uniform sampler2D textures;
+layout(set = 2, binding = 0) uniform sampler2D textures[20];
 
 layout(set = 2, binding = 1) uniform sampler2D shadow_map;
 
@@ -12,6 +12,11 @@ layout(location = 1) in vec2 frag_tex_cord;
 layout(location = 2) in vec4 frag_pos_light_space;
 
 layout(location = 0) out vec4 out_color;
+
+layout( push_constant ) uniform constants
+{
+	uint texture_index;
+} push_constants;
 
 const float AMBIENT = 0.08;
 
@@ -38,7 +43,7 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 
 void main()
 {
-    vec3 albedo = texture(textures, frag_tex_cord).rgb;
+    vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
     vec3 normal = normalize(frag_normal); //Do I even need to do this?
 
     float dont_know_name = max(dot(normal, light.light_dir), 0.0);

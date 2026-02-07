@@ -208,6 +208,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
     ImGui::End();
 }
 
+static vec2_uint_t selected_assets;
 static inline void show_loaded_assets(){
     ImGui::Text("Loaded Models");
 
@@ -237,17 +238,19 @@ static inline void show_loaded_assets(){
     }
 
     ImGui::Text("Existing Renderables");
-    static uint32_t selected_model;
-    static uint32_t selected_texture;
     if(ImGui::Button("Create Renderable")){
-
+        Message message{};
+        message.size = 0;
+        message.type = MessageType::CreateRenderable;
+        message.value = (void*)&selected_assets;
+        add_message(message);
     }
     if(ImGui::BeginCombo("Models", "")){
         for (auto const& value : loaded_model_index)
         {
             if (ImGui::Button(value.first.c_str()))
             {
-                selected_model = value.second;
+                selected_assets.x = value.second;
             }
         }
         ImGui::EndCombo();
@@ -257,7 +260,7 @@ static inline void show_loaded_assets(){
         {
             if (ImGui::Button(value.first.c_str()))
             {
-                selected_texture = value.second;
+                selected_assets.y = value.second;
             }
         }
         ImGui::EndCombo();
@@ -353,7 +356,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
                     static_cast<uint32_t>(add_render_component(render_pipeline->model_render_data.renderable_amount)),
                     static_cast<uint16_t>(RENDER)
                 };
-                render_pipeline->model_render_data.renderable_amount++;
+                //render_pipeline->model_render_data.renderable_amount++;
                 entities[inspecting].components.emplace_back(render);
                 //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }

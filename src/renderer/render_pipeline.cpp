@@ -454,7 +454,7 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
     memcpy(tts, &assd, sizeof(vec3_t));
     //End Move out
 
-    create_model_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.model_set_layout, render_pipeline.model_render_data, heap_stack);
+    //create_model_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.model_set_layout, render_pipeline.model_render_data, heap_stack);
 
     result = create_descriptor_set(render_pipeline.device.virtual_device, render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, render_pipeline.camera_descript, render_pipeline.light_test);
     if(result != VK_SUCCESS)
@@ -482,8 +482,15 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
     create_offscreen_framebuffer(render_pipeline.device, {1024, 1024}, &render_pipeline.shadow_pass);
     create_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, texture);
 
+    VkPushConstantRange push_constant;
+	push_constant.offset = 0;
+	push_constant.size = sizeof(uint);
+	push_constant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
     pipeline_layout_info.setLayoutCount = forward_layout_amount;
     pipeline_layout_info.pSetLayouts = forward_layouts;
+    pipeline_layout_info.pPushConstantRanges = &push_constant;
+    pipeline_layout_info.pushConstantRangeCount = 1;
     if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
@@ -503,9 +510,9 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
 
     RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
 
-    for(uint16_t render_index = 0; render_index <= model_data.renderable_amount; render_index++){
-
-        VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], render_data->descriptor_sets[frame], textures.descriptor_sets[frame]};
+    for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
+        if(render_data->instance_amount <= 0) continue;
+        VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], render_data->model_descriptor_sets[frame], textures.descriptor_sets[frame]};
         constexpr size_t descriptor_amount = sizeof(passed_descriptors) / sizeof(passed_descriptors[0]);
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, passed_descriptors, 0, nullptr);
@@ -517,6 +524,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
         if(model.index_amount <= 0) return;
 
         constexpr VkDeviceSize offsets[] = {0};
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint), &render_data->texture_index);
 
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
@@ -565,9 +573,10 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
 
     ComponentSystem* render =  get_component_system(RENDER);
     RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
-    for(uint16_t render_index = 0; render_index <= model_data.renderable_amount; render_index++)
+    for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++)
     {
-        VkDescriptorSet descriptors[] = { light.descriptor_sets[frame], render_data[render_index].descriptor_sets[frame]};
+        if(render_data->instance_amount <= 0) continue;
+        VkDescriptorSet descriptors[] = { light.descriptor_sets[frame], render_data[render_index].model_descriptor_sets[frame]};
         uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_amount, descriptors, 0, nullptr);
