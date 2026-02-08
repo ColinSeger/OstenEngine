@@ -300,7 +300,7 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipe
     return VK_SUCCESS;
 }
 
-void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, HeapStack& memory_arena)
+static void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, HeapStack& memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
@@ -393,7 +393,7 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack& heap_stack)
+static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack& heap_stack)
 {
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
@@ -506,35 +506,31 @@ VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instanc
 static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, const uint8_t frame, HeapStack& heap_stack){
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
-    ComponentSystem* render =  get_component_system(RENDER);
-
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
-
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
+        RenderAble* render_data = get_renderable(model_data, render_index, heap_stack);
+
         if(render_data->instance_amount <= 0) continue;
         VkDescriptorSet passed_descriptors[] = {descriptors.descriptor_sets[frame], render_data->model_descriptor_sets[frame], textures.descriptor_sets[frame]};
         constexpr size_t descriptor_amount = sizeof(passed_descriptors) / sizeof(passed_descriptors[0]);
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, descriptor_amount, passed_descriptors, 0, nullptr);
 
-        RenderComponent comp = *(RenderComponent*)(get_component_by_id(render, 0));
-
-        Model model = loaded_models[comp.mesh_id];
+        Model model = loaded_models[render_data->model_index];
 
         if(model.index_amount <= 0) return;
 
-        constexpr VkDeviceSize offsets[] = {0};
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint), &render_data->texture_index);
 
+        constexpr VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
         vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDrawIndexed(command_buffer, model.index_amount, render->amount, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
     }
 }
 
-void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor& light, ModelData model_data, const uint8_t frame, HeapStack heap_stack){
+static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor& light, ModelData model_data, const uint8_t frame, HeapStack heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
@@ -571,19 +567,16 @@ void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buf
     }
     constexpr VkDeviceSize offsets[] = {0};
 
-    ComponentSystem* render =  get_component_system(RENDER);
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
-    for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++)
-    {
-        if(render_data->instance_amount <= 0) continue;
+    for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
+        RenderAble* render_data = get_renderable(model_data, render_index, heap_stack);
+
+        if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
         VkDescriptorSet descriptors[] = { light.descriptor_sets[frame], render_data[render_index].model_descriptor_sets[frame]};
         uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_amount, descriptors, 0, nullptr);
 
-        RenderComponent comp = *reinterpret_cast<RenderComponent*>(get_component_by_id(render, 0));
-
-        Model model = loaded_models[comp.mesh_id];
+        Model model = loaded_models[render_data->model_index];
 
         if(model.index_amount > 0){
             vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);

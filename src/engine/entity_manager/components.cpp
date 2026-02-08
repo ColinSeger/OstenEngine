@@ -29,10 +29,8 @@ struct TransformComponent
 struct RenderComponent
 {
     const uint16_t id = 2;
+    uint32_t instance_id = 0;
     uint16_t transform_id = 0;
-    uint16_t descriptor_id = 0;
-    uint16_t mesh_id = 0;
-    uint16_t texture_id = 0;
 };
 
 struct CameraComponent
@@ -122,8 +120,7 @@ void create_transform_system(uint8_t transform_amount, HeapStack* memory_arena){
     }
 }
 
-uint16_t add_transform()
-{
+uint16_t add_transform(){
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
     uint8_t* comp = (uint8_t*)component_sys->memory_arena;
     uint16_t size = get_component_size_by_type(TRANSFORM);
@@ -143,14 +140,12 @@ void create_render_component_system(uint8_t render_amount, HeapStack* memory_are
     {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
         comp->transform_id = add_transform();
-        comp->mesh_id = 0;
-        comp->texture_id = 0;
+        comp->instance_id = 0;
     }
      //Component* test = reinterpret_cast<Component*>(component_sys->components);
 }
 
-uint16_t add_render_component(uint16_t descriptor_index)
-{
+uint16_t add_render_component(uint16_t descriptor_index){
     ComponentSystem* component_sys = get_component_system(RENDER);
     auto memory = *component_sys->memory_arena;
     RenderComponent* comp = reinterpret_cast<RenderComponent*>(memory[component_sys->components]);
@@ -158,7 +153,7 @@ uint16_t add_render_component(uint16_t descriptor_index)
     uint32_t size_offset = component_sys->amount;
     comp += size_offset;
     component_sys->amount++;
-    comp->descriptor_id = descriptor_index;
+    comp->instance_id = descriptor_index;
     return component_sys->amount-1;
 }
 

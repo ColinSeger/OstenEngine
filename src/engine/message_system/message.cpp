@@ -32,21 +32,21 @@ static void create_entity(const char* name){
 static void update_texture(struct RenderPipeline* render_pipeline, const char* texture_name, uint32_t entity_id){
     vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
 
-    uint32_t index = Texture::load_texture(render_pipeline->device, texture_name, render_pipeline->command_pool);
-    TextureImage texture = loaded_textures[index];
-    struct RenderPipeline& result = *render_pipeline;
+    //uint32_t index = Texture::load_texture(render_pipeline->device, texture_name, render_pipeline->command_pool);
+    //TextureImage texture = loaded_textures[index];
+    //struct RenderPipeline& result = *render_pipeline;
 
     //update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, vec2_uint_t* asset_index, HeapStack& heap_stack){
-    RenderAble* renderable = (RenderAble*)heap_stack[render_pipeline->model_render_data.renderable_memory_index];
+    RenderAble* renderable = get_free_renderable(render_pipeline->model_render_data, heap_stack);
     renderable->model_index = asset_index->x;
     renderable->texture_index = asset_index->y;
     renderable->capacity = 50;
     renderable->instance_amount = 1;
 
-    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, heap_stack);
+    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, renderable);
 
     render_pipeline->model_render_data.renderable_amount++;
 }
@@ -64,9 +64,8 @@ static void load_asset(const char* file_name, struct RenderPipeline& render_pipe
     }else if(extention[0] == 'b' || extention[0] == 'B'){
         ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
     }else if(extention[0] == 'p' || extention[0] == 'P'){
-        uint32_t ts = Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
-        auto t = loaded_textures[ts];
-        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, t, ts);
+        uint32_t texture_index = Texture::load_texture(render_pipeline.device, file_name, render_pipeline.command_pool);
+        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, texture_index);
     }
 }
 

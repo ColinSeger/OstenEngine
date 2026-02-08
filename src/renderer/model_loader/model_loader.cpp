@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
+// #include "../descriptors/descriptors.cpp"
 #include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
@@ -18,6 +19,8 @@ typedef struct
 
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
+
+    // VkDescriptorSet model_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 } Model;
 
 enum class LoadMode

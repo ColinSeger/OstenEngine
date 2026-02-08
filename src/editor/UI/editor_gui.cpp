@@ -113,28 +113,12 @@ void inspect(uint8_t type, uint16_t id)
             ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
             ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
 
-            if(ImGui::BeginCombo("Models", "")){
+            if(ImGui::BeginCombo("Instance", "")){
                 for (auto const& value : loaded_model_index)
                 {
                     if (ImGui::Button(value.first.c_str()))
                     {
-                        component->mesh_id = value.second;
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            if(ImGui::BeginCombo("Textures", "")){
-                for (auto const& value : loaded_textures_index)
-                {
-                    if (ImGui::Button(value.first.c_str()))
-                    {
-                        component->texture_id = value.second;
 
-                        Message update_texture{};
-                        update_texture.size = 0;
-                        update_texture.type = MessageType::UpdateTexture;
-                        update_texture.value = (void*)value.first.c_str();
-                        add_message(update_texture);
                     }
                 }
                 ImGui::EndCombo();
@@ -209,7 +193,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
 }
 
 static vec2_uint_t selected_assets;
-static inline void show_loaded_assets(){
+static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack heap_stack){
     ImGui::Text("Loaded Models");
 
     for (auto const& value : loaded_model_index)
@@ -237,7 +221,6 @@ static inline void show_loaded_assets(){
         ImGui::PopID();
     }
 
-    ImGui::Text("Existing Renderables");
     if(ImGui::Button("Create Renderable")){
         Message message{};
         message.size = 0;
@@ -265,10 +248,16 @@ static inline void show_loaded_assets(){
         }
         ImGui::EndCombo();
     }
+    ImGui::Text("Existing Renderables");
+    for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
+        RenderAble* renderable = get_renderable(render_pipe->model_render_data, i, heap_stack);
 
+        ImGui::Text("Texture %i", renderable->texture_index);
+        ImGui::Text("Model %i", renderable->model_index);
+    }
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting)
+void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack heap_stack)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -300,7 +289,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
         ImGui::PopID();
     }
 
-    show_loaded_assets();
+    show_loaded_assets(render_pipeline, heap_stack);
 
     ImGui::Begin("Console");
         std::vector<std::string> editor_logs = Debug::get_all_logs();
@@ -353,12 +342,11 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
             }
             if(ImGui::Button("Add Render Component")){
                 TempID render{
-                    static_cast<uint32_t>(add_render_component(render_pipeline->model_render_data.renderable_amount)),
-                    static_cast<uint16_t>(RENDER)
+                    (uint32_t)(add_render_component(render_pipeline->model_render_data.renderable_amount)),
+                    (uint16_t)(RENDER)
                 };
-                //render_pipeline->model_render_data.renderable_amount++;
+
                 entities[inspecting].components.emplace_back(render);
-                //inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             ImGui::EndPopup();
         }
