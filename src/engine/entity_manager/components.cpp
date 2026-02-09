@@ -117,6 +117,7 @@ void create_transform_system(uint16_t transform_amount, HeapStack* memory_arena)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
         comp->transform = Transform{};
+        comp->transform.scale = {1, 1, 1};
     }
 }
 
@@ -139,7 +140,7 @@ void create_render_component_system(uint16_t render_amount, HeapStack* memory_ar
     for (size_t i = 0; i < render_amount; i++)
     {
         RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
-        comp->transform_id = add_transform();
+        comp->transform_id = -1;
         comp->instance_id = 0;
     }
      //Component* test = reinterpret_cast<Component*>(component_sys->components);

@@ -411,7 +411,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     result = create_fragment_layout(render_pipeline.device.virtual_device, &render_pipeline.fragment_layout);
 
-    render_pipeline.model_render_data.object_capacity = (1024 * 10);
+    render_pipeline.model_render_data.object_capacity = (1024 * 50);
 
     result = init_model_data(render_pipeline.model_render_data, render_pipeline.device, heap_stack);
 
@@ -506,7 +506,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     return VK_SUCCESS;
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, const uint8_t frame, HeapStack& heap_stack){
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack& heap_stack){
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){

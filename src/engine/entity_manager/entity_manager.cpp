@@ -52,7 +52,7 @@ void EntityManager::add_entity(Entity entity, std::string name)
     while(contains != EntityManager::get_entity_names().end())
     {
         name.push_back(0);
-        for (uint8_t i = 0; i < 254; i++)
+        for (uint8_t i = 32; i < 126; i++)
         {
             contains = entity_names.find(name);
             if(contains != EntityManager::get_entity_names().end()){
