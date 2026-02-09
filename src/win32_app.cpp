@@ -6,6 +6,9 @@
 #include <memoryapi.h>
 #include <processthreadsapi.h>
 #include <psapi.h>
+#include "game/total_cheese.h"
+#define MATH_3D_IMPLEMENTATION
+#include "../external/math_3d.h"
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -44,6 +47,7 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 }
 
 uint8_t run(OstenEngine& engine){
+    init_game();
     engine.main_game_loop();
     return 0;
 }

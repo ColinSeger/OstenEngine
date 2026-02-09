@@ -9,7 +9,7 @@
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../external/imgui_test/imgui_impl_vulkan.h"
 #include "../../renderer/device/vulkan/device.cpp"
-#include "../../engine/message_system/message.cpp"
+#include "../../engine/message_system/message.h"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
 #include "vulkan/vulkan_core.h"
@@ -203,7 +203,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
     ImGui::End();
 }
 
-static vec2_uint_t selected_assets;
+static InstanceData selected_assets;
 static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack heap_stack){
     ImGui::Text("Loaded Models");
 
@@ -244,7 +244,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack hea
         {
             if (ImGui::Button(value.first.c_str()))
             {
-                selected_assets.x = value.second;
+                selected_assets.model_index = value.second;
             }
         }
         ImGui::EndCombo();
@@ -254,11 +254,12 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack hea
         {
             if (ImGui::Button(value.first.c_str()))
             {
-                selected_assets.y = value.second;
+                selected_assets.texture_index = value.second;
             }
         }
         ImGui::EndCombo();
     }
+    ImGui::InputInt("Capacity", &selected_assets.capacity);
     ImGui::Text("Existing Renderables");
     for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
         RenderAble* renderable = get_renderable(render_pipe->model_render_data, i, heap_stack);

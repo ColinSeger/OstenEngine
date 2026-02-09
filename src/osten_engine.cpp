@@ -11,8 +11,7 @@
 #include "editor/UI/editor_gui.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/components.cpp"
-#include "engine/message_system/message.cpp"
-#define MATH_3D_IMPLEMENTATION
+#include "engine/message_system/message.h"
 #include "../external/math_3d.h"
 
 constexpr size_t KB = 1024;
@@ -104,9 +103,9 @@ void OstenEngine::main_game_loop()
 
     auto last_tick = std::chrono::high_resolution_clock::now();
 
-    create_transform_system(1000, &heap_stack);
+    create_transform_system(10000, &heap_stack);
     create_camera_system(2, &heap_stack);
-    create_render_component_system(50, &heap_stack);
+    create_render_component_system(5000, &heap_stack);
 
     Message empty_entity{
         0,
@@ -126,6 +125,23 @@ void OstenEngine::main_game_loop()
         render_pipeline.shadow_pass.image_view,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
+
+    procces_all_commands(&render_pipeline, heap_stack);
+    int i = 0;
+    for (; i < entities.size(); i++) {
+        RenderAble* rendera = get_renderable(render_pipeline.model_render_data, 0, heap_stack);
+        TempID render{
+            (uint32_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
+            (uint16_t)(RENDER)
+        };
+        rendera->instance_amount++;
+
+        TransformComponent* transform = (TransformComponent*)get_component_by_id(get_component_system(TRANSFORM) ,rendera->transform_index + rendera->instance_amount);
+
+        transform->transform.position.y += 1.f * i;
+
+        entities[i].components.emplace_back(render);
+    }
 
     while(!glfwWindowShouldClose(main_window)) {
         glfwPollEvents();

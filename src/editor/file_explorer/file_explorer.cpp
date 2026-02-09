@@ -5,7 +5,7 @@
 #include <string>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../renderer/render_pipeline.cpp"
-#include "../../engine/message_system/message.cpp"
+#include "../../engine/message_system/message.h"
 
 struct FileExplorer{
     std::vector<std::string> folders;

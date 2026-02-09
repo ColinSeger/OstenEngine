@@ -48,18 +48,20 @@ std::unordered_map<std::string, uint32_t>& EntityManager::get_entity_names(){
 
 void EntityManager::add_entity(Entity entity, std::string name)
 {
-    if(auto contains = entity_names.find(name); contains != EntityManager::get_entity_names().end())
+    auto contains = entity_names.find(name);
+    while(contains != EntityManager::get_entity_names().end())
     {
-        for (size_t i = 0; i < 9; i++)
+        name.push_back(0);
+        for (uint8_t i = 0; i < 254; i++)
         {
-            if(auto contains = entity_names.find(name); contains != EntityManager::get_entity_names().end()){
-                name.push_back('A');
-            }else{
-                EntityManager::add_entity(Entity{}, name);
+            contains = entity_names.find(name);
+            if(contains != EntityManager::get_entity_names().end()){
+                name[name.size()-1] = (char)i;
+            }
+            else {
                 break;
             }
         }
-
     }
 
     entity.id = entities.size();
@@ -101,7 +103,8 @@ uint32_t EntityManager::get_entity_amount()
 
 void rename_entity(std::string current_name, std::string new_name)
 {
-    if(auto contains = entity_names.find(current_name); contains != EntityManager::get_entity_names().end()){
+    auto contains = entity_names.find(current_name);
+    if(contains != EntityManager::get_entity_names().end()){
         uint32_t id = entity_names[current_name];
         entity_names.erase(current_name);
         entity_names[new_name] = id;

@@ -24,6 +24,12 @@ enum class SupportedFiles : uint8_t
     jpg
 };
 
+struct InstanceData{
+    int32_t capacity;
+    uint16_t model_index;
+    uint16_t texture_index;
+};
+
 static void create_entity(const char* name){
     Entity entity{};
     EntityManager::add_entity(entity, name);
@@ -39,16 +45,16 @@ static void update_texture(struct RenderPipeline* render_pipeline, const char* t
     //update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
 }
 
-static void create_renderable(struct RenderPipeline* render_pipeline, vec2_uint_t* asset_index, HeapStack& heap_stack){
+static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack& heap_stack){
     uint16_t transform_id = add_transform();
-    for(uint16_t transform = 0; transform < 49; transform++){
+    for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
         add_transform();
     }
     uint32_t index = 0;
     RenderAble* renderable = get_free_renderable(render_pipeline->model_render_data, heap_stack, &index);
-    renderable->model_index = asset_index->x;
-    renderable->texture_index = asset_index->y;
-    renderable->capacity = 50;
+    renderable->model_index = asset_index->model_index;
+    renderable->texture_index = asset_index->texture_index;
+    renderable->capacity = asset_index->capacity;
     renderable->instance_amount = 0;
     renderable->transform_index = transform_id;
 
@@ -88,13 +94,13 @@ struct MessageSystem
     std::vector<Message> messages;
 };
 
-std::vector<Message> messages;
+static std::vector<Message> messages;
 
-void add_message(Message message){
+static void add_message(Message message){
     messages.emplace_back(message);
 }
 
-void handle_message(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
+static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
@@ -118,10 +124,16 @@ void handle_message(struct RenderPipeline* render_pipeline, HeapStack& heap_stac
         update_texture(render_pipeline, action, message.size);
     break;
     case MessageType::CreateRenderable:
-        create_renderable(render_pipeline, (vec2_uint_t*)message.value, heap_stack);
+        create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);
     break;
     default:
         break;
     }
     messages.erase(messages.begin());
+}
+
+static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
+    while (!messages.empty()) {
+        handle_message(render_pipeline, heap_stack);
+    }
 }

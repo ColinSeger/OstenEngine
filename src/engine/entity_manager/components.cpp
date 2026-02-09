@@ -130,7 +130,7 @@ uint16_t add_transform(){
     return component_sys->amount-1;
 }
 
-void create_render_component_system(uint8_t render_amount, HeapStack* memory_arena){
+void create_render_component_system(uint16_t render_amount, HeapStack* memory_arena){
     ComponentSystem* component_sys = get_component_system(RENDER);
     component_sys->memory_arena = memory_arena;
     component_sys->components = arena_alloc_memory(*memory_arena, sizeof(RenderComponent) * render_amount);

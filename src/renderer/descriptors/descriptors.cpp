@@ -566,10 +566,10 @@ static VkResult init_model_data(ModelData& model_data, Device& device, HeapStack
     VkDeviceSize bufferSize = sizeof(ObjectUBO) * model_data.object_capacity;
     model_data.renderable_amount = 0;
 
-    model_data.renderable_memory_index = arena_alloc_memory(heap_stack, model_data.object_capacity * sizeof(RenderAble));
+    model_data.renderable_memory_index = arena_alloc_memory(heap_stack, 50 * sizeof(RenderAble));
 
     //Temp
-    memset(heap_stack[model_data.renderable_memory_index], 0, model_data.object_capacity * sizeof(RenderAble));
+    memset(heap_stack[model_data.renderable_memory_index], 0, 50 * sizeof(RenderAble));
     //EndTemp
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
