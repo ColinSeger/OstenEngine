@@ -104,7 +104,7 @@ void OstenEngine::main_game_loop()
 
     auto last_tick = std::chrono::high_resolution_clock::now();
 
-    create_transform_system(100, &heap_stack);
+    create_transform_system(1000, &heap_stack);
     create_camera_system(2, &heap_stack);
     create_render_component_system(50, &heap_stack);
 

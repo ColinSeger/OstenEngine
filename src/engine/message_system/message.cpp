@@ -40,13 +40,19 @@ static void update_texture(struct RenderPipeline* render_pipeline, const char* t
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, vec2_uint_t* asset_index, HeapStack& heap_stack){
-    RenderAble* renderable = get_free_renderable(render_pipeline->model_render_data, heap_stack);
+    uint16_t transform_id = add_transform();
+    for(uint16_t transform = 0; transform < 49; transform++){
+        add_transform();
+    }
+    uint32_t index = 0;
+    RenderAble* renderable = get_free_renderable(render_pipeline->model_render_data, heap_stack, &index);
     renderable->model_index = asset_index->x;
     renderable->texture_index = asset_index->y;
     renderable->capacity = 50;
-    renderable->instance_amount = 1;
+    renderable->instance_amount = 0;
+    renderable->transform_index = transform_id;
 
-    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, renderable);
+    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, index, heap_stack);
 
     render_pipeline->model_render_data.renderable_amount++;
 }

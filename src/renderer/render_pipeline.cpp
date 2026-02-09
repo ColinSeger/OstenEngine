@@ -376,20 +376,23 @@ static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descr
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_image, ModelData& to_render) {
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_frame, ModelData& to_render, HeapStack heap_stack) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* render =  get_component_system(RENDER);
 
     //The renderable should not de3cide model and texture instead just be decided ahead of time and then indexed into
-    ObjectUBO* model_buffer = (ObjectUBO*)to_render.uniform_buffers_mapped[current_image];
+    //ObjectUBO* model_buffer = (ObjectUBO*)to_render.uniform_buffers_mapped[current_image];
 
-    for (size_t render_index = 0; render_index < render->amount; render_index++)
+    for (size_t render_index = 0; render_index < to_render.renderable_amount; render_index++)
     {
+        ObjectUBO* model_buffer = get_mapped_uniforms(to_render, heap_stack, render_index, current_frame);
         RenderComponent* render_component = (RenderComponent*)(get_component_by_id(render, render_index));
+        RenderAble* render_able = get_renderable(to_render, render_index, heap_stack);
+        for(uint16_t i = 0; i < render_able->instance_amount; i++){
+            Transform transform = ((TransformComponent*)get_component_by_id(transform_system, render_able->transform_index+i))->transform;
 
-        Transform transform = ((TransformComponent*)get_component_by_id(transform_system, render_component->transform_id))->transform;
-
-        model_buffer[render_index].model = Transformations::get_model_matrix(transform);
+            model_buffer[i].model = Transformations::get_model_matrix(transform);
+        }
     }
 }
 
@@ -484,7 +487,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     VkPushConstantRange push_constant;
 	push_constant.offset = 0;
-	push_constant.size = sizeof(uint);
+	push_constant.size = sizeof(uint32_t);
 	push_constant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     pipeline_layout_info.setLayoutCount = forward_layout_amount;
@@ -519,7 +522,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
 
         if(model.index_amount <= 0) return;
 
-        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint), &render_data->texture_index);
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &render_data->texture_index);
 
         constexpr VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
@@ -591,14 +594,14 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
     vkCmdEndRenderPass(command_buffer);
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack& memory_arena, CameraComponent& light_source)
+int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack& heap_stack, CameraComponent& light_source)
 {
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index;
 
     update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view);
     update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view);
-    update_uniform_buffer(camera, current_frame, model_render_data);
+    update_uniform_buffer(camera, current_frame, model_render_data, heap_stack);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
@@ -616,13 +619,13 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
         throw result;
     }
 
-    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, model_render_data, current_frame, memory_arena);
+    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, model_render_data, current_frame, heap_stack);
 
-    start_render_pass(command_buffer, ((VkFramebuffer*)memory_arena[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
+    start_render_pass(command_buffer, ((VkFramebuffer*)heap_stack[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    swap_draw_frame(command_buffer, render_descripts, texture_descriptor, model_render_data, pipeline_layout, current_frame, memory_arena);
+    swap_draw_frame(command_buffer, render_descripts, texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack);
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);

@@ -83,7 +83,7 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void inspect(uint8_t type, uint16_t id)
+void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack heap_stack)
 {
     switch (type)
     {
@@ -114,11 +114,22 @@ void inspect(uint8_t type, uint16_t id)
             ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
 
             if(ImGui::BeginCombo("Instance", "")){
-                for (auto const& value : loaded_model_index)
-                {
-                    if (ImGui::Button(value.first.c_str()))
-                    {
+                for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
 
+                    std::string name = std::string("RenderAble ");
+                    char buf[11];
+                    snprintf(buf, sizeof(buf), "%u", i);
+                    for(char c : buf){
+                        name.push_back(c);
+                    }
+                    if(ImGui::Button(name.c_str())){
+                        RenderAble* renderable = (RenderAble*)heap_stack[render_pipe->model_render_data.renderable_memory_index];
+                        renderable[component->instance_id].instance_amount--;
+
+                        component->instance_id = i;
+                        component->transform_id = renderable[i].transform_index + renderable[i].instance_amount;
+
+                        renderable[i].instance_amount++;
                     }
                 }
                 ImGui::EndCombo();
@@ -169,7 +180,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
             ImGui::OpenPopup("hierarchy_pop_up");
         }
 
-        if(ImGui::TreeNode("Thing"))
+        if(ImGui::TreeNode("Tree"))
         {
 
             if(entities.size() > 0)
@@ -326,7 +337,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
 
         for(TempID& id : entities[inspecting].components){
             ImGui::PushID(id.type);
-            inspect(id.type, id.index);
+            inspect(id.type, id.index, render_pipeline, heap_stack);
             ImGui::Spacing();
             ImGui::PopID();
         }
@@ -341,10 +352,12 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
                 // inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             if(ImGui::Button("Add Render Component")){
+                RenderAble* rendera = get_renderable(render_pipeline->model_render_data, 0, heap_stack);
                 TempID render{
-                    (uint32_t)(add_render_component(render_pipeline->model_render_data.renderable_amount)),
+                    (uint32_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
                     (uint16_t)(RENDER)
                 };
+                rendera->instance_amount++;
 
                 entities[inspecting].components.emplace_back(render);
             }

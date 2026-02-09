@@ -36,6 +36,7 @@ struct RenderAble{
     uint32_t instance_amount;
     uint32_t texture_index;
     uint16_t model_index;
+    uint16_t transform_index;
 };
 
 struct ModelData{
@@ -84,26 +85,39 @@ static RenderAble* get_renderable(ModelData& model_data, uint32_t index, HeapSta
 }
 
 //Can return null if you are out of capacity
-static RenderAble* get_free_renderable(ModelData& model_data, HeapStack heap_stack){
+static RenderAble* get_free_renderable(ModelData& model_data, HeapStack heap_stack, uint32_t* index){
     RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
     for (uint32_t i = 0; i < model_data.object_capacity; i++) {
         if(render_data->capacity <= 0) return render_data;
         render_data++;
+        *index += 1;
     }
     return 0;
 }
 
-// static ObjectUBO* get_uniforms(ModelData& model_data, HeapStack heap_stack, int32_t render_index){
-//     if(render_index > model_data.renderable_amount) return nullptr;
-//     ObjectUBO* result = (ObjectUBO*)model_data.uniform_buffers_mapped;
+static ObjectUBO* get_mapped_uniforms(ModelData& model_data, HeapStack heap_stack, int32_t render_index, uint8_t frame){
+    if(render_index > model_data.renderable_amount) return nullptr;
+    ObjectUBO* result = (ObjectUBO*)model_data.uniform_buffers_mapped[frame];
 
-//     RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
 
-//     for (int i = 0; i < render_index; i++) {
-//         result += render_data[i].capacity;
-//     }
-//     return result;
-// }
+    for (int i = 0; i < render_index; i++) {
+        result += render_data[i].capacity;
+    }
+    return result;
+}
+
+static size_t get_required_offset(ModelData& model_data, HeapStack heap_stack, int32_t render_index){
+    if(render_index > model_data.renderable_amount) return 0;
+    size_t result = 0;
+
+    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+
+    for (int i = 0; i < render_index; i++) {
+        result += render_data[i].capacity * sizeof(ObjectUBO);
+    }
+    return result;
+}
 
 static VkResult create_descriptor_pool(VkDescriptorPool& result, VkDevice virtual_device, const uint32_t pool_size){
     VkDescriptorPoolSize pool_sizes[] = {
@@ -475,7 +489,7 @@ static VkResult create_descriptor_set(VkDevice virtual_device, RenderingDescript
     return VK_SUCCESS;
 }
 
-static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, RenderAble* render_able){
+static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, uint32_t render_able_index, HeapStack heap_stack){
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -487,15 +501,15 @@ static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descr
     allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
     allocInfo.pSetLayouts = layouts;
 
-    // RenderAble* render_able = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    RenderAble* render_able = (RenderAble*)get_renderable(model_data, render_able_index, heap_stack);
     VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_able->model_descriptor_sets);
     if(allocation_status) return allocation_status;
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info{};
-        buffer_info.offset = 0;
-        buffer_info.range = sizeof(ObjectUBO) * render_able->capacity;
-        buffer_info.buffer = model_data.uniform_buffers[i];
+        buffer_info.offset  = get_required_offset(model_data, heap_stack, render_able_index);
+        buffer_info.range   = sizeof(ObjectUBO) * render_able->capacity;
+        buffer_info.buffer  = model_data.uniform_buffers[i];
 
         constexpr uint32_t descriptor_size = 1;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};

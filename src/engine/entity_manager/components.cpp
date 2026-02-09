@@ -108,7 +108,7 @@ ComponentSystem* get_component_system(uint8_t system_id)
     }
 }
 
-void create_transform_system(uint8_t transform_amount, HeapStack* memory_arena){
+void create_transform_system(uint16_t transform_amount, HeapStack* memory_arena){
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
     component_sys->components = arena_alloc_memory(*memory_arena, sizeof(TransformComponent) * transform_amount);
     component_sys->memory_arena = memory_arena;
@@ -145,7 +145,7 @@ void create_render_component_system(uint8_t render_amount, HeapStack* memory_are
      //Component* test = reinterpret_cast<Component*>(component_sys->components);
 }
 
-uint16_t add_render_component(uint16_t descriptor_index){
+uint16_t add_render_component(uint16_t descriptor_index, uint16_t transform_index){
     ComponentSystem* component_sys = get_component_system(RENDER);
     auto memory = *component_sys->memory_arena;
     RenderComponent* comp = reinterpret_cast<RenderComponent*>(memory[component_sys->components]);
@@ -154,6 +154,7 @@ uint16_t add_render_component(uint16_t descriptor_index){
     comp += size_offset;
     component_sys->amount++;
     comp->instance_id = descriptor_index;
+    comp->transform_id = transform_index;
     return component_sys->amount-1;
 }
 
