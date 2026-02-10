@@ -110,8 +110,8 @@ namespace ModelLoader
         Uint32Array indices;
 
         if(load_mode == LoadMode::OBJ){
-            parse_obj(file_name, vertices, indices, memory_arena);
-            //file_to_free = load_obj_v2(file_name, vertices, indices, memory_arena);
+            //parse_obj(file_name, vertices, indices, memory_arena);
+            file_to_free = load_obj_v2(file_name, vertices, indices, memory_arena);
         }else if(load_mode == LoadMode::BIN){
             file_to_free = de_serialize(file_name, vertices, indices, memory_arena);
         }

@@ -141,7 +141,7 @@ void OstenEngine::draw_frame(){
     }
 
     begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, heap_stack);
-    //ImGui::DockSpaceOverViewport();
+
     start_file_explorer(file_explorer, &render_pipeline);
 
     end_file_explorer();

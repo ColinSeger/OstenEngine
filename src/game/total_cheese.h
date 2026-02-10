@@ -10,7 +10,7 @@ static InstanceData render_ids {};
 static void load_game_reasources(){
     Message message{};
     message.type = MessageType::LoadModel;
-    message.value = (void*)"assets/debug_assets/viking.bin";
+    message.value = (void*)"assets/debug_assets/viking.obj";
 
     add_message(message);
 

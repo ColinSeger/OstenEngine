@@ -12,7 +12,6 @@ enum class MessageType : uint8_t
     CreateEntity,
     LoadTexture,
     SerializeOBJ,
-    UpdateTexture,
     CreateRenderable,
     TestEntity
 };
@@ -34,16 +33,6 @@ struct InstanceData{
 static void create_entity(const char* name){
     Entity entity{};
     EntityManager::add_entity(entity, name);
-}
-
-static void update_texture(struct RenderPipeline* render_pipeline, const char* texture_name, uint32_t entity_id){
-    vkDeviceWaitIdle(render_pipeline->device.virtual_device);//TODO have actual solution for this instead of waiting for device idle
-
-    //uint32_t index = Texture::load_texture(render_pipeline->device, texture_name, render_pipeline->command_pool);
-    //TextureImage texture = loaded_textures[index];
-    //struct RenderPipeline& result = *render_pipeline;
-
-    //update_fragment_set(result.device.virtual_device, result.descriptor_pool, result.fragment_layout, result.texture_descriptor, result.shadow_pass.image_view, result.shadow_pass.sampler,result.light_position , texture);
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack& heap_stack){
@@ -122,9 +111,6 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& he
     break;
     case MessageType::SerializeOBJ :
         ModelLoader::serialize(action, heap_stack);
-    break;
-    case MessageType::UpdateTexture:
-        update_texture(render_pipeline, action, message.size);
     break;
     case MessageType::CreateRenderable:
         create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);

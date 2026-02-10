@@ -275,7 +275,7 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
     size_t indicie_start = 0;
     std::string line;
     while(getline(file_stream, line)){
-        if(line[0] == 'v'){
+        if(line[0] == 'v' && line[1] == ' '){
             size_t index = arena_alloc_memory(memory_arena, sizeof(Vertex));
 
             Vertex* write_to = (Vertex*)memory_arena[index];
@@ -289,18 +289,19 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
             parse_indicie(line, 1, indicies);
         }
     }
-
-    model_vertices.amount = (vertex_end - mem_index) / sizeof(Vertex);
+    size_t vertex_bytes = (vertex_end - mem_index);
+    model_vertices.amount = (vertex_bytes / sizeof(Vertex));
     model_vertices.values = (Vertex*)memory_arena[mem_index];
 
     std::vector<uint32_t> temp;
-
-    for (size_t i = 0;(memory_arena.index - indicie_start) / (sizeof(uint32_t)*3) > i; i++) {
-        temp.push_back(*(uint32_t*)memory_arena[indicie_start + sizeof(uint32_t) * i]);
+    size_t indicie_index = (memory_arena.index - indicie_start) / (sizeof(uint32_t)*3);
+    for (size_t i = 0; indicie_index > i; i++) {
+        uint32_t number = *(uint32_t*)memory_arena[indicie_start + (sizeof(uint32_t) * 3) * i];
+        temp.push_back(number);
 
     }
 
-    model_indicies.amount = (memory_arena.index - indicie_start) / (sizeof(uint32_t)*3);
+    model_indicies.amount = indicie_index;
     free_arena(memory_arena, indicie_start);//Temp
     model_indicies.values = (uint32_t*)memory_arena[arena_alloc_memory(memory_arena, model_indicies.amount * sizeof(uint32_t))];
 

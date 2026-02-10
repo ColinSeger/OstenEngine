@@ -8,14 +8,14 @@
 #include "../../device/vulkan/device.cpp"
 #include "../../../../external/image_loader/stb_image.h"
 
-typedef struct
+struct TextureImage
 {
     VkImage texture_image;
     VkImageView image_view;
     VkSampler texture_sampler;
     VkDeviceMemory texture_image_memory;
     uint8_t mip_levels;
-} TextureImage;
+};
 
 struct TextureArray{
     size_t arena_index;
