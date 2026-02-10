@@ -336,9 +336,9 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
             }
         }
 
-        for(TempID& id : entities[inspecting].components){
-            ImGui::PushID(id.type);
-            inspect(id.type, id.index, render_pipeline, heap_stack);
+        for(uint16_t i = 0; i < entities[inspecting].amount; i++){
+            ImGui::PushID(entities[inspecting].components[i].type);
+            inspect(entities[inspecting].components[i].type, entities[inspecting].components[i].index, render_pipeline, heap_stack);
             ImGui::Spacing();
             ImGui::PopID();
         }
@@ -346,21 +346,22 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
             ImGui::Text("Components");
             if(ImGui::Button("Add Transform")){
                 TempID transform{
-                    static_cast<uint32_t>(add_transform()),
+                    static_cast<uint16_t>(add_transform()),
                     static_cast<uint16_t>(TRANSFORM)
                 };
-                entities[inspecting].components.emplace_back(transform);
+                //entities[inspecting].components.emplace_back(transform);
+                add_component(entities[inspecting], transform);
                 // inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             if(ImGui::Button("Add Render Component")){
                 RenderAble* rendera = get_renderable(render_pipeline->model_render_data, 0, heap_stack);
                 TempID render{
-                    (uint32_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
+                    (uint16_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
                     (uint16_t)(RENDER)
                 };
                 rendera->instance_amount++;
-
-                entities[inspecting].components.emplace_back(render);
+                add_component(entities[inspecting], render);
+                //entities[inspecting].components.emplace_back(render);
             }
             ImGui::EndPopup();
         }

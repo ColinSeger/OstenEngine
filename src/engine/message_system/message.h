@@ -13,7 +13,8 @@ enum class MessageType : uint8_t
     LoadTexture,
     SerializeOBJ,
     UpdateTexture,
-    CreateRenderable
+    CreateRenderable,
+    TestEntity
 };
 
 enum class SupportedFiles : uint8_t
@@ -95,6 +96,7 @@ struct MessageSystem
 };
 
 static std::vector<Message> messages;
+static std::vector<Entity> entities_to_create;
 
 static void add_message(Message message){
     messages.emplace_back(message);
@@ -104,6 +106,7 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& he
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
+    Entity ent = *(Entity*)message.value;
 
     switch (message.type)
     {
@@ -126,6 +129,9 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& he
     case MessageType::CreateRenderable:
         create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);
     break;
+    case MessageType::TestEntity:
+        EntityManager::add_entity(ent, "G");
+    break;
     default:
         break;
     }
@@ -136,4 +142,8 @@ static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapSta
     while (!messages.empty()) {
         handle_message(render_pipeline, heap_stack);
     }
+    for(Entity e : entities_to_create){
+        EntityManager::add_entity(e, "Game Object");
+    }
+    entities_to_create.clear();
 }

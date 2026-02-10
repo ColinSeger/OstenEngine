@@ -8,14 +8,20 @@
 
 struct TempID
 {
-    uint32_t index = 0;
+    uint16_t index = 0;
     uint16_t type = 0;
 };
 
 struct Entity{
-    uint32_t id;
-    std::vector<TempID> components;
+    TempID components[5];
+    uint16_t id;
+    uint16_t amount;
 };
+
+void add_component(Entity& entity, TempID component){
+    entity.components[entity.amount] = component;
+    entity.amount++;
+}
 
 namespace EntityManager
 {
@@ -51,12 +57,17 @@ void EntityManager::add_entity(Entity entity, std::string name)
     auto contains = entity_names.find(name);
     while(contains != EntityManager::get_entity_names().end())
     {
-        name.push_back(0);
-        for (uint8_t i = 32; i < 126; i++)
+        char buf[11];
+        snprintf(buf, sizeof(buf), "%u", (uint32_t)entities.size());
+        for(char c : buf){
+            name.push_back(c);
+        }
+        for (uint8_t i = 1; i < 9; i++)
         {
             contains = entity_names.find(name);
             if(contains != EntityManager::get_entity_names().end()){
-                name[name.size()-1] = (char)i;
+                uint32_t index = name.size()-1;
+                name[index] = (char)i + '0';
             }
             else {
                 break;

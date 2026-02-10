@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/message_system/message.h"
 #include "platform.h"
 #include <cstdint>
 #include "osten_engine.cpp"
@@ -47,23 +48,11 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 }
 
 uint8_t run(OstenEngine& engine){
-    init_game();
+    load_game_reasources();
 
     procces_all_commands(&engine.render_pipeline, engine.heap_stack);
-    RenderAble* rendera = get_renderable(engine.render_pipeline.model_render_data, 0, engine.heap_stack);
-    for (int i = 0; i < entities.size(); i++) {
-        TempID render{
-            (uint32_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
-            (uint16_t)(RENDER)
-        };
-        rendera->instance_amount++;
 
-        TransformComponent* transform = (TransformComponent*)get_component_by_id(get_component_system(TRANSFORM) ,rendera->transform_index + rendera->instance_amount);
-
-        transform->transform.position.y += 1.f * i;
-
-        entities[i].components.emplace_back(render);
-    }
+    init_game(engine);
 
     while(!engine.should_close){
         update_game(engine.delta_time, engine);
