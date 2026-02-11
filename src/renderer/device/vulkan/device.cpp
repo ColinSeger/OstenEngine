@@ -9,15 +9,10 @@
 #include "../../validation.h"
 #include "../../../additional_things/arena.h"
 
-struct TextureCord{
-    float x = 0;
-    float y = 0;
-};
-
 struct Vertex {
     vec3_t position{};
     vec3_t normals{};
-    TextureCord texture_cord{};
+    vec2_t texture_cord{};
 };
 
 typedef struct{

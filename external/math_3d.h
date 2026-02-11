@@ -97,7 +97,11 @@ v1.0  2016-02-15  Initial release
 // So you can just upload the vectors into shaders as they are.
 //
 
-typedef struct { float x, y, z; } vec3_t;
+typedef struct {
+    float x, y, z;
+} vec3_t;
+
+
 static inline vec3_t vec3(float x, float y, float z)        { return { x, y, z }; }
 
 static inline vec3_t v3_add   (vec3_t a, vec3_t b)          { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
@@ -117,6 +121,7 @@ static inline float  v3_angle_between(vec3_t a, vec3_t b);
 
 
 //OstenCode
+typedef struct { float x, y; } vec2_t;
 
 struct vec2_uint_t{
     uint32_t x;

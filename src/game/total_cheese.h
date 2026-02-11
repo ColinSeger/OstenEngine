@@ -10,7 +10,7 @@ static InstanceData render_ids {};
 static void load_game_reasources(){
     Message message{};
     message.type = MessageType::LoadModel;
-    message.value = (void*)"assets/debug_assets/viking.obj";
+    message.value = (void*)"assets/debug_assets/napoleon.OBJ";
 
     add_message(message);
 
@@ -18,7 +18,7 @@ static void load_game_reasources(){
     message.value = (void*)"assets/debug_assets/viking_room.png";
 
     add_message(message);
-    constexpr uint32_t capacity = 2000;
+    constexpr uint32_t capacity = 2;
     render_ids.model_index = 0;
     render_ids.texture_index = 1;
     render_ids.capacity = capacity +2;
@@ -31,7 +31,7 @@ static void load_game_reasources(){
 
 static void init_game(OstenEngine& engine){
 
-    constexpr uint32_t capacity = 2000;
+    constexpr uint32_t capacity = 2;
     uint32_t row_size = 100;
     uint32_t row = 0;
     for(int i = 0; i < capacity; i++){
