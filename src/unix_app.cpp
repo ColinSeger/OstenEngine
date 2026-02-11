@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/mman.h>
+#include "game/total_cheese.h"
 
 
 auto start_time = std::chrono::high_resolution_clock::now();
@@ -53,7 +54,15 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 }
 
 uint8_t run(OstenEngine& engine){
+    load_game_reasources();
 
-    engine.draw_frame();
+    procces_all_commands(&engine.render_pipeline, engine.heap_stack);
+
+    init_game(engine);
+
+    while(!engine.should_close){
+        update_game(engine.delta_time, engine);
+        engine.draw_frame();
+    }
     return 0;
 }

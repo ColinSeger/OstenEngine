@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <vector>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
 #include "device/vulkan/device.cpp"
@@ -378,15 +377,10 @@ static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descr
 
 static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_frame, ModelData& to_render, HeapStack heap_stack) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    ComponentSystem* render =  get_component_system(RENDER);
-
-    //The renderable should not de3cide model and texture instead just be decided ahead of time and then indexed into
-    //ObjectUBO* model_buffer = (ObjectUBO*)to_render.uniform_buffers_mapped[current_image];
 
     for (size_t render_index = 0; render_index < to_render.renderable_amount; render_index++)
     {
         ObjectUBO* model_buffer = get_mapped_uniforms(to_render, heap_stack, render_index, current_frame);
-        RenderComponent* render_component = (RenderComponent*)(get_component_by_id(render, render_index));
         RenderAble* render_able = get_renderable(to_render, render_index, heap_stack);
         for(uint16_t i = 0; i < render_able->instance_amount; i++){
             Transform transform = ((TransformComponent*)get_component_by_id(transform_system, render_able->transform_index+i))->transform;

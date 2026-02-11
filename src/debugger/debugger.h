@@ -54,7 +54,7 @@ namespace Debug
         double end_time = get_time_since_start();
         time_logger.index--;
         double time = end_time - time_logger.timers[time_logger.index];
-        time*=10;//Converts to seconds
+        // time*=10;//Converts to seconds
 
         std::string time_string = std::to_string(time);
 

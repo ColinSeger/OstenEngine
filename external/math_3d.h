@@ -74,6 +74,7 @@ v1.0  2016-02-15  Initial release
 #ifndef MATH_3D_HEADER
 #define MATH_3D_HEADER
 
+#include <cstdint>
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -128,33 +129,33 @@ struct vec2_uint_t{
     uint32_t y;
 };
 
-inline float parse_float(const char* character, size_t& index_jump) {
+inline float parse_float(const char* string_char, size_t& index_jump) {
     uint32_t int_part = 0;
     uint32_t frac_part = 0;
     uint32_t frac_div = 1;
     int sign = 1;
-    uint8_t jump = 0;
+    uint8_t jump = 1;
 
-    if (*character == '-') {
+    if (*string_char == '-') {
         sign = -1;
-        character++;
+        string_char++;
         jump++;
     }
 
-    if (*character < '0' || *character > '9') return 0;
+    if (*string_char < '0' || *string_char > '9') return 0;
 
-    while (*character >= '0' && *character <= '9') {
-        int_part = int_part * 10 + (*character - '0');
-        character++;
+    while (*string_char >= '0' && *string_char <= '9') {
+        int_part = int_part * 10 + (*string_char - '0');
+        string_char++;
         jump++;
     }
 
-    if (*character == '.') {
-        character++;
-        while (*character >= '0' && *character <= '9') {
-            frac_part = frac_part * 10 + (*character - '0');
+    if (*string_char == '.') {
+        string_char++;
+        while (*string_char >= '0' && *string_char <= '9') {
+            frac_part = frac_part * 10 + (*string_char - '0');
             frac_div *= 10;
-            character++;
+            string_char++;
             jump++;
         }
     }
@@ -162,17 +163,25 @@ inline float parse_float(const char* character, size_t& index_jump) {
     return (sign * ((float)int_part + (float)frac_part / frac_div));
 }
 
-static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
+// static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
+//     uint32_t result = 0;
+//     while (*start >= '0' && *start <= '9') {
+//         index_jump++;
+//         result = result * 10 + (*start - '0');
+//         ++start;
+//     }
+//     return result;
+// }
+//
+static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
     uint32_t result = 0;
-    while (*start >= '0' && *start <= '9') {
+    for(uint8_t i = 0; i < 10; i++){
+        if(string[i] < '0' || string[i] > '9') break;
+        result = result * 10 + (string[i] - '0');
         index_jump++;
-        result = result * 10 + (*start - '0');
-        ++start;
     }
     return result;
 }
-//
-
 
 //
 // 4x4 matrices

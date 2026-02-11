@@ -6,7 +6,6 @@
 #include <cstring>
 #include <fstream>
 #include <string>
-#include <vector>
 #include "../../../external/math_3d.h"
 #include "../device/vulkan/device.cpp"
 #include "../../debugger/debugger.h"
@@ -33,32 +32,24 @@ static constexpr bool select_mode(char* char_to_check)//This is ass
 }
 
 static inline vec3_t parse_vertex(const std::string& line, const uint16_t start_index){
-    float result[3]{};
-    uint8_t cord_index = 0;
-    for (size_t i = start_index; i < line.length(); i++){
-        if(line[i] == ' '){
-            result[cord_index] = parse_float(&line[i+1], i);
+    vec3_t result {};
+    size_t cord_index = start_index;
 
-            cord_index ++;
-            if(cord_index >= 3)break;
-        }
-    }
-    return {result[0], result[1], result[2]};
+    result.x = parse_float(&line[cord_index++], cord_index);
+    result.y = parse_float(&line[cord_index++], cord_index);
+    result.z = parse_float(&line[cord_index++], cord_index);
+
+    return result;
 }
 
-static inline vec2_t parse_uv(const std::string& line, const uint16_t start_index)
-{
-    float result[2]{};
-    uint8_t cord_index = 0;
-    for (size_t i = start_index; i < line.length(); i++){
-        if(line[i] == ' '){
-            result[cord_index] = parse_float(&line[i+1], i);
+static inline vec2_t parse_uv(const std::string& line, const uint16_t start_index){
+    vec2_t result{};
+    size_t cord_index = start_index;
 
-            cord_index ++;
-            if(cord_index >= 2)break;
-        }
-    }
-    return {result[0], result[1]};
+    result.x = parse_float(&line[cord_index++], cord_index);
+    result.y = parse_float(&line[cord_index++], cord_index);
+
+    return result;
 }
 
 static inline size_t parse_indicie(const std::string& line, const uint16_t start_index, HeapStack& heap_stack){
@@ -130,16 +121,10 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         Debug::log((char*)"Failed to load model");
         return heap_stack.capacity;
     }
-
-    // size_t file_size = file_stream.tellg();
-    // file_stream.seekg(0);
-    // //Funky idea where I overdide my old memory with the actual data to reduce memory allocation
-    //
     size_t mem_index = heap_stack.index;
 
-
-    std::vector<vec3_t> normals;
-    std::vector<vec2_t> uv;
+    size_t texture_index = 0;
+    size_t normals_index = 0;
 
     size_t vertex_end = mem_index;
     size_t indicie_start = 0;
@@ -149,26 +134,39 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
             size_t index = arena_alloc_memory(heap_stack, sizeof(Vertex));
 
             Vertex* write_to = (Vertex*)heap_stack[index];
-            write_to->position = parse_vertex(line, 1);
+            write_to->position = parse_vertex(line, 2);
             vertex_end = index + sizeof(Vertex);
         }
-        else if(line[0] == 'v' && line[1] == 'n'){
-            normals.emplace_back(parse_vertex(line, 1));
-        }
         else if(line[0] == 'v' && line[1] == 't'){
-            uv.emplace_back(parse_uv(line, 1));
+            size_t index = arena_alloc_memory(heap_stack, sizeof(vec2_t));
+            vec2_t* write_to = (vec2_t*)heap_stack[index];
+            vec2_t t = parse_uv(line, 3);
+            write_to->x = t.x;
+            write_to->y = t.y;
+            if(texture_index == 0) texture_index = index;
+        }
+        else if(line[0] == 'v' && line[1] == 'n'){
+            size_t index = arena_alloc_memory(heap_stack, sizeof(vec3_t));
+            vec3_t* write_to = (vec3_t*)heap_stack[index];
+            vec3_t t = parse_vertex(line, 3);
+            write_to->x = t.x;
+            write_to->y = t.y;
+            write_to->z = t.z;
+            if(normals_index == 0) normals_index = index;
         }
         else if(line[0] == 'f' && line[1] == ' '){
             size_t mem_i = parse_indicie(line, 1, heap_stack);
             if(indicie_start == 0)  indicie_start = mem_i;
         }
     }
+    file_stream.close();
 
     size_t vertex_bytes = (vertex_end - mem_index);
     model_vertices.amount = (vertex_bytes / sizeof(Vertex));
     model_vertices.values = (Vertex*)heap_stack[mem_index];
 
-    std::vector<uint32_t> temp;
+    size_t index = 0;
+    size_t index_end = 0;
     size_t indicie_index = (heap_stack.index - indicie_start) / (sizeof(uint32_t)*3);
     for (size_t i = 0; indicie_index > i; i++) {
         size_t index_of = indicie_start + (sizeof(uint32_t) * 3) * i;
@@ -176,55 +174,33 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         size_t texture_uv_index = *((uint32_t*)heap_stack[index_of + sizeof(uint32_t)]) -1;
         size_t vertex_normal_index = *((uint32_t*)heap_stack[index_of + sizeof(uint32_t)+ sizeof(uint32_t)]) -1;
 
-        temp.push_back(indicie);
 
-        if(!normals.empty()){
-            model_vertices.values[indicie].normals = normals[vertex_normal_index];
+        if(!index){
+            index = arena_alloc_memory(heap_stack, sizeof(uint32_t));
+        }else{
+            index_end = arena_alloc_memory(heap_stack, sizeof(uint32_t));
+        }
+
+        uint32_t* indicies = (uint32_t*)heap_stack[index + (sizeof(uint32_t) * i)];
+        *indicies = indicie;
+
+        if(normals_index){
+            model_vertices.values[indicie].normals = *((vec3_t*)heap_stack[(vertex_normal_index * sizeof(vec3_t))+ normals_index]);
         }else{
             model_vertices.values[indicie].normals = {0,1,0};
         }
 
-        model_vertices.values[indicie].texture_cord.x = uv[texture_uv_index].x;
-        model_vertices.values[indicie].texture_cord.y = 1.f - uv[texture_uv_index].y;
+        model_vertices.values[indicie].texture_cord.x = ((vec2_t*)heap_stack[(texture_uv_index * sizeof(vec2_t))+ texture_index])->x;
+        model_vertices.values[indicie].texture_cord.y = 1.f - ((vec2_t*)heap_stack[(texture_uv_index * sizeof(vec2_t))+ texture_index])->y;
     }
 
-    model_indicies.amount = indicie_index;
-    free_arena(heap_stack, indicie_start);//Temp
-    size_t allocation_size = model_indicies.amount * sizeof(uint32_t);
-    size_t allocation_index = arena_alloc_memory(heap_stack, allocation_size);
+    size_t allocation_index = arena_alloc_memory(heap_stack, indicie_index * sizeof(uint32_t));
 
+    model_indicies.amount = indicie_index;
     model_indicies.values = (uint32_t*)heap_stack[allocation_index];
 
-    size_t range = sizeof(uint32_t) * temp.size()-1;
-    memcpy(model_indicies.values, temp.data(), range);
-
-    file_stream.close();
+    memcpy(model_indicies.values, heap_stack[index], index_end - index);
 
     Debug::profile_time_end();
     return mem_index;
 }
-
-/*
-uint16_t* lin2 = (uint16_t*)line.data();
-size_t index = mem_index;
-
-Vertex* write_to = (Vertex*)heap_stack[index];
-switch (*lin2) {
-    case 8310://Vertex
-        index = arena_alloc_memory(heap_stack, sizeof(Vertex));
-        write_to->position = parse_vertex(line, 1);
-        vertex_end = index + sizeof(Vertex);
-    break;
-    case 29814://UV
-        uv.emplace_back(parse_uv(line, 1));
-    break;
-    case 28278://Normal
-        normals.emplace_back(parse_vertex(line, 1));
-    break;
-    case 8294://Index
-        size_t mem_i = parse_indicie(line, 1, heap_stack);
-        if(indicie_start == 0)  indicie_start = mem_i;
-    break;
-}
- *
- */

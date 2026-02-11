@@ -9,8 +9,11 @@
 #else
 #include "src/unix_app.cpp"
 #endif
-/*
-*/
+
+#define MATH_3D_IMPLEMENTATION
+#include "external/math_3d.h"
+
+
 int main()
 {
     #ifdef _DEBUG
