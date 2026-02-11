@@ -44,7 +44,7 @@ namespace ModelLoader
         new_name[new_name.size()-2] = 'i';
         new_name[new_name.size()-3] = 'b';
 
-        parse_obj(filename, vertices, indices, memory_arena);
+        load_obj_v2(filename, vertices, indices, memory_arena);
 
         std::ofstream file(new_name, std::ios::binary);
 
