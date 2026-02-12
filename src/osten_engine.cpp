@@ -13,6 +13,7 @@
 #include "engine/entity_manager/components.cpp"
 #include "engine/message_system/message.h"
 #include "../external/math_3d.h"
+#include "renderer/camera/camera.h"
 
 constexpr size_t KB = 1024;
 constexpr size_t MB = KB * 1024;
@@ -125,6 +126,8 @@ void OstenEngine::draw_frame(){
     should_close = glfwWindowShouldClose(main_window);
 
     glfwPollEvents();
+
+    camera_movement(delta_time, 0, main_window);
 
     auto current_time = std::chrono::high_resolution_clock::now();
     delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();

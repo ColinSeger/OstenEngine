@@ -199,7 +199,7 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
     model_indicies.amount = indicie_index;
     model_indicies.values = (uint32_t*)heap_stack[allocation_index];
 
-    memcpy(model_indicies.values, heap_stack[index], index_end - index);
+    memcpy(model_indicies.values, heap_stack[index], (index_end - index) + sizeof(uint32_t));
 
     Debug::profile_time_end();
     return mem_index;
