@@ -89,7 +89,7 @@ void* get_component_by_id(ComponentSystem* component_system, uint16_t id)
     return comp;
 }
 
-ComponentSystem* get_component_system(uint8_t system_id)
+static constexpr ComponentSystem* get_component_system(uint8_t system_id)
 {
     switch (system_id)
     {

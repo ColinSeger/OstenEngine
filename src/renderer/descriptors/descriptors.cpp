@@ -9,26 +9,26 @@
 
 constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
-typedef struct{
+struct RenderDescriptors{
     uint32_t object_amount;
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
-} RenderDescriptors;
+};
 
-typedef struct{
+struct Light{
     VkDescriptorSet light_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
-} Light;
+};
 
-typedef struct{
+struct CameraDescriptor{
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
-} CameraDescriptor;
+};
 
 struct RenderAble{
     VkDescriptorSet model_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
