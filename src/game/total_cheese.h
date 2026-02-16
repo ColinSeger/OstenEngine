@@ -50,6 +50,8 @@ static void init_game(OstenEngine& engine){
 static double test = 0;
 static void update_game(double delta_time, OstenEngine& engine){
     test+= delta_time;
+    Entity data[255] {};
+    uint8_t in_range = get_units_in_range(army_units.data(), army_units.size(), {2, 0, 0}, 5, data, 255);
     for (ArmyUnit& unit : army_units) {
         //test_army(unit);
         move_towards(unit, {}, delta_time);

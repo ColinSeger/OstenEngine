@@ -119,7 +119,7 @@ static inline float  v3_dot   (vec3_t a, vec3_t b)          { return a.x*b.x + a
 static inline vec3_t v3_proj  (vec3_t v, vec3_t onto);
 static inline vec3_t v3_cross (vec3_t a, vec3_t b);
 static inline float  v3_angle_between(vec3_t a, vec3_t b);
-
+static inline vec3_t v3_move_towards (vec3_t a, vec3_t b, float delta);
 
 //OstenCode
 typedef struct { float x, y; } vec2_t;
@@ -128,40 +128,9 @@ struct vec2_uint_t{
     uint32_t x;
     uint32_t y;
 };
+static inline float parse_float(const char* string_char, size_t& index_jump);
 
-inline float parse_float(const char* string_char, size_t& index_jump) {
-    uint32_t int_part = 0;
-    uint32_t frac_part = 0;
-    uint32_t frac_div = 1;
-    int sign = 1;
-    uint8_t jump = 1;
-
-    if (*string_char == '-') {
-        sign = -1;
-        string_char++;
-        jump++;
-    }
-
-    if (*string_char < '0' || *string_char > '9') return 0;
-
-    while (*string_char >= '0' && *string_char <= '9') {
-        int_part = int_part * 10 + (*string_char - '0');
-        string_char++;
-        jump++;
-    }
-
-    if (*string_char == '.') {
-        string_char++;
-        while (*string_char >= '0' && *string_char <= '9') {
-            frac_part = frac_part * 10 + (*string_char - '0');
-            frac_div *= 10;
-            string_char++;
-            jump++;
-        }
-    }
-    index_jump += jump;
-    return (sign * ((float)int_part + (float)frac_part / frac_div));
-}
+static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump);
 
 // static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
 //     uint32_t result = 0;
@@ -173,15 +142,6 @@ inline float parse_float(const char* string_char, size_t& index_jump) {
 //     return result;
 // }
 //
-static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
-    uint32_t result = 0;
-    for(uint8_t i = 0; i < 10; i++){
-        if(string[i] < '0' || string[i] > '9') break;
-        result = result * 10 + (string[i] - '0');
-        index_jump++;
-    }
-    return result;
-}
 
 //
 // 4x4 matrices
@@ -299,7 +259,15 @@ static inline float v3_angle_between(vec3_t a, vec3_t b) {
 // static inline vec3_t v3_add(const vec3_t value1, const vec3_t value2){
 //     return {value1.x + value2.x, value1.y + value2.y, value1.z + value2.z};
 // }
-
+static inline vec3_t v3_move_towards (vec3_t current, vec3_t target, float delta){
+    if(delta == 0) return current;
+    vec3_t direction = v3_sub(target, current);
+    float lenght = v3_length(direction);
+    if(lenght <= delta || lenght == 0) return target;
+    //lenght *= delta;
+    vec3_t step = v3_muls(direction, delta / lenght);
+    return  v3_add(current, step);
+}
 //
 // Matrix functions header implementation
 //
@@ -709,6 +677,52 @@ mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//
         0,  0,  zFar / (zNear - zFar),  -1,
         0,  0, (zNear * zFar) / (zNear - zFar),  0
     );
+}
+
+//Osten Implementation
+
+static inline float parse_float(const char* string_char, size_t& index_jump) {
+    uint32_t int_part = 0;
+    uint32_t frac_part = 0;
+    uint32_t frac_div = 1;
+    int sign = 1;
+    uint8_t jump = 1;
+
+    if (*string_char == '-') {
+        sign = -1;
+        string_char++;
+        jump++;
+    }
+
+    if (*string_char < '0' || *string_char > '9') return 0;
+
+    while (*string_char >= '0' && *string_char <= '9') {
+        int_part = int_part * 10 + (*string_char - '0');
+        string_char++;
+        jump++;
+    }
+
+    if (*string_char == '.') {
+        string_char++;
+        while (*string_char >= '0' && *string_char <= '9') {
+            frac_part = frac_part * 10 + (*string_char - '0');
+            frac_div *= 10;
+            string_char++;
+            jump++;
+        }
+    }
+    index_jump += jump;
+    return (sign * ((float)int_part + (float)frac_part / frac_div));
+}
+
+static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
+    uint32_t result = 0;
+    for(uint8_t i = 0; i < 10; i++){
+        if(string[i] < '0' || string[i] > '9') break;
+        result = result * 10 + (string[i] - '0');
+        index_jump++;
+    }
+    return result;
 }
 
 #endif // MATH_3D_IMPLEMENTATION

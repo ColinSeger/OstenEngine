@@ -126,3 +126,10 @@ std::vector<Entity>& EntityManager::get_all_entities()
 {
     return entities;
 }
+
+uint16_t get_component_id(Entity entity, uint16_t type){
+    for (TempID ids : entity.components) {
+        if(ids.type == type) return ids.index;
+    }
+    return UINT16_MAX;
+}
