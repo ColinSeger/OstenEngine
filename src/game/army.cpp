@@ -8,7 +8,8 @@
 
 
 struct ArmyUnit{
-    Entity units[255];
+    uint16_t unit_transform[255];
+    RenderAble* render_able;
     bool alive_units[255];//Bad
     float move_speed = 1.f;
 };
@@ -16,11 +17,11 @@ struct ArmyUnit{
 ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size){
     uint8_t row = 0;
     ArmyUnit unit{};
-
-
+    unit.render_able = render_able;
     for(uint8_t i = 0; i < amount; i++){
 
         uint16_t transform_index = render_able->transform_index + render_able->instance_amount;
+        unit.unit_transform[i] = transform_index;
 
         struct Entity entity {};
 
@@ -48,20 +49,23 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
 
 
 void test_army(ArmyUnit& unit){
+    ComponentSystem* system = get_component_system(TRANSFORM);
     for (uint8_t i = 0; i < 255; i++) {
-        uint16_t id = get_component_id(unit.units[i], TRANSFORM);
-        if(id == UINT16_MAX) continue;
-        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(get_component_system(TRANSFORM), id);
+        //uint16_t id = get_component_id(unit.unit_transform[i], TRANSFORM);
+        //if(id == UINT16_MAX) continue;
+        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);
         transform->transform.rotation.y += 0.01f;
     }
 }
 
 void move_towards(ArmyUnit& unit, vec3_t position, double delta_time){
-    if(delta_time <= 0 || delta_time > 10) return;
+    if(delta_time <= 0) return;
+    ComponentSystem* system = get_component_system(TRANSFORM);
+
     for (uint8_t i = 0; i < 255; i++) {
-        uint16_t id = get_component_id(unit.units[i], TRANSFORM);
-        if(id == UINT16_MAX) continue;
-        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(get_component_system(TRANSFORM), id);
+        //uint16_t id = get_component_id(unit.units[i], RENDER);
+        //if(id == UINT16_MAX) continue;
+        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);
         vec3_t current = transform->transform.position;
 
         vec3_t result = v3_move_towards(current, position, delta_time * unit.move_speed * 10);
@@ -70,20 +74,20 @@ void move_towards(ArmyUnit& unit, vec3_t position, double delta_time){
     }
 }
 
-uint8_t get_units_in_range(ArmyUnit* army_units, uint16_t unit_amount, vec3_t target, float range, Entity* result, uint8_t capacity){
+uint8_t get_units_in_range(ArmyUnit* army_units, uint16_t unit_amount, vec3_t target, float range, uint16_t* result, uint8_t capacity){
     ComponentSystem* transforms = get_component_system(TRANSFORM);
     uint8_t amount = 0;
     for(uint16_t x = 0; x < unit_amount; x++){
         for(uint16_t i = 0; i < 255; i++){
-            uint16_t id = get_component_id(army_units[x].units[i], TRANSFORM);
-            if(id == UINT16_MAX) continue;
-            Transform& transform1 = ((struct TransformComponent*)get_component_by_id(transforms, id))->transform;
+            //uint16_t id = get_component_id(army_units[x].units[i], TRANSFORM);
+            //if(id == UINT16_MAX) continue;
+            Transform& transform1 = ((struct TransformComponent*)get_component_by_id(transforms, army_units->unit_transform[i]))->transform;
 
             vec3_t distance = v3_sub(transform1.position, target);
 
             float vec_lenght = v3_length(distance);
             if(vec_lenght < range){
-                result[amount] = army_units->units[i];
+                result[amount] = army_units->unit_transform[i];
                 amount++;
                 if(amount >= capacity) return amount;
             }
