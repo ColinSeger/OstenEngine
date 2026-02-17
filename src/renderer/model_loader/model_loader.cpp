@@ -69,7 +69,7 @@ namespace ModelLoader
 
         if(!file.is_open()){
             Debug::log((char*)"There was a issue parsing this model");
-            return memory_arena.capacity;
+            return memory_arena.index;
         }
 
         //Find out where the file ends

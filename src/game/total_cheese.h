@@ -15,7 +15,7 @@ static std::vector<ArmyUnit> army_units{};
 static void load_game_reasources(){
     struct Message message{};
     message.type = MessageType::LoadModel;
-    message.value = (void*)"assets/debug_assets/cube.bin";
+    message.value = (void*)"assets/debug_assets/Cube.obj";
 
     add_message(message);
 
