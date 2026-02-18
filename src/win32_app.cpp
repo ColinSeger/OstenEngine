@@ -83,7 +83,7 @@ uint8_t run(OstenEngine& engine){
     procces_all_commands(&engine.render_pipeline, engine.heap_stack);
 
     init_game(engine);
-
+    last_tick = std::chrono::high_resolution_clock::now();
     while(!engine.should_close){
         update_game(engine.delta_time, engine);
         engine.draw_frame();

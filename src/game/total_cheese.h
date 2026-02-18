@@ -43,7 +43,7 @@ static void init_game(OstenEngine& engine){
 
     army_units.emplace_back(unit1);
 
-    ArmyUnit unit = init_army_unit(rendera, {0 , 0 , 0}, 255, 40);
+    //ArmyUnit unit = init_army_unit(rendera, {0 , 0 , 0}, 255, 40);
 
     //army_units.emplace_back(unit);
 }
@@ -51,9 +51,9 @@ static double test = 0;
 static void update_game(double delta_time, OstenEngine& engine){
     test+= delta_time;
     uint16_t data[255] {};
-    uint8_t in_range = get_units_in_range(army_units.data(), army_units.size(), {2, 0, 0}, 5, data, 255);
+    uint8_t in_range = get_units_in_range(army_units.data(), army_units.size(), {0, 0, 0}, 1000, data, 255);
     for (ArmyUnit& unit : army_units) {
         //test_army(unit);
-        move_towards(unit, {0,0,0}, delta_time);
+        move_towards(unit, {0,0,0}, delta_time, data);
     }
 }

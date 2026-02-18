@@ -11,7 +11,7 @@ struct ArmyUnit{
     uint16_t unit_transform[255];
     RenderAble* render_able;
     bool alive_units[255];//Bad
-    float move_speed = 1.f;
+    float move_speed = 5.f;
 };
 
 ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size){
@@ -58,19 +58,47 @@ void test_army(ArmyUnit& unit){
     }
 }
 
-void move_towards(ArmyUnit& unit, vec3_t position, double delta_time){
+void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, uint16_t nearby_transform_indexes[255]){
     if(delta_time <= 0) return;
     ComponentSystem* system = get_component_system(TRANSFORM);
 
+    float minimum_distance = 4;
+    float seperation_strenght = 1;
+
+
     for (uint8_t i = 0; i < 255; i++) {
-        //uint16_t id = get_component_id(unit.units[i], RENDER);
-        //if(id == UINT16_MAX) continue;
+
         TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);
         vec3_t current = transform->transform.position;
+        vec3_t target = v3_sub(target_position, current);
+        vec3_t desired = v3_norm(target);
 
-        vec3_t result = v3_move_towards(current, position, delta_time * unit.move_speed * 10);
+        vec3_t separation = {};
 
-        transform->transform.position = result;
+        //vec3_t result = v3_move_towards(current, desired, delta_time * unit.move_speed * 10);
+
+        for (uint8_t x = 0; x < 255; x++){
+            if(nearby_transform_indexes[x] == 0) break;
+            TransformComponent* other = (struct TransformComponent*)get_component_by_id(system, nearby_transform_indexes[x]);
+
+            vec3_t other_pos = other->transform.position;
+
+            vec3_t diff = v3_sub(current, other_pos);
+            float dist = v3_length(diff);
+
+            if (dist > 0 && dist < minimum_distance) {
+                // stronger push when closer
+                vec3_t push = v3_muls(v3_norm(diff), (minimum_distance - dist) / minimum_distance);
+                separation = v3_add(separation, push);
+            }
+        }
+
+        separation = v3_muls(separation, seperation_strenght);
+
+        vec3_t final_dir = v3_add(desired, separation);
+        final_dir = v3_norm(final_dir);
+        float move_speed = unit.move_speed * delta_time;
+        transform->transform.position = v3_move_towards(current, v3_add(current, v3_muls(final_dir, move_speed)), move_speed);
     }
 }
 
