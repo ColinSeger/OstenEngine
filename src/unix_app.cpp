@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/mman.h>
-#include "game/total_cheese.h"
+#include "game/total_cheese.hpp"
 
 
 auto start_time = std::chrono::high_resolution_clock::now();

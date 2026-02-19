@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include <cmath>
 #include <cstdint>
 #include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"

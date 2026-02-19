@@ -2,9 +2,6 @@
 #include <cstdint>
 #include <vector>
 #include "../engine/message_system/message.h"
-//#include "../osten_engine.cpp"
-//#include "../renderer/render_pipeline.cpp"
-//#include "../engine/entity_manager/entity_manager.cpp"
 
 
 struct ArmyUnit{
@@ -64,8 +61,6 @@ void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, uin
 
     float minimum_distance = 4;
     float seperation_strenght = 1;
-
-
     for (uint8_t i = 0; i < 255; i++) {
 
         TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);

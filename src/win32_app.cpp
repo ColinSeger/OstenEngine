@@ -11,7 +11,7 @@
 #include <processthreadsapi.h>
 #include <psapi.h>
 #include <winnt.h>
-#include "game/total_cheese.h"
+#include "game/total_cheese.hpp"
 
 static auto start_time = std::chrono::high_resolution_clock::now();
 
