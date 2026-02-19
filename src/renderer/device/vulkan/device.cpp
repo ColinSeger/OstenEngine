@@ -97,14 +97,14 @@ constexpr VertexAttributes get_attribute_descriptions() {
     return attribute_descriptions;
 }
 
-QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack& memory_arena){
+QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
     QueueFamilyIndicies indices;
     // Logic to find queue family indices to populate struct
     uint32_t queue_family_amount = 0;
 
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, nullptr);
-    size_t mem_index = arena_alloc_memory(memory_arena, sizeof(VkQueueFamilyProperties) * queue_family_amount);
-    VkQueueFamilyProperties* queue_families = (VkQueueFamilyProperties*)memory_arena[mem_index];
+    size_t mem_index = arena_alloc_memory(heap_stack, sizeof(VkQueueFamilyProperties) * queue_family_amount);
+    VkQueueFamilyProperties* queue_families = (VkQueueFamilyProperties*)get_at_index(heap_stack, mem_index);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_amount, queue_families);
 
     uint32_t index = 0;
@@ -128,12 +128,12 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
         index++;
     }
 
-    free_arena(memory_arena, mem_index);
+    free_arena(heap_stack, mem_index);
 
     return indices;
 }
 
-SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack& memory_arena){
+SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
     SwapChainSupportDetails swap_chain_details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
 
@@ -146,8 +146,8 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     swap_chain_details.surface_amount = format_amount;
     swap_chain_details.present_amount = present_mode_amount;
 
-    size_t mem_index = arena_alloc_memory(memory_arena, (sizeof(VkSurfaceFormatKHR) * format_amount) + (sizeof(VkPresentModeKHR) * present_mode_amount));
-    swap_chain_details.surface_data = memory_arena[mem_index];
+    size_t mem_index = arena_alloc_memory(heap_stack, (sizeof(VkSurfaceFormatKHR) * format_amount) + (sizeof(VkPresentModeKHR) * present_mode_amount));
+    swap_chain_details.surface_data = get_at_index(heap_stack, mem_index);
 
     if (format_amount != 0) {
         //swap_chain_details.surface_formats = surfaces;
@@ -164,12 +164,12 @@ SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfa
     return swap_chain_details;
 }
 
-static bool check_device_extension_support(VkPhysicalDevice device, HeapStack& memory_arena){
+static bool check_device_extension_support(VkPhysicalDevice device, HeapStack* heap_stack){
     uint32_t extension_count = 0;
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-    size_t mem_index = arena_alloc_memory(memory_arena, sizeof(VkExtensionProperties) * extension_count);
-    VkExtensionProperties* available_extensions = (VkExtensionProperties*)memory_arena[mem_index];
+    size_t mem_index = arena_alloc_memory(heap_stack, sizeof(VkExtensionProperties) * extension_count);
+    VkExtensionProperties* available_extensions = (VkExtensionProperties*)get_at_index(heap_stack, mem_index);
 
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions);
 
@@ -182,7 +182,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, HeapStack& m
             found_amount++;
         }
     }
-    free_arena(memory_arena, mem_index);
+    free_arena(heap_stack, mem_index);
     if(found_amount >= extension_amount){
         return true;
     }else{
@@ -190,7 +190,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, HeapStack& m
     }
 }
 
-static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, HeapStack& memory_arena){//Can improve later
+static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, HeapStack* memory_arena){//Can improve later
     QueueFamilyIndicies indices = find_queue_families(device, surface, memory_arena);
 
     bool has_extention_support = check_device_extension_support(device, memory_arena);
@@ -217,7 +217,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const u
     return false;
 }
 
-static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStack& memory_arena){
+static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStack* memory_arena){
     QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface, memory_arena);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 
@@ -275,7 +275,7 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStac
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, HeapStack& memory_arena)
+void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, HeapStack* heap_stack)
 {
     uint32_t device_amount = 0;
 
@@ -284,12 +284,12 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
     if(device_amount <= 0){
         throw "There is no device that supports vulkan on this computer";
     }
-    size_t mem_index = arena_alloc_memory(memory_arena, sizeof(VkPhysicalDevice) * device_amount);
-    VkPhysicalDevice* devices = (VkPhysicalDevice*)memory_arena[mem_index];
+    size_t mem_index = arena_alloc_memory(heap_stack, sizeof(VkPhysicalDevice) * device_amount);
+    VkPhysicalDevice* devices = (VkPhysicalDevice*)get_at_index(heap_stack, mem_index);
     vkEnumeratePhysicalDevices(instance, &device_amount, devices);
 
     for (uint32_t i = 0; i < device_amount; i++) {
-        if (is_device_suitable(devices[i], surface_reference, memory_arena)) {
+        if (is_device_suitable(devices[i], surface_reference, heap_stack)) {
             device.physical_device = devices[i];
             break;
         }
@@ -298,8 +298,8 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
     if(device.physical_device == VK_NULL_HANDLE){
         throw "No vulkan supported graphics found";
     }
-    free_arena(memory_arena, mem_index);
-    create_virtual_device(device, surface_reference, memory_arena);
+    free_arena(heap_stack, mem_index);
+    create_virtual_device(device, surface_reference, heap_stack);
 }
 
 void destroy_device(Device& device)
@@ -508,7 +508,7 @@ namespace CommandBuffer
         return vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers);
     }
 
-    VkResult create_command_pool(Device& device, VkSurfaceKHR surface, HeapStack& memory_arena, VkCommandPool& command_pool) {
+    VkResult create_command_pool(Device& device, VkSurfaceKHR surface, HeapStack* memory_arena, VkCommandPool& command_pool) {
         QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface, memory_arena);
 
         VkCommandPoolCreateInfo poolInfo{};

@@ -74,10 +74,10 @@ struct RenderPipeline
 
     ModelData model_render_data;
 
-    int32_t draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack& heap_stack, CameraComponent& light_source);
+    int32_t draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source);
 };
 
-void render_cleanup(struct RenderPipeline& pipeline, HeapStack& memory_stack)
+void render_cleanup(struct RenderPipeline& pipeline, HeapStack* memory_stack)
 {
     vkDeviceWaitIdle(pipeline.device.virtual_device);
 
@@ -110,15 +110,15 @@ void render_cleanup(struct RenderPipeline& pipeline, HeapStack& memory_stack)
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 }
 
-static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, HeapStack& memory_arena){
+static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, HeapStack* heap_stack){
     //Move this later
-    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", memory_arena);
-    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", memory_arena);
+    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", heap_stack);
+    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", heap_stack);
 
-    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
-    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, memory_arena);
-    free_arena(memory_arena, vertex_shader.arena_index);
-    free_arena(memory_arena, fragment_shader.arena_index);//Tecnically only need one of these
+    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, heap_stack);
+    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, heap_stack);
+    free_arena(heap_stack, vertex_shader.arena_index);
+    free_arena(heap_stack, fragment_shader.arena_index);//Tecnically only need one of these
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
@@ -212,12 +212,12 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     return VK_SUCCESS;
 }
 
-static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, HeapStack& memory_arena){
-    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", memory_arena);
+static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, HeapStack* heap_stack){
+    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
 
-    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, memory_arena);
+    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, heap_stack);
 
-    free_arena(memory_arena, vertex_shader.arena_index);
+    free_arena(heap_stack, vertex_shader.arena_index);
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info};
     constexpr uint8_t shader_amount = sizeof(shader_stages) / sizeof(shader_stages[0]);
@@ -299,7 +299,7 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipe
     return VK_SUCCESS;
 }
 
-static void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, HeapStack& memory_arena)
+static void restart_swap_chain(RenderPipeline& render_pipeline, VkExtent2D screen_size, HeapStack* memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
 
@@ -375,7 +375,7 @@ static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descr
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_frame, ModelData& to_render, HeapStack heap_stack) {
+static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
     for (size_t render_index = 0; render_index < to_render.renderable_amount; render_index++)
@@ -390,7 +390,7 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     }
 }
 
-static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack& heap_stack)
+static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack* heap_stack)
 {
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
@@ -500,7 +500,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     return VK_SUCCESS;
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack& heap_stack){
+static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor& descriptors, TextureDescriptor& textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack){
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
@@ -527,7 +527,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, RenderingDescriptor
     }
 }
 
-static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor& light, ModelData model_data, const uint8_t frame, HeapStack heap_stack){
+static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, RenderingDescriptor& light, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
@@ -588,7 +588,7 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
     vkCmdEndRenderPass(command_buffer);
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack& heap_stack, CameraComponent& light_source)
+int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source)
 {
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index;
@@ -615,7 +615,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
 
     start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, test_lights_desc, model_render_data, current_frame, heap_stack);
 
-    start_render_pass(command_buffer, ((VkFramebuffer*)heap_stack[swap_chain_images.swap_chain_frame_buffers])[image_index], render_pass, swap_chain.screen_extent);
+    void* frame_buffer = get_at_index(heap_stack, swap_chain_images.swap_chain_frame_buffers);
+
+    start_render_pass(command_buffer, ((VkFramebuffer*)frame_buffer)[image_index], render_pass, swap_chain.screen_extent);
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 

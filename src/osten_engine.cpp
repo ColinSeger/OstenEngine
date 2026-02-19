@@ -6,7 +6,7 @@
 #include <vulkan/vulkan_core.h>
 #include "platform.h"
 #include "additional_things/arena.h"
-#include "renderer/instance/vulkan/instance.cpp"
+#include "renderer/instance/vulkan/instance.h"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
@@ -64,7 +64,7 @@ static auto start_time2 = std::chrono::high_resolution_clock::now();
 static std::chrono::high_resolution_clock::time_point last_tick;
 
 OstenEngine::OstenEngine(const int width, const int height, const char* application_name){
-    heap_stack = init_mem_arena(128*MB);
+    init_mem_arena(&heap_stack ,128*MB);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");
@@ -86,23 +86,27 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     WindowExtentions window_extentions{ glfw_extensions, glfw_extention_count };
 
     //Investigate Why so slow
-    Instance::create_instance(instance, application_name, window_extentions, heap_stack);
+    VkResult result = create_instance(instance, application_name, window_extentions);
+
+    if(result != VK_SUCCESS){
+        throw "Failed to create Instance";
+    }
 
     VkSurfaceKHR surface;
 
-    VkResult result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
+    result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
     if(result != VK_SUCCESS){
         throw "Failed to create surface";
     }
 
-    result = create_render_pipeline(window_size, instance, surface, this->render_pipeline, heap_stack);
+    result = create_render_pipeline(window_size, instance, surface, this->render_pipeline, &heap_stack);
 
     if(result != VK_SUCCESS){
         throw "Failed to create render pipeline";
     }
 
-    init_imgui(main_window, &render_pipeline, instance, heap_stack);
+    init_imgui(main_window, &render_pipeline, instance, &heap_stack);
 
     imgui_texture = ImGui_ImplVulkan_AddTexture
     (
@@ -133,7 +137,7 @@ void OstenEngine::draw_frame(){
     delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
     double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time2).count();
 
-    procces_all_commands(&render_pipeline, heap_stack);
+    procces_all_commands(&render_pipeline, &heap_stack);
 
     if(frame_time > 1) {
         update_graph(platform_memory_mb());
@@ -143,7 +147,7 @@ void OstenEngine::draw_frame(){
         frames = 0;
     }
 
-    begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, heap_stack);
+    begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, &heap_stack);
 
     start_file_explorer(file_explorer, &render_pipeline);
 
@@ -163,7 +167,7 @@ void OstenEngine::draw_frame(){
     {
         CameraComponent* camera = (CameraComponent*)get_component_by_id(camera_sys, 0);
         CameraComponent* light_source = (CameraComponent*)get_component_by_id(camera_sys, 1);
-        result = render_pipeline.draw_frame(*camera, imgui_texture, heap_stack, *light_source);
+        result = render_pipeline.draw_frame(*camera, imgui_texture, &heap_stack, *light_source);
 
         if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
             resized = false;
@@ -174,8 +178,8 @@ void OstenEngine::draw_frame(){
                 glfwGetFramebufferSize(main_window, &width, &height);
                 glfwWaitEvents();
             }
-            restart_swap_chain(render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, heap_stack);
-            result = render_pipeline.draw_frame(*camera, imgui_texture, heap_stack, *light_source);
+            restart_swap_chain(render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, &heap_stack);
+            result = render_pipeline.draw_frame(*camera, imgui_texture, &heap_stack, *light_source);
         }
     }
 
@@ -191,10 +195,10 @@ void OstenEngine::cleanup()
 
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplVulkan_Shutdown();
-    render_cleanup(render_pipeline, heap_stack);
+    render_cleanup(render_pipeline, &heap_stack);
     vkDestroySurfaceKHR(instance, surf, nullptr);
     vkDestroyInstance(instance, nullptr);
     ImGui::DestroyContext();
 
-    destroy_arena(heap_stack);
+    destroy_arena(&heap_stack);
 }

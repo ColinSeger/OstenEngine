@@ -52,7 +52,7 @@ static inline vec2_t parse_uv(const std::string& line, const uint16_t start_inde
     return result;
 }
 
-static inline size_t parse_indicie(const std::string& line, const uint16_t start_index, HeapStack& heap_stack){
+static inline size_t parse_indicie(const std::string& line, const uint16_t start_index, HeapStack* heap_stack){
     uint32_t index_index = 0;
     uint8_t temp = 0;
     uint32_t indicies[12]{};
@@ -66,7 +66,7 @@ static inline size_t parse_indicie(const std::string& line, const uint16_t start
             if(line[i] == '/') temp++;
         }
     }
-    uint32_t* values = (uint32_t*)heap_stack[memory_index];
+    uint32_t* values = (uint32_t*)get_at_index(heap_stack, memory_index);
     if(index_index < 9){
         if(temp < 5){
             values[0] = indicies[0];
@@ -98,7 +98,7 @@ static inline size_t parse_indicie(const std::string& line, const uint16_t start
     }
     else if(index_index > 9){
         size_t memory_index2 = arena_alloc_memory(heap_stack, sizeof(uint32_t) * 9);
-        uint32_t* values2 = (uint32_t*)heap_stack[memory_index2];
+        uint32_t* values2 = (uint32_t*)get_at_index(heap_stack, memory_index2);
         values2[0] = indicies[0];
         values2[1] = indicies[1];
         values2[2] = indicies[2];
@@ -109,7 +109,7 @@ static inline size_t parse_indicie(const std::string& line, const uint16_t start
     return memory_index;
 }
 
-static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack& heap_stack){
+static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack* heap_stack){
     Debug::profile_time_start();
     std::ifstream file_stream(path_of_obj, std::ios_base::in);
 
@@ -119,9 +119,9 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         model_indicies.values = nullptr;
         model_indicies.amount = 0;
         Debug::log((char*)"Failed to load model");
-        return heap_stack.capacity;
+        return heap_stack->capacity;
     }
-    size_t mem_index = heap_stack.index;
+    size_t mem_index = heap_stack->index;
 
     size_t texture_index = 0;
     size_t normals_index = 0;
@@ -133,13 +133,13 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         if(line[0] == 'v' && line[1] == ' '){
             size_t index = arena_alloc_memory(heap_stack, sizeof(Vertex));
 
-            Vertex* write_to = (Vertex*)heap_stack[index];
+            Vertex* write_to = (Vertex*)get_at_index(heap_stack, index);
             write_to->position = parse_vertex(line, 2);
             vertex_end = index + sizeof(Vertex);
         }
         else if(line[0] == 'v' && line[1] == 't'){
             size_t index = arena_alloc_memory(heap_stack, sizeof(vec2_t));
-            vec2_t* write_to = (vec2_t*)heap_stack[index];
+            vec2_t* write_to = (vec2_t*)get_at_index(heap_stack, index);
             vec2_t t = parse_uv(line, 3);
             write_to->x = t.x;
             write_to->y = t.y;
@@ -147,7 +147,7 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         }
         else if(line[0] == 'v' && line[1] == 'n'){
             size_t index = arena_alloc_memory(heap_stack, sizeof(vec3_t));
-            vec3_t* write_to = (vec3_t*)heap_stack[index];
+            vec3_t* write_to = (vec3_t*)get_at_index(heap_stack, index);
             vec3_t t = parse_vertex(line, 3);
             write_to->x = t.x;
             write_to->y = t.y;
@@ -163,16 +163,16 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
 
     size_t vertex_bytes = (vertex_end - mem_index);
     model_vertices.amount = (vertex_bytes / sizeof(Vertex));
-    model_vertices.values = (Vertex*)heap_stack[mem_index];
+    model_vertices.values = (Vertex*)get_at_index(heap_stack, mem_index);
 
     size_t index = 0;
     size_t index_end = 0;
-    size_t indicie_index = (heap_stack.index - indicie_start) / (sizeof(uint32_t)*3);
+    size_t indicie_index = (heap_stack->index - indicie_start) / (sizeof(uint32_t)*3);
     for (size_t i = 0; indicie_index > i; i++) {
         size_t index_of = indicie_start + (sizeof(uint32_t) * 3) * i;
-        size_t indicie = *((uint32_t*)heap_stack[index_of]) -1;
-        size_t texture_uv_index = *((uint32_t*)heap_stack[index_of + sizeof(uint32_t)]) -1;
-        size_t vertex_normal_index = *((uint32_t*)heap_stack[index_of + sizeof(uint32_t)+ sizeof(uint32_t)]) -1;
+        size_t indicie = *((uint32_t*)get_at_index(heap_stack, index_of)) -1;
+        size_t texture_uv_index = *((uint32_t*)get_at_index(heap_stack, index_of + sizeof(uint32_t))) -1;
+        size_t vertex_normal_index = *((uint32_t*)get_at_index(heap_stack, index_of + sizeof(uint32_t)+ sizeof(uint32_t))) -1;
 
 
         if(!index){
@@ -181,25 +181,25 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
             index_end = arena_alloc_memory(heap_stack, sizeof(uint32_t));
         }
 
-        uint32_t* indicies = (uint32_t*)heap_stack[index + (sizeof(uint32_t) * i)];
+        uint32_t* indicies = (uint32_t*)get_at_index(heap_stack, index + (sizeof(uint32_t) * i));
         *indicies = indicie;
 
         if(normals_index){
-            model_vertices.values[indicie].normals = *((vec3_t*)heap_stack[(vertex_normal_index * sizeof(vec3_t))+ normals_index]);
+            model_vertices.values[indicie].normals = *((vec3_t*)get_at_index(heap_stack, (vertex_normal_index * sizeof(vec3_t))+ normals_index));
         }else{
             model_vertices.values[indicie].normals = {0,1,0};
         }
 
-        model_vertices.values[indicie].texture_cord.x = ((vec2_t*)heap_stack[(texture_uv_index * sizeof(vec2_t))+ texture_index])->x;
-        model_vertices.values[indicie].texture_cord.y = 1.f - ((vec2_t*)heap_stack[(texture_uv_index * sizeof(vec2_t))+ texture_index])->y;
+        model_vertices.values[indicie].texture_cord.x = ((vec2_t*)get_at_index(heap_stack, (texture_uv_index * sizeof(vec2_t))+ texture_index))->x;
+        model_vertices.values[indicie].texture_cord.y = 1.f - ((vec2_t*)get_at_index(heap_stack, (texture_uv_index * sizeof(vec2_t))+ texture_index))->y;
     }
 
     size_t allocation_index = arena_alloc_memory(heap_stack, indicie_index * sizeof(uint32_t));
 
     model_indicies.amount = indicie_index;
-    model_indicies.values = (uint32_t*)heap_stack[allocation_index];
+    model_indicies.values = (uint32_t*)get_at_index(heap_stack, allocation_index);
 
-    memcpy(model_indicies.values, heap_stack[index], (index_end - index) + sizeof(uint32_t));
+    memcpy(model_indicies.values, get_at_index(heap_stack, index), (index_end - index) + sizeof(uint32_t));
 
     Debug::profile_time_end();
     return mem_index;

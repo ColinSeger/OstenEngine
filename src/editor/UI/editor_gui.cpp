@@ -37,7 +37,7 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack& memory_arena)
+void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack* memory_arena)
 {
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
@@ -83,7 +83,7 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack heap_stack)
+void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack)
 {
     switch (type)
     {
@@ -123,7 +123,7 @@ void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack h
                         name.push_back(c);
                     }
                     if(ImGui::Button(name.c_str())){
-                        RenderAble* renderable = (RenderAble*)heap_stack[render_pipe->model_render_data.renderable_memory_index];
+                        RenderAble* renderable = (RenderAble*)get_at_index(heap_stack, render_pipe->model_render_data.renderable_memory_index);
                         renderable[component->instance_id].instance_amount--;
 
                         component->instance_id = i;
@@ -204,7 +204,7 @@ static void imgui_hierarchy(bool& open, uint32_t& inspecting){
 }
 
 static InstanceData selected_assets;
-static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack heap_stack){
+static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* heap_stack){
     ImGui::Text("Loaded Models");
 
     for (auto const& value : loaded_model_index)
@@ -269,7 +269,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack hea
     }
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack heap_stack)
+void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {

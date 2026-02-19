@@ -56,10 +56,10 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 uint8_t run(OstenEngine& engine){
     load_game_reasources();
 
-    procces_all_commands(&engine.render_pipeline, engine.heap_stack);
+    procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
 
     init_game(engine);
-
+    last_tick = std::chrono::high_resolution_clock::now();
     while(!engine.should_close){
         update_game(engine.delta_time, engine);
         engine.draw_frame();

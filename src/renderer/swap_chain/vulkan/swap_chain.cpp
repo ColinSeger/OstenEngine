@@ -84,7 +84,7 @@ static VkPresentModeKHR select_swap_present_mode(const VkPresentModeKHR* availab
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-void create_swap_chain(Device& device, const VkExtent2D window, VkSurfaceKHR surface, SwapChain& swap_chain, HeapStack& memory_arena){
+void create_swap_chain(Device& device, const VkExtent2D window, VkSurfaceKHR surface, SwapChain& swap_chain, HeapStack* memory_arena){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface, memory_arena);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format((VkSurfaceFormatKHR*)swap_chain_support.surface_data, swap_chain_support.surface_amount);
@@ -140,15 +140,15 @@ void create_swap_chain(Device& device, const VkExtent2D window, VkSurfaceKHR sur
     swap_chain.swap_chain_image_format = surface_format.format;
 }
 
-int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images, HeapStack& memory_arena){
+int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainImages& swap_chain_images, HeapStack* heap_stack){
     vkDeviceWaitIdle(virtual_device);
     vkDestroyImageView(virtual_device, swap_chain_images.depth_image_view, nullptr);
     vkDestroyImage(virtual_device, swap_chain_images.depth_image, nullptr);
     vkFreeMemory(virtual_device, swap_chain_images.depth_image_memory, nullptr);
 
     for (int i = 0; i < swap_chain_images.image_amount; i++) {
-        vkDestroyFramebuffer(virtual_device, ((VkFramebuffer*)memory_arena[swap_chain_images.swap_chain_frame_buffers])[i], nullptr);
-        vkDestroyImageView(virtual_device, ((VkImageView*)memory_arena[swap_chain_images.swap_chain_image_view])[i], nullptr);
+        vkDestroyFramebuffer(virtual_device, ((VkFramebuffer*)get_at_index(heap_stack, swap_chain_images.swap_chain_frame_buffers))[i], nullptr);
+        vkDestroyImageView(virtual_device, ((VkImageView*)get_at_index(heap_stack, swap_chain_images.swap_chain_image_view))[i], nullptr);
     }
 
     vkDestroySwapchainKHR(virtual_device, swap_chain.swap_chain, nullptr);
@@ -157,14 +157,14 @@ int clean_swap_chain(VkDevice& virtual_device, SwapChain& swap_chain, SwapChainI
 }
 
 
-static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format, HeapStack& memory_arena){
-    swap_images.swap_chain_image_view = arena_alloc_memory(memory_arena, sizeof(VkImageView) * swap_images.image_amount);
+static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtual_device, VkFormat image_format, HeapStack* heap_stack){
+    swap_images.swap_chain_image_view = arena_alloc_memory(heap_stack, sizeof(VkImageView) * swap_images.image_amount);
 
     for (size_t i = 0; i < swap_images.image_amount; i++)
     {
         VkImageViewCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        create_info.image = static_cast<VkImage*>(memory_arena[swap_images.swap_chain_images])[i];
+        create_info.image = ((VkImage*)get_at_index(heap_stack, swap_images.swap_chain_images))[i];
 
         create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         create_info.format = image_format;
@@ -180,7 +180,7 @@ static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtua
         create_info.subresourceRange.baseArrayLayer = 0;
         create_info.subresourceRange.layerCount = 1;
 
-        VkResult creation_status = vkCreateImageView(virtual_device, &create_info, nullptr, &static_cast<VkImageView*>(memory_arena[swap_images.swap_chain_image_view])[i]);
+        VkResult creation_status = vkCreateImageView(virtual_device, &create_info, nullptr, &((VkImageView*)get_at_index(heap_stack, swap_images.swap_chain_image_view))[i]);
 
         if(creation_status != VK_SUCCESS)
             //This Only happens if it failed to create image views
@@ -189,29 +189,29 @@ static VkResult create_image_views(SwapChainImages& swap_images, VkDevice virtua
     return VK_SUCCESS;
 }
 
-void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images, HeapStack& memory_arena){
-    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface, memory_arena);
+void create_swap_chain_images(Device& device, SwapChain& swap_chain,  VkSurfaceKHR surface, SwapChainImages& swap_images, HeapStack* heap_stack){
+    SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device.physical_device, surface, heap_stack);
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
 
-    swap_images.swap_chain_images = arena_alloc_memory(memory_arena, sizeof(VkImage) * image_amount);
+    swap_images.swap_chain_images = arena_alloc_memory(heap_stack, sizeof(VkImage) * image_amount);
 
     swap_images.image_amount = image_amount;
     //swap_images.swap_chain_images = images;//Should Probably allocate for this
 
-    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, (VkImage*)memory_arena[swap_images.swap_chain_images]);
+    vkGetSwapchainImagesKHR(device.virtual_device, swap_chain.swap_chain, &image_amount, (VkImage*)get_at_index(heap_stack, swap_images.swap_chain_images));
 
-    VkResult images_result = create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format, memory_arena);
+    VkResult images_result = create_image_views(swap_images, device.virtual_device, swap_chain.swap_chain_image_format, heap_stack);
 
     if(images_result != VK_SUCCESS) throw "Failed to create swapchain images";
 }
 
-VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent, HeapStack& memory_arena){
-    swap_images.swap_chain_frame_buffers = arena_alloc_memory(memory_arena, sizeof(VkFramebuffer) * swap_images.image_amount);
+VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_device, VkRenderPass& render_pass, VkImageView depth_image_view, VkExtent2D extent, HeapStack* heap_stack){
+    swap_images.swap_chain_frame_buffers = arena_alloc_memory(heap_stack, sizeof(VkFramebuffer) * swap_images.image_amount);
 
     for (size_t i = 0; i < swap_images.image_amount; i++) {
         VkImageView attachments[2] = {
-            static_cast<VkImageView*>(memory_arena[swap_images.swap_chain_image_view])[i],
+            ((VkImageView*)get_at_index(heap_stack, swap_images.swap_chain_image_view))[i],
             depth_image_view
         };
 
@@ -223,7 +223,7 @@ VkResult create_frame_buffers(SwapChainImages& swap_images, VkDevice virtual_dev
         framebuffer_info.width = extent.width;
         framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
-        VkResult creation_status = vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &static_cast<VkFramebuffer*>(memory_arena[swap_images.swap_chain_frame_buffers])[i]);
+        VkResult creation_status = vkCreateFramebuffer(virtual_device, &framebuffer_info, nullptr, &((VkFramebuffer*)get_at_index(heap_stack, swap_images.swap_chain_frame_buffers))[i]);
         if(creation_status != VK_SUCCESS)
             //This Only happens if it failed to create framebuffers
             return creation_status;
@@ -286,9 +286,9 @@ struct OffScreenImage{
     size_t mem_index_frame_buffer;
 };
 
-OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRenderPass render_pass, VkImageView depth_image, HeapStack& memory_arena){
+OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRenderPass render_pass, VkImageView depth_image, HeapStack* heap_stack){
     OffScreenImage offscreen_image;
-    offscreen_image.mem_index_frame_buffer = arena_alloc_memory(memory_arena, sizeof(VkFramebuffer));;
+    offscreen_image.mem_index_frame_buffer = arena_alloc_memory(heap_stack, sizeof(VkFramebuffer));
 
     Texture::create_image(
         device,
@@ -337,7 +337,7 @@ OffScreenImage create_offscreen_image(Device& device, VkExtent2D extent, VkRende
     framebuffer_info.height = extent.height;
     framebuffer_info.layers = 1;
 
-    creation_status = vkCreateFramebuffer(device.virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(memory_arena[offscreen_image.mem_index_frame_buffer]));
+    creation_status = vkCreateFramebuffer(device.virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(get_at_index(heap_stack, offscreen_image.mem_index_frame_buffer)));
 
     if(creation_status != VK_SUCCESS) throw;
 

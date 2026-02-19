@@ -34,7 +34,7 @@ std::vector<Model> loaded_models;
 
 namespace ModelLoader
 {
-    static void serialize(const char* filename, HeapStack& memory_arena){
+    static void serialize(const char* filename, HeapStack* memory_arena){
         VertexArray vertices;
         Uint32Array indices;
 
@@ -63,20 +63,20 @@ namespace ModelLoader
     }
 
     //This Returns a size_t from the memory arena index
-    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, HeapStack& memory_arena){
+    static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, HeapStack* heap_stack){
         Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
         if(!file.is_open()){
             Debug::log((char*)"There was a issue parsing this model");
-            return memory_arena.index;
+            return heap_stack->index;
         }
 
         //Find out where the file ends
         size_t file_size = file.tellg();
         file.seekg(0);
-        size_t mem_index = arena_alloc_memory(memory_arena, file_size);
-        char* buffer = (char*)memory_arena[mem_index];
+        size_t mem_index = arena_alloc_memory(heap_stack, file_size);
+        char* buffer = (char*)get_at_index(heap_stack, mem_index);
 
         file.read(buffer, file_size);
         file.close();
@@ -97,7 +97,7 @@ namespace ModelLoader
         return mem_index;
     }
 
-    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack& memory_arena)
+    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack* memory_arena)
     {
         Model model{};
         auto contains = loaded_model_index.find(file_name);
@@ -105,7 +105,7 @@ namespace ModelLoader
         if(contains != loaded_model_index.end()){
             return loaded_model_index[file_name];
         }
-        size_t file_to_free = memory_arena.capacity;//Temp solution for speed test
+        size_t file_to_free = memory_arena->capacity;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
 

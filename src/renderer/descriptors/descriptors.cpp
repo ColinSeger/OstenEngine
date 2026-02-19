@@ -76,17 +76,17 @@ VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
 
 
 //Can Return null if you are accesing outside capacity
-static RenderAble* get_renderable(ModelData& model_data, uint32_t index, HeapStack heap_stack){
+static RenderAble* get_renderable(ModelData& model_data, uint32_t index, HeapStack* heap_stack){
     if(index > model_data.renderable_amount) return 0;
 
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    RenderAble* render_data = (RenderAble*)get_at_index(heap_stack, model_data.renderable_memory_index);
 
     return &render_data[index];
 }
 
 //Can return null if you are out of capacity
-static RenderAble* get_free_renderable(ModelData& model_data, HeapStack heap_stack, uint32_t* index){
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+static RenderAble* get_free_renderable(ModelData& model_data, HeapStack* heap_stack, uint32_t* index){
+    RenderAble* render_data = (RenderAble*)get_at_index(heap_stack, model_data.renderable_memory_index);
     for (uint32_t i = 0; i < model_data.object_capacity; i++) {
         if(render_data->capacity <= 0) return render_data;
         render_data++;
@@ -95,11 +95,11 @@ static RenderAble* get_free_renderable(ModelData& model_data, HeapStack heap_sta
     return 0;
 }
 
-static ObjectUBO* get_mapped_uniforms(ModelData& model_data, HeapStack heap_stack, int32_t render_index, uint8_t frame){
+static ObjectUBO* get_mapped_uniforms(ModelData& model_data, HeapStack* heap_stack, int32_t render_index, uint8_t frame){
     if(render_index > model_data.renderable_amount) return nullptr;
     ObjectUBO* result = (ObjectUBO*)model_data.uniform_buffers_mapped[frame];
 
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    RenderAble* render_data = (RenderAble*)get_at_index(heap_stack, model_data.renderable_memory_index);
 
     for (int i = 0; i < render_index; i++) {
         result += render_data[i].capacity;
@@ -107,11 +107,11 @@ static ObjectUBO* get_mapped_uniforms(ModelData& model_data, HeapStack heap_stac
     return result;
 }
 
-static size_t get_required_offset(ModelData& model_data, HeapStack heap_stack, int32_t render_index){
+static size_t get_required_offset(ModelData& model_data, HeapStack* heap_stack, int32_t render_index){
     if(render_index > model_data.renderable_amount) return 0;
     size_t result = 0;
 
-    RenderAble* render_data = (RenderAble*)heap_stack[model_data.renderable_memory_index];
+    RenderAble* render_data = (RenderAble*)get_at_index(heap_stack, model_data.renderable_memory_index);
 
     for (int i = 0; i < render_index; i++) {
         result += render_data[i].capacity * sizeof(ObjectUBO);
@@ -489,7 +489,7 @@ static VkResult create_descriptor_set(VkDevice virtual_device, RenderingDescript
     return VK_SUCCESS;
 }
 
-static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, uint32_t render_able_index, HeapStack heap_stack){
+static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, uint32_t render_able_index, HeapStack* heap_stack){
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -562,14 +562,14 @@ static void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, De
     }
 }
 
-static VkResult init_model_data(ModelData& model_data, Device& device, HeapStack& heap_stack){
+static VkResult init_model_data(ModelData& model_data, Device& device, HeapStack* heap_stack){
     VkDeviceSize bufferSize = sizeof(ObjectUBO) * model_data.object_capacity;
     model_data.renderable_amount = 0;
 
     model_data.renderable_memory_index = arena_alloc_memory(heap_stack, 50 * sizeof(RenderAble));
 
     //Temp
-    memset(heap_stack[model_data.renderable_memory_index], 0, 50 * sizeof(RenderAble));
+    memset(get_at_index(heap_stack, model_data.renderable_memory_index), 0, 50 * sizeof(RenderAble));
     //EndTemp
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

@@ -35,7 +35,7 @@ static void create_entity(const char* name){
     EntityManager::add_entity(entity, name);
 }
 
-static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack& heap_stack){
+static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
     uint16_t transform_id = add_transform();
     for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
         add_transform();
@@ -53,7 +53,7 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
     render_pipeline->model_render_data.renderable_amount++;
 }
 
-static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack& memory_arena)
+static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack* memory_arena)
 {
     std::string filename = file_name;
     char extention[3];
@@ -91,7 +91,7 @@ static void add_message(Message message){
     messages.emplace_back(message);
 }
 
-static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
+static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
@@ -124,7 +124,7 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack& he
     messages.erase(messages.begin());
 }
 
-static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack& heap_stack){
+static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     while (!messages.empty()) {
         handle_message(render_pipeline, heap_stack);
     }

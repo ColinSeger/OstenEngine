@@ -37,7 +37,7 @@ static void load_game_reasources(){
 static void init_game(OstenEngine& engine){
     vkDeviceWaitIdle(engine.render_pipeline.device.virtual_device);
 
-    struct RenderAble* rendera = get_renderable(engine.render_pipeline.model_render_data, 0, engine.heap_stack);
+    struct RenderAble* rendera = get_renderable(engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
 
     ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40);
 
