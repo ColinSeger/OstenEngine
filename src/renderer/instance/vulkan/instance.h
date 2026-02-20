@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <vulkan/vulkan.h>
 #include <cstdint>
 #include <cstring>
@@ -10,15 +11,15 @@ typedef struct {
     uint32_t extensions_amount;
 } WindowExtentions;
 
-static inline bool check_validation_layer_support(uint32_t layer_count)
-{
-    VkLayerProperties available_layers[layer_count];
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
+static inline bool check_validation_layer_support(uint32_t layer_count){
+    assert(layer_count < 255);
+    VkLayerProperties layers_buffer[255];
+    vkEnumerateInstanceLayerProperties(&layer_count, layers_buffer);
     bool layer_found = false;
 
     for(uint8_t i = 0; i < validation_amount; i++){
         for(uint32_t layer_index = 0; layer_index < layer_count; layer_index++){
-            if(strcmp(validation_layers[i], available_layers[layer_index].layerName) == 0){
+            if(strcmp(validation_layers[i], layers_buffer[layer_index].layerName) == 0){
                 layer_found = true;
                 break;
             }
@@ -31,8 +32,7 @@ static inline bool check_validation_layer_support(uint32_t layer_count)
     return true;
 }
 
-static inline VkResult create_instance(VkInstance& instance, const char* name, WindowExtentions window_extensions)
-{
+static inline VkResult create_instance(VkInstance* instance, const char* name, WindowExtentions window_extensions){
     if(window_extensions.window_extensions == 0) return VK_ERROR_EXTENSION_NOT_PRESENT;
     if(validation_amount > 0){
         uint32_t layer_count;
@@ -69,5 +69,5 @@ static inline VkResult create_instance(VkInstance& instance, const char* name, W
         create_info.enabledLayerCount = 0;
     }
 
-    return vkCreateInstance(&create_info, nullptr, &instance);
+    return vkCreateInstance(&create_info, nullptr, instance);
 }

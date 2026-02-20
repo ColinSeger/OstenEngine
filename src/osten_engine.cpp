@@ -10,7 +10,7 @@
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
-#include "engine/entity_manager/components.cpp"
+#include "engine/entity_manager/components.hpp"
 #include "engine/message_system/message.h"
 #include "../external/math_3d.h"
 #include "renderer/camera/camera.h"
@@ -86,7 +86,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     WindowExtentions window_extentions{ glfw_extensions, glfw_extention_count };
 
     //Investigate Why so slow
-    VkResult result = create_instance(instance, application_name, window_extentions);
+    VkResult result = create_instance(&instance, application_name, window_extentions);
 
     if(result != VK_SUCCESS){
         throw "Failed to create Instance";
@@ -119,7 +119,10 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
 
     create_transform_system(10000, &heap_stack);
     create_camera_system(2, &heap_stack);
+    add_camera(add_transform());
+    add_camera(add_transform());
     create_render_component_system(9000, &heap_stack);
+    create_collider_system(2000, &heap_stack);
 }
 
 OstenEngine::~OstenEngine(){

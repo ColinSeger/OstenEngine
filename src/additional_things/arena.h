@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "../platform.h"
-//#include "../debugger/debugger.h"
 
 struct HeapStack{
     unsigned long long capacity;

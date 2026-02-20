@@ -1,0 +1,214 @@
+// #include "components.h"
+#pragma once
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include "../transform.h"
+#include "../../additional_things/arena.h"
+
+constexpr uint8_t CAMERA = 0;
+constexpr uint8_t TRANSFORM = 1;
+constexpr uint8_t RENDER = 2;
+constexpr uint8_t COLLIDER = 3;
+
+
+typedef struct
+{
+    const uint16_t id;
+} Component;
+
+struct TransformComponent{
+    const uint16_t id = 1;
+    uint16_t entity = 0;
+    Transform transform {};
+    TransformComponent& operator=(TransformComponent& transform){
+        this->transform = transform.transform;
+        return *this;
+    }
+};
+
+struct RenderComponent{
+    const uint16_t id = 2;
+    uint16_t transform_id = UINT16_MAX;
+    uint32_t instance_id = 0;
+};
+
+struct CameraComponent{
+    const uint16_t id = 3;
+    uint16_t transform_id = UINT16_MAX;
+    float field_of_view = 45.f;
+
+    CameraComponent& operator=(CameraComponent camera){
+        this->transform_id = camera.transform_id;
+        this->field_of_view = camera.field_of_view;
+        return *this;
+    }
+};
+
+struct SimpleColliderComp{
+    const uint16_t id = 4;
+    uint16_t transform_id = UINT16_MAX;
+    uint16_t entity = UINT16_MAX;
+    uint16_t collision_amount = 0;
+    float collision_range = 0;
+    uint16_t* nearby_colliders;
+};
+
+struct ComponentSystem
+{
+    HeapStack* memory_arena;
+    size_t components;
+    uint16_t amount = 0;
+    uint16_t capacity = 10;
+    uint8_t type = 0;
+};
+
+namespace{
+    ComponentSystem cameras{};
+    ComponentSystem transforms{};
+    ComponentSystem render_components{};
+    ComponentSystem simple_colliders{};
+}
+
+static inline uint16_t get_component_size_by_type(uint16_t type){
+    switch ((uint8_t)type)
+    {
+    case TRANSFORM:
+        return sizeof(TransformComponent);
+
+    case RENDER:
+        return sizeof(RenderComponent);
+
+    case CAMERA:
+        return sizeof(CameraComponent);
+
+    case COLLIDER:
+        return sizeof(SimpleColliderComp);
+
+    default:
+        return 0;
+        break;
+    }
+}
+
+static inline void* get_component_by_id(ComponentSystem* component_system, uint16_t id){
+    uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    uint16_t size = get_component_size_by_type(component_system->type);
+    uint32_t size_offset = size * id;
+    comp += size_offset;
+    return comp;
+}
+
+static constexpr ComponentSystem* get_component_system(uint8_t system_id){
+    switch (system_id)
+    {
+    case CAMERA:
+        return &cameras;
+
+    case TRANSFORM:
+        return &transforms;
+
+    case RENDER:
+        return &render_components;
+
+    case COLLIDER:
+        return &simple_colliders;
+    default:
+        return nullptr;
+        break;
+    }
+}
+
+
+static inline uint16_t add_render_component(uint16_t descriptor_index, uint16_t transform_index){
+    ComponentSystem* component_sys = get_component_system(RENDER);
+    RenderComponent* comp = (RenderComponent*)(get_at_index(component_sys->memory_arena,component_sys->components));
+    // uint16_t size = get_component_size_by_type(RENDER);
+    uint32_t size_offset = component_sys->amount;
+    comp += size_offset;
+    component_sys->amount++;
+    comp->instance_id = descriptor_index;
+    comp->transform_id = transform_index;
+    return component_sys->amount-1;
+}
+
+static inline void create_transform_system(uint16_t transform_amount, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(TRANSFORM);
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(TransformComponent) * transform_amount);
+    component_sys->memory_arena = memory_arena;
+    component_sys->type = 1;
+    component_sys->capacity = transform_amount;
+    for (size_t i = 0; i < transform_amount; i++)
+    {
+        TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
+        comp->transform = Transform{};
+        comp->transform.scale = {1, 1, 1};
+    }
+}
+
+static inline void create_render_component_system(uint16_t render_amount, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(RENDER);
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(RenderComponent) * render_amount);
+    component_sys->type = RENDER;
+    component_sys->capacity = render_amount;
+    for (size_t i = 0; i < render_amount; i++){
+        RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
+        comp->transform_id = -1;
+        comp->instance_id = 0;
+    }
+}
+
+static inline void create_camera_system(uint8_t camera_amount, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(CAMERA);
+
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(CameraComponent) * camera_amount);
+    component_sys->amount = 0;
+    component_sys->type = CAMERA;
+    component_sys->capacity = camera_amount;
+
+    for (size_t i = 0; i < camera_amount; i++){
+        CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
+        comp->field_of_view = 45.f;
+    }
+}
+
+static inline void create_collider_system(uint16_t collider_amount, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(COLLIDER);
+
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(SimpleColliderComp) * collider_amount);
+    component_sys->capacity = collider_amount;
+    component_sys->amount = 0;
+    component_sys->type = COLLIDER;
+
+    for (size_t i = 0; i < collider_amount; i++){
+        SimpleColliderComp* comp = (SimpleColliderComp*)get_component_by_id(component_sys, i);
+    }
+}
+
+static inline uint16_t add_camera(uint16_t transform_index){
+    ComponentSystem* component_sys = get_component_system(CAMERA);
+
+    CameraComponent* comp = (CameraComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
+    comp += component_sys->amount;
+    comp->transform_id = transform_index;
+
+    TransformComponent* transform = (TransformComponent*)get_component_by_id(&transforms, comp->transform_id);
+    transform->transform.position.x = 10;
+    transform->transform.position.z = 2;
+    transform->transform.rotation.y = 0;
+
+    component_sys->amount++;
+
+    return component_sys->amount-1;
+}
+
+static inline uint16_t add_transform(){
+    ComponentSystem* component_sys = get_component_system(TRANSFORM);
+    TransformComponent* comp = (TransformComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
+    comp += component_sys->amount;
+    component_sys->amount++;
+    return component_sys->amount-1;
+}

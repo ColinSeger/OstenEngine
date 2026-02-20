@@ -1,11 +1,5 @@
-// #include "transform.h"
 #pragma once
 #include "../../external/math_3d.h"
-
-struct Vector2{
-    float x = 0;
-    float y = 0;
-};
 
 struct Transform{
     vec3_t position = {0.0f, 0.0f, 0.0f};
@@ -15,7 +9,7 @@ struct Transform{
 
 namespace Transformations
 {
-    mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably
+    static inline mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably
         mat4_t model = mat4(
             1,  0,  0,  0,
             0,  1,  0,  0,
@@ -29,7 +23,7 @@ namespace Transformations
         return model;
     }
 
-    vec3_t v3_forward_vector(Transform transform){
+    static inline vec3_t v3_forward_vector(Transform transform){
         float pitch = transform.rotation.x;
         float yaw = transform.rotation.y;
         vec3_t vector = {
