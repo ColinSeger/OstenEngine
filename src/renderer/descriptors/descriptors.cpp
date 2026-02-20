@@ -32,11 +32,11 @@ struct CameraDescriptor{
 
 struct RenderAble{
     VkDescriptorSet model_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
+    size_t transform_index;
     uint32_t capacity;
     uint32_t instance_amount;
     uint32_t texture_index;
     uint16_t model_index;
-    uint16_t transform_index;
 };
 
 struct ModelData{

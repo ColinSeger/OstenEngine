@@ -11,20 +11,32 @@ struct ArmyUnit{
     float move_speed = 5.f;
 };
 
-ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size){
+ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack){
     uint8_t row = 0;
     ArmyUnit unit{};
     unit.render_able = render_able;
     for(uint8_t i = 0; i < amount; i++){
-
-        uint16_t transform_index = render_able->transform_index + render_able->instance_amount;
-        unit.unit_transform[i] = transform_index;
-
+        uint16_t transform_index = UINT16_MAX;
+        //uint16_t entity_id = queue_enity_creation();
         struct Entity entity {};
 
+        transform_index = add_transform();
+        ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i] = transform_index;
+        unit.unit_transform[i] = transform_index;
+
+        uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
+
+        struct TempID transform_comp{
+            (uint16_t)(transform_index),
+            (uint16_t)(TRANSFORM)
+        };
         struct TempID render{
             (uint16_t)(add_render_component(0, transform_index)),
             (uint16_t)(RENDER)
+        };
+        struct TempID collider{
+            (uint16_t)(0),
+            (uint16_t)(COLLIDER)
         };
 
         TransformComponent* transform = (struct TransformComponent*)get_component_by_id(get_component_system(TRANSFORM), transform_index);
@@ -38,7 +50,9 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
         if(1 == i%row_size){
             row++;
         }
+        add_component(entity, transform_comp);
         add_component(entity, render);
+        add_component(entity, collider);
         entities_to_create.emplace_back(entity);
     }
     return unit;

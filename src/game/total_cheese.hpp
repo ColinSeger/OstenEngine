@@ -38,7 +38,7 @@ static void init_game(OstenEngine& engine){
 
     struct RenderAble* rendera = get_renderable(engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
 
-    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40);
+    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40, &engine.heap_stack);
 
     army_units.emplace_back(unit1);
 

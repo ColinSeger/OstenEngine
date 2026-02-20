@@ -36,7 +36,7 @@ static void create_entity(const char* name){
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
-    uint16_t transform_id = add_transform();
+    //uint16_t transform_id = add_transform();
     for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
         add_transform();
     }
@@ -46,7 +46,7 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
     renderable->texture_index = asset_index->texture_index;
     renderable->capacity = asset_index->capacity;
     renderable->instance_amount = 0;
-    renderable->transform_index = transform_id;
+    renderable->transform_index = arena_alloc_memory(heap_stack, sizeof(uint16_t) * renderable->capacity);
 
     create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, index, heap_stack);
 
@@ -84,11 +84,60 @@ struct MessageSystem
     std::vector<Message> messages;
 };
 
+struct TempComp{
+    uint16_t entity;
+    uint16_t component;
+};
+
 static std::vector<Message> messages;
 static std::vector<Entity> entities_to_create;
+static uint16_t entity_queue = 0;
+
+static std::vector<TempComp> component_stack;
+
+static uint16_t queue_enity_creation(){//Actually Stack
+    entities_to_create.emplace_back(Entity{});
+    entity_queue++;
+    return entity_queue-1;
+}
+
+static void queue_component_add(uint16_t entity_id, uint16_t component_to_add){//Actually Stack
+    component_stack.push_back({entity_id, component_to_add});
+}
 
 static void add_message(Message message){
     messages.emplace_back(message);
+}
+
+static void handle_entity(){
+    for(int i = 0; i < entity_queue; i++){
+        Entity entity{};
+        for(int x = 0; x < component_stack.size(); x++){
+            if(i != component_stack[x].entity) continue;
+
+            switch (component_stack[x].component){
+            case CAMERA:
+                //add_camera(uint16_t transform_index);
+            break;
+            case TRANSFORM:
+                add_transform();
+            break;
+            case RENDER:
+
+            break;
+            case COLLIDER:
+
+            break;
+            default:
+            break;
+            }
+            add_component(entity, {component_stack[x].component});
+        }
+        EntityManager::add_entity(entity, "G");
+    }
+    Entity& entity = entities_to_create[0];
+
+    entities_to_create.erase(entities_to_create.begin());
 }
 
 static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
@@ -116,7 +165,7 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* he
         create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);
     break;
     case MessageType::TestEntity:
-        EntityManager::add_entity(ent, "G");
+
     break;
     default:
         break;

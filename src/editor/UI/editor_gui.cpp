@@ -14,8 +14,7 @@
 #include "../../engine/entity_manager/entity_manager.cpp"
 #include "vulkan/vulkan_core.h"
 
-static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
-{
+static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
     VkDescriptorPool imgui_pool;
 
     VkDescriptorPoolSize pool_sizes[] = {
@@ -37,8 +36,7 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device)
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack* memory_arena)
-{
+void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack* memory_arena){
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
     VkDevice virtual_device = render_pipeline->device.virtual_device;
@@ -83,8 +81,7 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack)
-{
+void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack){
     switch (type)
     {
     case 0:{
@@ -103,37 +100,44 @@ void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* 
         ImGui::DragFloat3("Scale", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.scale.x, 0.1f);
         break;
     case 2:{
-            ImGui::Text("Render Component");
-            ComponentSystem* transform_system = get_component_system(TRANSFORM);
-            ComponentSystem* render_system = get_component_system(RENDER);
-            RenderComponent* component = static_cast<RenderComponent*>(get_component_by_id(render_system, id));
-            Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[0].transform_id))->transform;
+        ImGui::Text("Render Component");
+        ComponentSystem* transform_system = get_component_system(TRANSFORM);
+        ComponentSystem* render_system = get_component_system(RENDER);
+        RenderComponent* component = static_cast<RenderComponent*>(get_component_by_id(render_system, id));
+        Transform& render_component_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<RenderComponent*>(component)[0].transform_id))->transform;
 
-            ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
-            ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
-            ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
+        ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
+        ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
+        ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
 
-            if(ImGui::BeginCombo("Instance", "")){
-                for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
+        if(ImGui::BeginCombo("Instance", "")){
+            for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
 
-                    std::string name = std::string("RenderAble ");
-                    char buf[11];
-                    snprintf(buf, sizeof(buf), "%u", i);
-                    for(char c : buf){
-                        name.push_back(c);
-                    }
-                    if(ImGui::Button(name.c_str())){
-                        RenderAble* renderable = (RenderAble*)get_at_index(heap_stack, render_pipe->model_render_data.renderable_memory_index);
-                        renderable[component->instance_id].instance_amount--;
-
-                        component->instance_id = i;
-                        component->transform_id = renderable[i].transform_index + renderable[i].instance_amount;
-
-                        renderable[i].instance_amount++;
-                    }
+                std::string name = std::string("RenderAble ");
+                char buf[11];
+                snprintf(buf, sizeof(buf), "%u", i);
+                for(char c : buf){
+                    name.push_back(c);
                 }
-                ImGui::EndCombo();
+                if(ImGui::Button(name.c_str())){
+                    RenderAble* renderable = (RenderAble*)get_at_index(heap_stack, render_pipe->model_render_data.renderable_memory_index);
+                    renderable[component->instance_id].instance_amount--;
+
+                    component->instance_id = i;
+                    component->transform_id = renderable[i].transform_index + renderable[i].instance_amount;
+
+                    renderable[i].instance_amount++;
+                }
             }
+            ImGui::EndCombo();
+        }
+    }
+    break;
+    case 3:{
+            ImGui::Text("Collider");
+            ComponentSystem* transform_system = get_component_system(COLLIDER);
+            SimpleColliderComp* collider = ((SimpleColliderComp*)get_component_by_id(transform_system, 0));
+
         }
     break;
     default:

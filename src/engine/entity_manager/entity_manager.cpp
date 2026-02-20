@@ -19,6 +19,9 @@ struct Entity{
 };
 
 void add_component(Entity& entity, TempID component){
+    for(TempID com : entity.components){
+        if(com.type == component.type) return;
+    }
     entity.components[entity.amount] = component;
     entity.amount++;
 }

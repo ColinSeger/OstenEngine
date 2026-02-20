@@ -382,8 +382,9 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
     {
         ObjectUBO* model_buffer = get_mapped_uniforms(to_render, heap_stack, render_index, current_frame);
         RenderAble* render_able = get_renderable(to_render, render_index, heap_stack);
+        uint16_t* transform_index = (uint16_t*)get_at_index(heap_stack, render_able->transform_index);
         for(uint16_t i = 0; i < render_able->instance_amount; i++){
-            Transform transform = ((TransformComponent*)get_component_by_id(transform_system, render_able->transform_index+i))->transform;
+            Transform transform = ((TransformComponent*)get_component_by_id(transform_system, transform_index[i]))->transform;
 
             model_buffer[i].model = Transformations::get_model_matrix(transform);
         }

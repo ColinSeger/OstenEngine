@@ -11,11 +11,9 @@ constexpr uint8_t TRANSFORM = 1;
 constexpr uint8_t RENDER = 2;
 constexpr uint8_t COLLIDER = 3;
 
-
-typedef struct
-{
+struct Component{
     const uint16_t id;
-} Component;
+};
 
 struct TransformComponent{
     const uint16_t id = 1;
@@ -29,6 +27,7 @@ struct TransformComponent{
 
 struct RenderComponent{
     const uint16_t id = 2;
+    uint16_t entity_id = 0;
     uint16_t transform_id = UINT16_MAX;
     uint32_t instance_id = 0;
 };
@@ -71,23 +70,17 @@ namespace{
 }
 
 static inline uint16_t get_component_size_by_type(uint16_t type){
-    switch ((uint8_t)type)
-    {
+    switch ((uint8_t)type){
     case TRANSFORM:
         return sizeof(TransformComponent);
-
     case RENDER:
         return sizeof(RenderComponent);
-
     case CAMERA:
         return sizeof(CameraComponent);
-
     case COLLIDER:
         return sizeof(SimpleColliderComp);
-
     default:
         return 0;
-        break;
     }
 }
 
@@ -100,25 +93,19 @@ static inline void* get_component_by_id(ComponentSystem* component_system, uint1
 }
 
 static constexpr ComponentSystem* get_component_system(uint8_t system_id){
-    switch (system_id)
-    {
+    switch (system_id){
     case CAMERA:
         return &cameras;
-
     case TRANSFORM:
         return &transforms;
-
     case RENDER:
         return &render_components;
-
     case COLLIDER:
         return &simple_colliders;
     default:
-        return nullptr;
-        break;
+        return 0;
     }
 }
-
 
 static inline uint16_t add_render_component(uint16_t descriptor_index, uint16_t transform_index){
     ComponentSystem* component_sys = get_component_system(RENDER);
@@ -136,8 +123,8 @@ static inline void create_transform_system(uint16_t transform_amount, HeapStack*
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
     component_sys->components = arena_alloc_memory(memory_arena, sizeof(TransformComponent) * transform_amount);
     component_sys->memory_arena = memory_arena;
-    component_sys->type = 1;
     component_sys->capacity = transform_amount;
+    component_sys->type = TRANSFORM;
     for (size_t i = 0; i < transform_amount; i++)
     {
         TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
@@ -152,6 +139,7 @@ static inline void create_render_component_system(uint16_t render_amount, HeapSt
     component_sys->components = arena_alloc_memory(memory_arena, sizeof(RenderComponent) * render_amount);
     component_sys->type = RENDER;
     component_sys->capacity = render_amount;
+
     for (size_t i = 0; i < render_amount; i++){
         RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
         comp->transform_id = -1;
@@ -212,3 +200,24 @@ static inline uint16_t add_transform(){
     component_sys->amount++;
     return component_sys->amount-1;
 }
+
+static inline void calculate_colliders(){
+
+}
+/*
+ *
+static constexpr ComponentSystem* create_component(uint8_t system_id){
+    switch (system_id){
+    case CAMERA:
+        return add_camera(uint16_t transform_index);
+    case TRANSFORM:
+        return &transforms;
+    case RENDER:
+        return &render_components;
+    case COLLIDER:
+        return &simple_colliders;
+    default:
+        return 0;
+    }
+}
+*/
