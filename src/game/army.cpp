@@ -35,7 +35,7 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
             (uint16_t)(RENDER)
         };
         struct TempID collider{
-            (uint16_t)(0),
+            (uint16_t)(add_collider()),
             (uint16_t)(COLLIDER)
         };
 

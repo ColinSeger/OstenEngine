@@ -84,6 +84,9 @@ uint8_t run(OstenEngine& engine){
 
     init_game(engine);
     last_tick = std::chrono::high_resolution_clock::now();
+
+    calculate_colliders(&engine.heap_stack);
+
     while(!engine.should_close){
         update_game(engine.delta_time, engine);
         engine.draw_frame();

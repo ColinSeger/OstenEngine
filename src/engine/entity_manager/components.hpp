@@ -201,8 +201,40 @@ static inline uint16_t add_transform(){
     return component_sys->amount-1;
 }
 
-static inline void calculate_colliders(){
+static inline uint16_t add_collider(){
+    ComponentSystem* component_sys = get_component_system(COLLIDER);
+    SimpleColliderComp* comp = (SimpleColliderComp*)get_at_index(component_sys->memory_arena, component_sys->components);
+    comp += component_sys->amount;
+    comp->collision_range = 5;
+    component_sys->amount++;
+    return component_sys->amount-1;
+}
 
+static inline size_t calculate_colliders(HeapStack* heap_stack){
+    size_t free_index = heap_stack->index;
+    ComponentSystem* collider_system = get_component_system(COLLIDER);
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    SimpleColliderComp* colliders = (SimpleColliderComp*)get_at_index(heap_stack, collider_system->components);
+    TransformComponent* transforms = (TransformComponent*)get_at_index(heap_stack, transform_system->components);
+
+    for(int x = 0; x < collider_system->amount; x++){
+        colliders[x].collision_amount = 0;
+        size_t index = arena_alloc_memory(heap_stack, sizeof(uint16_t));
+        colliders[x].nearby_colliders = (uint16_t*)get_at_index(heap_stack, index);
+        for(int y = 0; y < collider_system->amount; y++){
+            Transform self = transforms[colliders[x].transform_id].transform;
+            Transform other = transforms[colliders[y].transform_id].transform;
+
+            float lenght = v3_length(v3_sub(self.position, other.position));
+            if(lenght < colliders[x].collision_range){
+                colliders[x].nearby_colliders[colliders[x].collision_amount] = colliders[y].transform_id;
+                colliders[x].collision_amount++;
+                arena_alloc_memory(heap_stack, sizeof(uint16_t));
+            }
+        }
+    }
+
+    return free_index;
 }
 /*
  *
