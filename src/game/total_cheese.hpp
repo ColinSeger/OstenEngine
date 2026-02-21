@@ -5,7 +5,7 @@
 #include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"
 #include "../osten_engine.cpp"
-#include "army.cpp"
+#include "army.hpp"
 
 static struct InstanceData render_ids {};
 
@@ -49,10 +49,8 @@ static void init_game(OstenEngine& engine){
 static double test = 0;
 static void update_game(double delta_time, OstenEngine& engine){
     test+= delta_time;
-    uint16_t data[255] {};
-    uint8_t in_range = get_units_in_range(army_units.data(), army_units.size(), {0, 0, 0}, 1000, data, 255);
     for (ArmyUnit& unit : army_units) {
         //test_army(unit);
-        move_towards(unit, {0,0,0}, delta_time, data);
+        move_towards(unit, {0,0,0}, delta_time);
     }
 }

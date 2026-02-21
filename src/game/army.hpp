@@ -5,13 +5,13 @@
 
 
 struct ArmyUnit{
-    uint16_t unit_transform[255];
+    uint16_t unit_colliders[255];
     RenderAble* render_able;
     bool alive_units[255];//Bad
     float move_speed = 5.f;
 };
 
-ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack){
+static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack){
     uint8_t row = 0;
     ArmyUnit unit{};
     unit.render_able = render_able;
@@ -22,9 +22,9 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
 
         transform_index = add_transform();
         ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i] = transform_index;
-        unit.unit_transform[i] = transform_index;
+        unit.unit_colliders[i] = add_collider(transform_index, 0);
 
-        uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
+        //uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
 
         struct TempID transform_comp{
             (uint16_t)(transform_index),
@@ -35,7 +35,7 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
             (uint16_t)(RENDER)
         };
         struct TempID collider{
-            (uint16_t)(add_collider()),
+            (uint16_t)(unit.unit_colliders[i]),
             (uint16_t)(COLLIDER)
         };
 
@@ -58,37 +58,25 @@ ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint
     return unit;
 }
 
-
-void test_army(ArmyUnit& unit){
-    ComponentSystem* system = get_component_system(TRANSFORM);
-    for (uint8_t i = 0; i < 255; i++) {
-        //uint16_t id = get_component_id(unit.unit_transform[i], TRANSFORM);
-        //if(id == UINT16_MAX) continue;
-        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);
-        transform->transform.rotation.y += 0.01f;
-    }
-}
-
-void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, uint16_t nearby_transform_indexes[255]){
+static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time){
     if(delta_time <= 0) return;
-    ComponentSystem* system = get_component_system(TRANSFORM);
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* collider_system = get_component_system(COLLIDER);
+    SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, unit.unit_colliders[0]);
 
     float minimum_distance = 4;
-    float seperation_strenght = 1;
+    float seperation_strength = 1;
     for (uint8_t i = 0; i < 255; i++) {
+        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(transform_system, colliders[unit.unit_colliders[i]].transform_id);
 
-        TransformComponent* transform = (struct TransformComponent*)get_component_by_id(system, unit.unit_transform[i]);
         vec3_t current = transform->transform.position;
         vec3_t target = v3_sub(target_position, current);
         vec3_t desired = v3_norm(target);
 
         vec3_t separation = {};
 
-        //vec3_t result = v3_move_towards(current, desired, delta_time * unit.move_speed * 10);
-
-        for (uint8_t x = 0; x < 255; x++){
-            if(nearby_transform_indexes[x] == 0) break;
-            TransformComponent* other = (struct TransformComponent*)get_component_by_id(system, nearby_transform_indexes[x]);
+        for (uint8_t x = 0; x < colliders[i].collision_amount; x++){
+            TransformComponent* other = (struct TransformComponent*)get_component_by_id(transform_system, colliders->nearby_colliders[x]);
 
             vec3_t other_pos = other->transform.position;
 
@@ -102,33 +90,11 @@ void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, uin
             }
         }
 
-        separation = v3_muls(separation, seperation_strenght);
+        separation = v3_muls(separation, seperation_strength);
 
         vec3_t final_dir = v3_add(desired, separation);
         final_dir = v3_norm(final_dir);
         float move_speed = unit.move_speed * delta_time;
         transform->transform.position = v3_move_towards(current, v3_add(current, v3_muls(final_dir, move_speed)), move_speed);
     }
-}
-
-uint8_t get_units_in_range(ArmyUnit* army_units, uint16_t unit_amount, vec3_t target, float range, uint16_t* result, uint8_t capacity){
-    ComponentSystem* transforms = get_component_system(TRANSFORM);
-    uint8_t amount = 0;
-    for(uint16_t x = 0; x < unit_amount; x++){
-        for(uint16_t i = 0; i < 255; i++){
-            //uint16_t id = get_component_id(army_units[x].units[i], TRANSFORM);
-            //if(id == UINT16_MAX) continue;
-            Transform& transform1 = ((struct TransformComponent*)get_component_by_id(transforms, army_units->unit_transform[i]))->transform;
-
-            vec3_t distance = v3_sub(transform1.position, target);
-
-            float vec_lenght = v3_length(distance);
-            if(vec_lenght < range){
-                result[amount] = army_units->unit_transform[i];
-                amount++;
-                if(amount >= capacity) return amount;
-            }
-        }
-    }
-    return amount;
 }

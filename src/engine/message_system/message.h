@@ -91,10 +91,11 @@ struct TempComp{
 
 static std::vector<Message> messages;
 static std::vector<Entity> entities_to_create;
+/*
 static uint16_t entity_queue = 0;
 
 static std::vector<TempComp> component_stack;
-
+ *
 static uint16_t queue_enity_creation(){//Actually Stack
     entities_to_create.emplace_back(Entity{});
     entity_queue++;
@@ -105,9 +106,6 @@ static void queue_component_add(uint16_t entity_id, uint16_t component_to_add){/
     component_stack.push_back({entity_id, component_to_add});
 }
 
-static void add_message(Message message){
-    messages.emplace_back(message);
-}
 
 static void handle_entity(){
     for(int i = 0; i < entity_queue; i++){
@@ -139,7 +137,11 @@ static void handle_entity(){
 
     entities_to_create.erase(entities_to_create.begin());
 }
+*/
 
+static void add_message(Message message){
+    messages.emplace_back(message);
+}
 static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     if(messages.size() <= 0) return;
     Message message = messages.front();

@@ -1,5 +1,7 @@
+#include "additional_things/arena.h"
 #include "platform.h"
 #include "osten_engine.cpp"
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <unistd.h>
@@ -61,8 +63,10 @@ uint8_t run(OstenEngine& engine){
     init_game(engine);
     last_tick = std::chrono::high_resolution_clock::now();
     while(!engine.should_close){
+        size_t free = calculate_colliders(&engine.heap_stack);
         update_game(engine.delta_time, engine);
         engine.draw_frame();
+        free_arena(&engine.heap_stack, free);
     }
     return 0;
 }

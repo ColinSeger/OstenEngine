@@ -30,9 +30,9 @@ inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwindow* w
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
         //camera_tranform->transform.position.x += 100 * delta_time;
     }
-    static double old_xpos = xpos, old_ypos = ypos;
+    //static double old_xpos = xpos, old_ypos = ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-    if(old_xpos < ypos){
+    //if(old_xpos < ypos){
         //camera_tranform->transform.rotation.y += 1 * delta_time;
-    }
+        //}
 }

@@ -50,7 +50,8 @@ struct SimpleColliderComp{
     uint16_t entity = UINT16_MAX;
     uint16_t collision_amount = 0;
     float collision_range = 0;
-    uint16_t* nearby_colliders;
+    uint16_t nearby_colliders[255];
+    //uint16_t* nearby_colliders;
 };
 
 struct ComponentSystem
@@ -201,11 +202,13 @@ static inline uint16_t add_transform(){
     return component_sys->amount-1;
 }
 
-static inline uint16_t add_collider(){
+static inline uint16_t add_collider(uint16_t transform_index, uint16_t entity){
     ComponentSystem* component_sys = get_component_system(COLLIDER);
     SimpleColliderComp* comp = (SimpleColliderComp*)get_at_index(component_sys->memory_arena, component_sys->components);
     comp += component_sys->amount;
     comp->collision_range = 5;
+    comp->transform_id = transform_index;
+    comp->entity = entity;
     component_sys->amount++;
     return component_sys->amount-1;
 }
@@ -219,17 +222,20 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
 
     for(int x = 0; x < collider_system->amount; x++){
         colliders[x].collision_amount = 0;
-        size_t index = arena_alloc_memory(heap_stack, sizeof(uint16_t));
-        colliders[x].nearby_colliders = (uint16_t*)get_at_index(heap_stack, index);
-        for(int y = 0; y < collider_system->amount; y++){
-            Transform self = transforms[colliders[x].transform_id].transform;
-            Transform other = transforms[colliders[y].transform_id].transform;
+        //size_t index = arena_alloc_memory(heap_stack, sizeof(uint16_t));
+        //colliders[x].nearby_colliders = (uint16_t*)get_at_index(heap_stack, index);
+        Transform self = transforms[colliders[x].transform_id].transform;
 
-            float lenght = v3_length(v3_sub(self.position, other.position));
-            if(lenght < colliders[x].collision_range){
+        for(int y = 0; y < collider_system->amount; y++){
+            Transform other = transforms[colliders[y].transform_id].transform;
+            float length = v3_length(v3_sub(self.position, other.position));
+            if(length < colliders[x].collision_range){
+                if(colliders[x].collision_amount > sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0])){
+                    break;
+                }
                 colliders[x].nearby_colliders[colliders[x].collision_amount] = colliders[y].transform_id;
                 colliders[x].collision_amount++;
-                arena_alloc_memory(heap_stack, sizeof(uint16_t));
+                //arena_alloc_memory(heap_stack, sizeof(uint16_t));
             }
         }
     }
