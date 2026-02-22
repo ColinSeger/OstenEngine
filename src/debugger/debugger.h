@@ -36,9 +36,9 @@ namespace Debug
         return debug_logs.size();
     }
 
-    static inline std::vector<std::string>& get_all_logs()
+    static inline std::string* get_all_logs()
     {
-        return debug_logs;
+        return debug_logs.data();
     }
     static inline void profile_time_start()
     {

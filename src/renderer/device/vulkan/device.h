@@ -15,40 +15,38 @@ struct Vertex {
     vec2_t texture_cord{};
 };
 
-typedef struct{
+struct VertexArray{
     size_t amount;
     Vertex* values;
-}VertexArray;
+};
 
-typedef struct{
+struct  Uint32Array{
     size_t amount;
     uint32_t* values;
-} Uint32Array;
+};
 
-typedef struct{
+struct VertexAttributes{
     VkVertexInputAttributeDescription array[3];
-} VertexAttributes;
+};
 
-struct optional
-{
+struct optional{
     uint32_t number;
     bool has_value = false;
 };
 
-typedef struct{
+struct QueueFamilyIndices{
     optional graphics_family;
     optional present_family;
-}  QueueFamilyIndicies;
+};
 
-typedef struct{
+struct SwapChainSupportDetails{
     VkSurfaceCapabilitiesKHR surface_capabilities;
     void* surface_data;
     uint8_t surface_amount;
     uint8_t present_amount;
-} SwapChainSupportDetails ;
+};
 
-struct Device
-{
+struct Device{
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice virtual_device = VK_NULL_HANDLE;
 
@@ -60,7 +58,7 @@ static const char* device_extensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-constexpr bool is_completed(const QueueFamilyIndicies& queue_family){
+constexpr bool is_completed(const QueueFamilyIndices& queue_family){
     return queue_family.graphics_family.has_value && queue_family.present_family.has_value;
 }
 
@@ -97,8 +95,8 @@ constexpr VertexAttributes get_attribute_descriptions() {
     return attribute_descriptions;
 }
 
-QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
-    QueueFamilyIndicies indices;
+static inline QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
+    QueueFamilyIndices indices;
     // Logic to find queue family indices to populate struct
     uint32_t queue_family_amount = 0;
 
@@ -133,7 +131,7 @@ QueueFamilyIndicies find_queue_families(VkPhysicalDevice device, VkSurfaceKHR& s
     return indices;
 }
 
-SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
+static inline SwapChainSupportDetails find_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR& surface, HeapStack* heap_stack){
     SwapChainSupportDetails swap_chain_details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swap_chain_details.surface_capabilities);
 
@@ -191,7 +189,7 @@ static bool check_device_extension_support(VkPhysicalDevice device, HeapStack* h
 }
 
 static bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface, HeapStack* memory_arena){//Can improve later
-    QueueFamilyIndicies indices = find_queue_families(device, surface, memory_arena);
+    QueueFamilyIndices indices = find_queue_families(device, surface, memory_arena);
 
     bool has_extention_support = check_device_extension_support(device, memory_arena);
 
@@ -218,7 +216,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[],const u
 }
 
 static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStack* memory_arena){
-    QueueFamilyIndicies indices = find_queue_families(device.physical_device, surface, memory_arena);
+    QueueFamilyIndices indices = find_queue_families(device.physical_device, surface, memory_arena);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 
     VkDeviceQueueCreateInfo queue_create_infos[sizeof(family_array) / sizeof(family_array[0])];
@@ -275,7 +273,7 @@ static void create_virtual_device(Device& device, VkSurfaceKHR surface, HeapStac
     vkGetDeviceQueue(device.virtual_device, indices.present_family.number, 0, &device.present_queue);
 }
 
-void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, HeapStack* heap_stack)
+static inline void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_reference, HeapStack* heap_stack)
 {
     uint32_t device_amount = 0;
 
@@ -302,14 +300,14 @@ void create_device(Device& device,VkInstance& instance, VkSurfaceKHR& surface_re
     create_virtual_device(device, surface_reference, heap_stack);
 }
 
-void destroy_device(Device& device)
+static inline void destroy_device(Device& device)
 {
     vkDestroyDevice(device.virtual_device, nullptr);
 }
 
 namespace CommandBuffer
 {
-    VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
+    static inline VkCommandBuffer begin_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool)
     {
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -329,7 +327,7 @@ namespace CommandBuffer
         return command_buffer;
     }
 
-    void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer)
+    static inline void end_single_time_commands(VkDevice virtual_device, VkCommandPool& command_pool, VkQueue graphics_queue, VkCommandBuffer& command_buffer)
     {
         vkEndCommandBuffer(command_buffer);
 
@@ -344,7 +342,7 @@ namespace CommandBuffer
         vkFreeCommandBuffers(virtual_device, command_pool, 1, &command_buffer);
     }
 
-    uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
+    static inline uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties mem_properties;
         vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
@@ -359,7 +357,7 @@ namespace CommandBuffer
         return 0;
     }
 
-    static void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool){
+    static inline  void copy_buffer(Device& device, VkBuffer& src_buffer, VkBuffer& dst_buffer, VkDeviceSize& size, VkCommandPool& command_pool){
         VkCommandBuffer command_buffer = begin_single_time_commands(device.virtual_device, command_pool);
 
         VkBufferCopy copy_region{};
@@ -373,7 +371,7 @@ namespace CommandBuffer
         end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
     }
 
-    VkResult create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory){
+    static inline VkResult create_buffer(Device& device, VkBufferUsageFlags usage, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& buffer_memory){
         VkBufferCreateInfo buffer_info{};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer_info.size = size;
@@ -403,7 +401,7 @@ namespace CommandBuffer
         return result;
     }
 
-    VkResult create_vertex_buffer(Device& device, VertexArray& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
+    static inline VkResult create_vertex_buffer(Device& device, VertexArray& vertices, VkBuffer& vertex_buffer, VkDeviceMemory& vertex_buffer_memory, VkCommandPool& command_pool)
     {
         VkDeviceSize buffer_size = sizeof(vertices.values[0]) * vertices.amount;
 
@@ -446,7 +444,7 @@ namespace CommandBuffer
         return result;
     }
 
-    VkResult create_index_buffer(Device& device, Uint32Array& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool){
+    static inline VkResult create_index_buffer(Device& device, Uint32Array& indicies, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory, VkCommandPool& command_pool){
         VkDeviceSize buffer_size = sizeof(indicies.values[0]) * indicies.amount;
 
         VkBuffer staging_buffer;
@@ -489,7 +487,7 @@ namespace CommandBuffer
     }
 
 
-    VkResult record_command_buffer(VkCommandBuffer& command_buffer)
+    static inline VkResult record_command_buffer(VkCommandBuffer& command_buffer)
     {
         VkCommandBufferBeginInfo begin_info{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -497,8 +495,7 @@ namespace CommandBuffer
         return vkBeginCommandBuffer(command_buffer, &begin_info);
     }
 
-    //Can probably make this a array
-    VkResult create_command_buffers(VkCommandBuffer* command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT){
+    static inline VkResult create_command_buffers(VkCommandBuffer* command_buffers, VkDevice virtual_device, VkCommandPool& command_pool, const uint8_t MAX_FRAMES_IN_FLIGHT){
         VkCommandBufferAllocateInfo allocation_info{};
         allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocation_info.commandPool = command_pool;
@@ -508,8 +505,8 @@ namespace CommandBuffer
         return vkAllocateCommandBuffers(virtual_device, &allocation_info, command_buffers);
     }
 
-    VkResult create_command_pool(Device& device, VkSurfaceKHR surface, HeapStack* memory_arena, VkCommandPool& command_pool) {
-        QueueFamilyIndicies queue_family_indices = find_queue_families(device.physical_device, surface, memory_arena);
+    static inline VkResult create_command_pool(Device& device, VkSurfaceKHR surface, HeapStack* memory_arena, VkCommandPool& command_pool) {
+        QueueFamilyIndices queue_family_indices = find_queue_families(device.physical_device, surface, memory_arena);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

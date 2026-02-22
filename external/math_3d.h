@@ -124,6 +124,9 @@ static inline vec3_t v3_move_towards (vec3_t a, vec3_t b, float delta);
 //OstenCode
 typedef struct { float x, y; } vec2_t;
 
+static inline float  v2_length(vec2_t v)                    { return sqrtf(v.x*v.x + v.y*v.y); }
+static inline vec2_t v2_muls  (vec2_t a, float s)           { return { a.x * s,   a.y * s, };  }
+
 struct vec2_uint_t{
     uint32_t x;
     uint32_t y;
@@ -278,6 +281,14 @@ static inline vec3_t v3_norm(vec3_t v) {
 		return { v.x / len, v.y / len, v.z / len };
 	else
 		return { 0, 0, 0};
+}
+
+static inline vec2_t v2_norm(vec2_t v) {
+	float len = v2_length(v);
+	if (len > 0)
+		return { v.x / len, v.y / len };
+	else
+		return { 0, 0 };
 }
 
 static inline vec3_t v3_proj(vec3_t v, vec3_t onto) {

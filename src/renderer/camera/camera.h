@@ -26,6 +26,12 @@ inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwindow* w
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
         camera_tranform->transform.position.y += camera_speed * delta_time;
     }
+    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+        camera_tranform->transform.position.z += camera_speed * delta_time;
+    }
+    if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS){
+        camera_tranform->transform.position.z -= camera_speed * delta_time;
+    }
 
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
         //camera_tranform->transform.position.x += 100 * delta_time;

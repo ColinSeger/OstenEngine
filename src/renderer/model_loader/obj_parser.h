@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 #include "../../../external/math_3d.h"
-#include "../device/vulkan/device.cpp"
+#include "../device/vulkan/device.h"
 #include "../../debugger/debugger.h"
 
 typedef struct{

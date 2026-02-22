@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vulkan/vulkan.h>
 #include <vector>
-#include "../device/vulkan/device.cpp"
+#include "../device/vulkan/device.h"
 #include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
@@ -82,11 +82,11 @@ namespace ModelLoader
         //195528 debug asset
 
         //Figures out where the vertexes starts/stops
-        uint32_t index_start = *reinterpret_cast<uint32_t*>(buffer);
+        uint32_t index_start = *((uint32_t*)buffer);
 
         //Sets where to start values of the model
-        vertices.values = reinterpret_cast<Vertex*>(buffer + sizeof(uint32_t));
-        indices.values = reinterpret_cast<uint32_t*>(buffer+ sizeof(uint32_t) + index_start);
+        vertices.values = (Vertex*)(buffer + sizeof(uint32_t));
+        indices.values = (uint32_t*)(buffer+ sizeof(uint32_t) + index_start);
 
         //Sets amount the array contains
         vertices.amount = index_start / sizeof(Vertex);

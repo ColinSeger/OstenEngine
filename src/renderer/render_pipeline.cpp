@@ -4,10 +4,10 @@
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
-#include "device/vulkan/device.cpp"
-#include "descriptors/descriptors.cpp"
-#include "texture/vulkan/texture.cpp"
-#include "swap_chain/vulkan/swap_chain.cpp"
+#include "device/vulkan/device.h"
+#include "descriptors/descriptors.h"
+#include "texture/vulkan/texture.h"
+#include "swap_chain/vulkan/swap_chain.h"
 #include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.hpp"
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
@@ -22,8 +22,7 @@ struct RenderData{
     //uint32_t descriptor_usage = 0;
 };
 
-struct RenderPipeline
-{
+struct RenderPipeline{
     SwapChainImages swap_chain_images = {};
 
     //Device manager
@@ -86,10 +85,10 @@ void render_cleanup(struct RenderPipeline& pipeline, HeapStack* memory_stack)
         vkDestroyBuffer(pipeline.device.virtual_device, model.vertex_buffer, nullptr);
     }
 
-    for(size_t i = 0; i < loaded_textures.size(); i++){
-        vkDestroyImageView(pipeline.device.virtual_device, loaded_textures[i].image_view, nullptr);
-        vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
-    }
+    // for(size_t i = 0; i < loaded_textures.size(); i++){
+    //     vkDestroyImageView(pipeline.device.virtual_device, loaded_textures[i].image_view, nullptr);
+    //     vkDestroyImage(pipeline.device.virtual_device, loaded_textures[i].texture_image, nullptr);
+    // }
 
     clean_swap_chain(pipeline.device.virtual_device, pipeline.swap_chain, pipeline.swap_chain_images, memory_stack);
     vkDestroyPipeline(pipeline.device.virtual_device, pipeline.graphics_pipeline, nullptr);
@@ -222,7 +221,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
 
 static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass){
     //ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
-    FileData vertex_code = platform_load_entire_file("src/renderer/shaders/vert.spv");
+    FileData vertex_code = platform_load_entire_file("src/renderer/shaders/quad.vert.spv");
     VkPipelineShaderStageCreateInfo vertex_stage_info = {};
     bool vertex_result = create_shader(vertex_code, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, &vertex_stage_info);
     free_file(vertex_code);
@@ -371,7 +370,7 @@ static void create_sync_objects(VkDevice virtual_device, RenderData& render_pipe
 static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, transform_id))->transform;
+    Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
 
     //Camera is placeholder name
     vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::v3_forward_vector(camera_transform));
@@ -437,8 +436,8 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     //create_uniform_buffers(render_pipeline.test_descriptor, render_pipeline.test_descriptor.object_amount, render_pipeline.device);
 
-    uint32_t index = Texture::load_texture(render_pipeline.device, ".png", render_pipeline.command_pool);
-    TextureImage texture = loaded_textures[index];
+    // uint32_t index = Texture::load_texture(render_pipeline.device, ".png", render_pipeline.command_pool);
+    TextureImage texture = Texture::load_texture(render_pipeline.device, (char*)".png", render_pipeline.command_pool).texture;
 
     //Start Move out
     VkDeviceMemory mem;
@@ -559,8 +558,8 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(viewport_extent.width);
-    viewport.height = static_cast<float>(viewport_extent.height);
+    viewport.width = ((float)viewport_extent.width);
+    viewport.height =((float)viewport_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);

@@ -4,17 +4,16 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
-#include <vector>
 #include "../../../external/imgui_test/imgui.h"
 #include "../../../external/imgui_test/imgui_impl_glfw.h"
 #include "../../../external/imgui_test/imgui_impl_vulkan.h"
-#include "../../renderer/device/vulkan/device.cpp"
+#include "../../renderer/device/vulkan/device.h"
 #include "../../engine/message_system/message.h"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
 #include "vulkan/vulkan_core.h"
 
-static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
+static inline  VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
     VkDescriptorPool imgui_pool;
 
     VkDescriptorPoolSize pool_sizes[] = {
@@ -36,7 +35,7 @@ static VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
     return imgui_pool;
 }
 
-void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack* memory_arena){
+static inline void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, VkInstance instance, HeapStack* memory_arena){
     VkDescriptorPool imgui_descriptor_pool = create_imgui_descriptor_pool(render_pipeline->device.virtual_device);
     VkPhysicalDevice physical_device = render_pipeline->device.physical_device;
     VkDevice virtual_device = render_pipeline->device.virtual_device;
@@ -81,7 +80,7 @@ void init_imgui(GLFWwindow* main_window, struct RenderPipeline* render_pipeline,
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack){
+static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack){
     switch (type)
     {
     case 0:{
@@ -152,7 +151,7 @@ static float memory_stats[30]{};
 static float highest_value = 0;
 constexpr uint8_t graph_size = sizeof(memory_stats) / sizeof(memory_stats[0]);
 
-static void update_graph(float current){
+static inline void update_graph(float current){
     if(current > highest_value) highest_value = current;
     float push_value = current;
     for(uint8_t i = 0; i < graph_size; i++){
@@ -162,7 +161,7 @@ static void update_graph(float current){
     }
 }
 
-static void imgui_hierarchy_pop_up(){
+static inline void imgui_hierarchy_pop_up(){
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
@@ -176,7 +175,7 @@ static void imgui_hierarchy_pop_up(){
     }
 }
 
-static void imgui_hierarchy(bool& open, uint32_t& inspecting){
+static inline void imgui_hierarchy(bool& open, uint32_t& inspecting){
     auto& entities = EntityManager::get_all_entities();
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
@@ -214,8 +213,7 @@ static InstanceData selected_assets;
 static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* heap_stack){
     ImGui::Text("Loaded Models");
 
-    for (auto const& value : loaded_model_index)
-    {
+    for (auto const& value : loaded_model_index){
         ImGui::PushID(value.second);
         if(ImGui::Button(value.first.c_str()) && value.first[value.first.size()-1] == 'j'){
             Message serialize{};
@@ -231,15 +229,14 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
 
     ImGui::Text("Loaded Textures");
 
-    for (auto const& value : loaded_textures_index)
-    {
-        ImGui::PushID(value.second);
-        ImGui::Button(value.first.c_str());
-        ImGui::Spacing();
-        ImGui::PopID();
-    }
+    // for (auto const& value : loaded_textures_index){
+    //     ImGui::PushID(value.second);
+    //     ImGui::Button(value.first.c_str());
+    //     ImGui::Spacing();
+    //     ImGui::PopID();
+    // }
 
-    if(ImGui::Button("Create Renderable")){
+    if(ImGui::Button("Create RenderAble")){
         Message message{};
         message.size = 0;
         message.type = MessageType::CreateRenderable;
@@ -247,27 +244,25 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
         add_message(message);
     }
     if(ImGui::BeginCombo("Models", "")){
-        for (auto const& value : loaded_model_index)
-        {
-            if (ImGui::Button(value.first.c_str()))
-            {
+        for (auto const& value : loaded_model_index){
+            if (ImGui::Button(value.first.c_str())){
                 selected_assets.model_index = value.second;
             }
         }
         ImGui::EndCombo();
     }
-    if(ImGui::BeginCombo("Textures", "")){
-        for (auto const& value : loaded_textures_index)
-        {
-            if (ImGui::Button(value.first.c_str()))
-            {
-                selected_assets.texture_index = value.second;
-            }
-        }
-        ImGui::EndCombo();
-    }
+    // if(ImGui::BeginCombo("Textures", "")){
+    //     for (auto const& value : loaded_textures_index)
+    //     {
+    //         if (ImGui::Button(value.first.c_str()))
+    //         {
+    //             selected_assets.texture_index = value.second;
+    //         }
+    //     }
+    //     ImGui::EndCombo();
+    // }
     ImGui::InputInt("Capacity", &selected_assets.capacity);
-    ImGui::Text("Existing Renderables");
+    ImGui::Text("Existing RenderAble");
     for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
         RenderAble* renderable = get_renderable(render_pipe->model_render_data, i, heap_stack);
 
@@ -276,10 +271,8 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
     }
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack, vec3_t& target_point)
-{
-    if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
-    {
+static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack, vec3_t& target_point){
+    if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0){
         ImGui_ImplGlfw_Sleep(10);
     }
 
@@ -313,7 +306,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
     show_loaded_assets(render_pipeline, heap_stack);
 
     ImGui::Begin("Console");
-        std::vector<std::string> editor_logs = Debug::get_all_logs();
+        std::string* editor_logs = Debug::get_all_logs();
         ImGui::BeginChild("Logs");
             for (size_t i = 0; i <  Debug::logs_size(); i++)
             {
@@ -333,8 +326,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
 
     ImGui::End();
     ImGui::Begin("Inspector");
-        for (auto& entity : EntityManager::get_entity_names())
-        {
+        for (auto& entity : EntityManager::get_entity_names()){
             if(entity.second == entities[inspecting].id){
                 char buffer[64] = {};
                 for (size_t i = 0; i < entity.first.length(); i++) {
@@ -382,7 +374,7 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
     ImGui::End();
 }
 
-void end_imgui_editor_poll()
+static inline void end_imgui_editor_poll()
 {
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();

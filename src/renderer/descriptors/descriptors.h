@@ -1,11 +1,11 @@
-#ifndef DESCRIPTORSETS
+#pragma once
 #include <stddef.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 #include <stdint.h>
 #include "../../../external/math_3d.h"
-#include "../device/vulkan/device.cpp"
-#include "../texture/vulkan/texture.cpp"
+#include "../device/vulkan/device.h"
+#include "../texture/vulkan/texture.h"
 
 constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -71,8 +71,7 @@ typedef struct{
     mat4_t model;
 } ObjectUBO;
 
-constexpr uint32_t texture_capacity = 20;
-VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
+static VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
 
 
 //Can Return null if you are accesing outside capacity
@@ -338,15 +337,15 @@ static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descri
     }
 }
 
-static void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor& descriptor, VkImageView image_view, VkSampler sampler, VkBuffer lisght, uint16_t texture_index){
+static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor& descriptor, VkImageView image_view, VkSampler sampler, VkBuffer lisght, uint16_t texture_index){
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
     image_info.sampler = sampler;
 
     //Not good
-    image_descriptors_info[texture_index].imageView = loaded_textures[texture_index].image_view;
-    image_descriptors_info[texture_index].sampler = loaded_textures[texture_index].texture_sampler;
+    image_descriptors_info[texture_index].imageView = texture_storage[texture_index].texture.image_view;
+    image_descriptors_info[texture_index].sampler = texture_storage[texture_index].texture.texture_sampler;
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
@@ -489,7 +488,7 @@ static VkResult create_descriptor_set(VkDevice virtual_device, RenderingDescript
     return VK_SUCCESS;
 }
 
-static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, uint32_t render_able_index, HeapStack* heap_stack){
+static inline VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ModelData& model_data, uint32_t render_able_index, HeapStack* heap_stack){
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -528,7 +527,7 @@ static VkResult create_model_set(VkDevice virtual_device, VkDescriptorPool descr
     return VK_SUCCESS;
 }
 
-static void create_light_uniform_buffer(Light* light_descriptor, Device& device) {
+static inline  void create_light_uniform_buffer(Light* light_descriptor, Device& device) {
     VkDeviceSize bufferSize = sizeof(LightUbo);
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -545,7 +544,7 @@ static void create_light_uniform_buffer(Light* light_descriptor, Device& device)
     }
 }
 
-static void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, Device& device) {
+static inline  void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, Device& device) {
     VkDeviceSize bufferSize = sizeof(CameraUbo);
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -562,7 +561,7 @@ static void create_camera_uniform_buffer(CameraDescriptor& render_descriptor, De
     }
 }
 
-static VkResult init_model_data(ModelData& model_data, Device& device, HeapStack* heap_stack){
+static inline VkResult init_model_data(ModelData& model_data, Device& device, HeapStack* heap_stack){
     VkDeviceSize bufferSize = sizeof(ObjectUBO) * model_data.object_capacity;
     model_data.renderable_amount = 0;
 
@@ -589,6 +588,3 @@ static VkResult init_model_data(ModelData& model_data, Device& device, HeapStack
 
     return VK_SUCCESS;
 }
-
-#endif
-#define  DESCRIPTORSETS

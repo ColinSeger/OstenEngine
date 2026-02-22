@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include <vulkan/vulkan.h>
-#include "../device/vulkan/device.cpp"
-#include "../texture/vulkan/texture.cpp"
+#include "../device/vulkan/device.h"
+#include "../texture/vulkan/texture.h"
 #include "vulkan/vulkan_core.h"
 
 static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){

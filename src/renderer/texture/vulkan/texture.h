@@ -1,11 +1,10 @@
 #pragma once
+#include <cstdint>
+#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
-#include <unordered_map>
 #include <vulkan/vulkan_core.h>
-#include <vector>
-#include "../../device/vulkan/device.cpp"
+#include "../../device/vulkan/device.h"
 #include "../../../../external/image_loader/stb_image.h"
 
 struct TextureImage
@@ -23,18 +22,28 @@ struct TextureArray{
     uint16_t capacity;
 };
 
-std::unordered_map<std::string, uint32_t> loaded_textures_index;
-std::vector<TextureImage> loaded_textures;
+constexpr uint32_t texture_capacity = 20;
+
+struct TextureStorage{
+    TextureImage texture;
+    char* name;
+    uint32_t index = 0;
+};
+
+static TextureStorage texture_storage[texture_capacity] = {};
+static uint32_t texture_amount = 0;
+
+// std::unordered_map<std::string, uint32_t> loaded_textures_index;
+// std::vector<TextureImage> loaded_textures;
 
 namespace Texture
 {
-    struct Formats
-    {
+    struct Formats{
         VkFormat* formats;
         uint32_t format_amount;
     };
 
-    static VkFormat find_supported_texture_formats(const Formats formats, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
+    static inline VkFormat find_supported_texture_formats(const Formats formats, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice physical_device)
     {
         for(uint32_t i = 0; i < formats.format_amount; i++)
         {
@@ -51,7 +60,7 @@ namespace Texture
         throw "failed to find supported format!";
     }
 
-    static void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool, uint8_t mip_level)
+    static inline void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool, uint8_t mip_level)
     {
         VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
@@ -104,7 +113,7 @@ namespace Texture
         CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
     }
 
-    static void copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
+    static inline void copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
     {
         VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
 
@@ -137,7 +146,8 @@ namespace Texture
         CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
     }
 
-    VkResult create_image(  const Device& device,
+    static inline VkResult create_image(
+                        const Device& device,
                         const VkExtent2D image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
@@ -184,7 +194,7 @@ namespace Texture
         return vkBindImageMemory(device.virtual_device, image, image_memory, 0);
     }
 
-    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)
+    static inline VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)
     {
         VkImageView result{};
         VkImageViewCreateInfo view_info{};
@@ -206,7 +216,7 @@ namespace Texture
         return result;
     }
 
-    VkSampler create_texture_sampler(Device& device)
+    static inline VkSampler create_texture_sampler(Device& device)
     {
         VkSampler textureSampler{};
 
@@ -240,7 +250,7 @@ namespace Texture
         return textureSampler;
     }
 
-    VkFormat find_depth_formats(VkPhysicalDevice physical_device) {
+    static inline VkFormat find_depth_formats(VkPhysicalDevice physical_device) {
         VkFormat valid_formats[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
         Formats formats{
             formats.formats = valid_formats,
@@ -255,7 +265,8 @@ namespace Texture
         );
     }
 
-    static void create_image(Device& device,
+    static inline void create_image(
+                        Device& device,
                         VkExtent2D& image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
@@ -301,7 +312,7 @@ namespace Texture
         vkBindImageMemory(device.virtual_device, image.texture_image, image.texture_image_memory, 0);
     }
 
-    VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag, uint8_t mip_level)
+    static inline VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag, uint8_t mip_level)
     {
         VkImageView result{};
         VkImageViewCreateInfo view_info{};
@@ -323,7 +334,7 @@ namespace Texture
         return result;
     }
 
-    static void generate_mipmap(VkImage image, VkFormat image_format, VkExtent2D image_size, uint32_t mip_level, Device device, VkCommandPool command_pool)
+    static inline void generate_mipmap(VkImage image, VkFormat image_format, VkExtent2D image_size, uint32_t mip_level, Device device, VkCommandPool command_pool)
     {
         // Check if image format supports linear blitting
         VkFormatProperties format_properties;
@@ -431,8 +442,7 @@ namespace Texture
         CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue ,command_buffer);
     }
 
-    TextureImage create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool)
-    {
+    static inline TextureImage create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool){
         int texture_width = 0;
         int texture_height = 0;
         int texture_channels = 0;
@@ -510,19 +520,21 @@ namespace Texture
         return texture_image;
     }
 
-    uint32_t load_texture(Device& device ,const char* texture_location, VkCommandPool& command_pool)
-    {
-        auto contains = loaded_textures_index.find(texture_location);
-        if(contains != loaded_textures_index.end()){
-            return loaded_textures_index[texture_location];
+    static inline TextureStorage load_texture(Device& device, char* texture_location, VkCommandPool& command_pool){
+
+        for(uint32_t i = 0; i < texture_amount; i++){
+            if(!strcmp(texture_storage[i].name, texture_location)){
+                return texture_storage[i];
+            }
         }
         TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
         texture_image.image_view = create_image_view(device.virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture_image.mip_levels);
         texture_image.texture_sampler = Texture::create_texture_sampler(device);
 
-
-        loaded_textures.emplace_back(texture_image);
-        loaded_textures_index[texture_location] = loaded_textures.size() -1;
-        return loaded_textures_index[texture_location];
+        texture_storage[texture_amount].texture = texture_image;
+        texture_storage[texture_amount].name = texture_location;
+        texture_storage[texture_amount].index = texture_amount;
+        texture_amount++;
+        return texture_storage[texture_amount -1];
     }
 }

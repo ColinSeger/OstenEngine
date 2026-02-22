@@ -1,5 +1,7 @@
 // #include "components.h"
 #pragma once
+#include <assert.h>
+#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include "../transform.h"
@@ -49,7 +51,7 @@ struct SimpleColliderComp{
     uint16_t entity = UINT16_MAX;
     uint16_t collision_amount = 0;
     float collision_range = 0;
-    uint16_t nearby_colliders[255];
+    uint16_t nearby_colliders[58];//Bad and can cause issues but to little time to fix
     //uint16_t* nearby_colliders;
 };
 
@@ -222,13 +224,21 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
         Transform self = transforms[colliders[x].transform_id].transform;
 
         for(int y = 0; y < collider_system->amount; y++){
-            Transform other = transforms[colliders[y].transform_id].transform;
+            uint16_t other_transform_id = colliders[y].transform_id;
+            Transform other = transforms[other_transform_id].transform;
             float length = v3_length(v3_sub(self.position, other.position));
             if(length < colliders[x].collision_range){
                 if(colliders[x].collision_amount > sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0])){
+                    //uint16_t to_many = colliders[x].collision_amount;
+                    //Debug::log("You had ");
+                    assert(false);
                     break;
                 }
-                colliders[x].nearby_colliders[colliders[x].collision_amount] = colliders[y].transform_id;
+                if(other_transform_id == 0){
+                    assert(false);
+                    break;
+                }
+                colliders[x].nearby_colliders[colliders[x].collision_amount] = other_transform_id;
                 colliders[x].collision_amount++;
                 //arena_alloc_memory(heap_stack, sizeof(uint16_t));
             }
