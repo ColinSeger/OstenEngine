@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 #include "../engine/message_system/message.h"
 
@@ -94,6 +94,7 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
 
         vec3_t final_dir = v3_add(desired, separation);
         final_dir = v3_norm(final_dir);
+        final_dir.z = 0;
         float move_speed = unit.move_speed * delta_time;
         transform->transform.position = v3_move_towards(current, v3_add(current, v3_muls(final_dir, move_speed)), move_speed);
     }

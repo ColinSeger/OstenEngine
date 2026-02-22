@@ -7,10 +7,6 @@ struct HeapStack{
     unsigned long long capacity;
     unsigned long long index;
     unsigned char* data;
-    // void* operator[](const unsigned long long index) const {
-    //     if(index > capacity || this->index < index) throw;
-    //     return &data[index];
-    // }
 };
 
 inline void* get_at_index(struct HeapStack* heap_stack, const unsigned long long index){

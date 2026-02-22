@@ -2,7 +2,6 @@
 #define GLFW_INCLUDE_NONE
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
-#include <iostream>
 
 #ifdef WIN32
 #include "src/win32_app.cpp"
@@ -26,10 +25,6 @@ int main()
     OstenEngine engine = start(1920, 1080, name);
 
     run(engine);
-
-    // std::string result;
-    std::cout << "Hello World \n";
-    // std::cin >> result;
 
     return 0;
 }

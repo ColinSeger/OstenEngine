@@ -1,8 +1,8 @@
-#include <cstddef>
-#include <cstring>
 #ifndef DESCRIPTORSETS
+#include <stddef.h>
+#include <string.h>
 #include <vulkan/vulkan_core.h>
-#include <cstdint>
+#include <stdint.h>
 #include "../../../external/math_3d.h"
 #include "../device/vulkan/device.cpp"
 #include "../texture/vulkan/texture.cpp"

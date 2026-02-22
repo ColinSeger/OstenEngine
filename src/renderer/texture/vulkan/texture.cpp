@@ -1,6 +1,6 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vulkan/vulkan_core.h>

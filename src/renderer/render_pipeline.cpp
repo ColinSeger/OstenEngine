@@ -1,7 +1,7 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
 #include "device/vulkan/device.cpp"
@@ -110,15 +110,23 @@ void render_cleanup(struct RenderPipeline& pipeline, HeapStack* memory_stack)
     vkDestroyCommandPool(pipeline.device.virtual_device, pipeline.command_pool, nullptr);
 }
 
-static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline, HeapStack* heap_stack){
-    //Move this later
-    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/vert.spv", heap_stack);
-    ShaderMemoryIndexing fragment_shader = load_shader("src/renderer/shaders/frag.spv", heap_stack);
+static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline){
 
-    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, heap_stack);
-    VkPipelineShaderStageCreateInfo fragment_state_info = create_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, heap_stack);
-    free_arena(heap_stack, vertex_shader.arena_index);
-    free_arena(heap_stack, fragment_shader.arena_index);//Tecnically only need one of these
+    FileData vertex_code = platform_load_entire_file("src/renderer/shaders/vert.spv");
+    FileData fragment_code = platform_load_entire_file("src/renderer/shaders/frag.spv");
+
+    VkPipelineShaderStageCreateInfo vertex_stage_info = {};
+    VkPipelineShaderStageCreateInfo fragment_state_info = {};
+
+    bool vertex_result = create_shader(vertex_code, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, &vertex_stage_info);
+    bool fragment_result = create_shader(fragment_code, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, &fragment_state_info);
+
+    free_file(vertex_code);
+    free_file(fragment_code);
+
+    if(!vertex_result ||!fragment_result){
+        return VK_INCOMPATIBLE_SHADER_BINARY_EXT;
+    }
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info, fragment_state_info};
 
@@ -129,7 +137,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(sizeof(attribute_descriptions.array) / sizeof(attribute_descriptions.array[0]));
+    vertex_input_info.vertexAttributeDescriptionCount = (uint32_t)(sizeof(attribute_descriptions.array) / sizeof(attribute_descriptions.array[0]));
     vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.array;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
@@ -159,10 +167,10 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
     depth_stencil.stencilTestEnable = VK_FALSE;
 
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkPipelineMultisampleStateCreateInfo multi_sampling{};
+    multi_sampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multi_sampling.sampleShadingEnable = VK_FALSE;
+    multi_sampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState color_blend_attachment{};
     color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -182,7 +190,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
 
     VkPipelineDynamicStateCreateInfo dynamic_state{};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = sizeof(dynamic_states) / sizeof(dynamic_states[0]);
+    dynamic_state.dynamicStateCount = (uint32_t)(sizeof(dynamic_states) / sizeof(dynamic_states[0]));
     dynamic_state.pDynamicStates = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipeline_info{};
@@ -193,7 +201,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     pipeline_info.pInputAssemblyState = &input_assembly;
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
-    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pMultisampleState = &multi_sampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = &dynamic_state;
@@ -212,12 +220,16 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     return VK_SUCCESS;
 }
 
-static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass, HeapStack* heap_stack){
-    ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
+static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass){
+    //ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
+    FileData vertex_code = platform_load_entire_file("src/renderer/shaders/vert.spv");
+    VkPipelineShaderStageCreateInfo vertex_stage_info = {};
+    bool vertex_result = create_shader(vertex_code, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, &vertex_stage_info);
+    free_file(vertex_code);
 
-    VkPipelineShaderStageCreateInfo vertex_stage_info = create_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, heap_stack);
-
-    free_arena(heap_stack, vertex_shader.arena_index);
+    if(!vertex_result){
+        return VK_INCOMPATIBLE_SHADER_BINARY_EXT;
+    }
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {vertex_stage_info};
     constexpr uint8_t shader_amount = sizeof(shader_stages) / sizeof(shader_stages[0]);
@@ -493,9 +505,9 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
         throw "Failed to create pipeline";
     }
 
-    setup_shadow_pipe(render_pipeline.device.virtual_device, render_pipeline.shadow_pipe_layout, &render_pipeline.shadow_pipeline, render_pipeline.shadow_pass.render_pass, heap_stack);
+    setup_shadow_pipe(render_pipeline.device.virtual_device, render_pipeline.shadow_pipe_layout, &render_pipeline.shadow_pipeline, render_pipeline.shadow_pass.render_pass);
 
-    setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline, heap_stack);
+    setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline);
 
     create_sync_objects(render_pipeline.device.virtual_device, render_pipeline.render_data);
     return VK_SUCCESS;

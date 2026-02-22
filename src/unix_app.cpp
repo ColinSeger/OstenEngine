@@ -1,15 +1,14 @@
-#include "additional_things/arena.h"
 #include "platform.h"
-#include "osten_engine.cpp"
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
+#include <stddef.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <fcntl.h>
+#include "additional_things/arena.h"
+#include "osten_engine.cpp"
 #include "game/total_cheese.hpp"
-
-
-auto start_time = std::chrono::high_resolution_clock::now();
 
 float platform_memory_mb()
 {//https://libstatgrab.org/ Look Into
@@ -44,14 +43,46 @@ void platform_free_memory(void *pointer, unsigned long long size){
     munmap(pointer, size);
 }
 
-double get_time_since_start(){
-    auto current_time = std::chrono::high_resolution_clock::now();
+struct Timer platform_get_time_handle(){
+    Timer result = {};
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
-    return std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time).count();
+    result.sec = start.tv_sec;
+    result.ns = start.tv_nsec;
+    return result;
+}
+
+double platform_calc_elapsed_time_seconds(struct Timer timer){
+    struct timespec end;
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    return (end.tv_sec - timer.sec) + (end.tv_nsec - timer.ns) / 1e9;
+}
+
+long long platform_get_file_size(const char* filename) {
+    struct stat file_stats;
+    if (stat(filename, &file_stats) == -1)
+        return -1;
+    return file_stats.st_size;
+}
+
+struct FileData platform_load_entire_file(const char* filepath){//Add error handling
+    FileData result = {};
+    result.filename = filepath;
+    long long file_size = platform_get_file_size(result.filename);
+    int file = open(result.filename, O_RDONLY);
+
+    result.file_data = mmap(0, file_size, PROT_READ, MAP_PRIVATE, file, 0);
+    result.file_size = file_size;
+    close(file);
+    return result;
+}
+void free_file(struct FileData file){
+    munmap(file.file_data, file.file_size);
 }
 
 OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    start_time = std::chrono::high_resolution_clock::now();
     return OstenEngine(width, height, name);
 }
 
@@ -61,7 +92,7 @@ uint8_t run(OstenEngine& engine){
     procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
 
     init_game(engine);
-    last_tick = std::chrono::high_resolution_clock::now();
+    last_tick = platform_get_time_handle();
     while(!engine.should_close){
         size_t free = calculate_colliders(&engine.heap_stack);
         update_game(engine.delta_time, engine);

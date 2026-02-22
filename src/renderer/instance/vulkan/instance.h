@@ -1,8 +1,8 @@
 #pragma once
-#include <cassert>
+#include <assert.h>
 #include <vulkan/vulkan.h>
-#include <cstdint>
-#include <cstring>
+#include <stdint.h>
+#include <string.h>
 #include "../../validation.h"
 #include "vulkan/vulkan_core.h"
 

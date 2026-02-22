@@ -1,8 +1,7 @@
 // #include "components.h"
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
+#include <stddef.h>
+#include <stdint.h>
 #include "../transform.h"
 #include "../../additional_things/arena.h"
 
@@ -171,10 +170,6 @@ static inline void create_collider_system(uint16_t collider_amount, HeapStack* m
     component_sys->capacity = collider_amount;
     component_sys->amount = 0;
     component_sys->type = COLLIDER;
-
-    for (size_t i = 0; i < collider_amount; i++){
-        SimpleColliderComp* comp = (SimpleColliderComp*)get_component_by_id(component_sys, i);
-    }
 }
 
 static inline uint16_t add_camera(uint16_t transform_index){

@@ -1,7 +1,7 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 #include <vulkan/vulkan.h>
 #include "../../../../external/math_3d.h"
 #include "../../../debugger/debugger.h"

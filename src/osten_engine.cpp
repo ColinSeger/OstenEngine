@@ -1,6 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <chrono>
+#include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
@@ -24,6 +23,7 @@ struct OstenEngine
     struct RenderPipeline render_pipeline;
 
     GLFWwindow* main_window = nullptr;
+    vec3_t target_point = {};
 
     VkDescriptorSet imgui_texture = VK_NULL_HANDLE;
 
@@ -60,8 +60,8 @@ struct OstenEngine
     void cleanup();
 };
 
-static auto start_time2 = std::chrono::high_resolution_clock::now();
-static std::chrono::high_resolution_clock::time_point last_tick;
+static Timer start_time2 = platform_get_time_handle();
+static Timer last_tick;
 
 OstenEngine::OstenEngine(const int width, const int height, const char* application_name){
     init_mem_arena(&heap_stack ,128*MB);
@@ -134,11 +134,9 @@ void OstenEngine::draw_frame(){
 
     glfwPollEvents();
 
-    camera_movement(delta_time, 0, main_window);
 
-    auto current_time = std::chrono::high_resolution_clock::now();
-    delta_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - last_tick).count();
-    double frame_time = std::chrono::duration<double, std::chrono::seconds::period>(current_time - start_time2).count();
+    delta_time = platform_calc_elapsed_time_seconds(last_tick);
+    double frame_time = platform_calc_elapsed_time_seconds(start_time2);
 
     procces_all_commands(&render_pipeline, &heap_stack);
 
@@ -146,11 +144,12 @@ void OstenEngine::draw_frame(){
         update_graph(platform_memory_mb());
 
         fps = frames / frame_time;
-        start_time2 = current_time;
+        start_time2 = platform_get_time_handle();
         frames = 0;
     }
 
-    begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, &heap_stack);
+
+    begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, &heap_stack, target_point);
 
     start_file_explorer(file_explorer, &render_pipeline);
 
@@ -164,7 +163,10 @@ void OstenEngine::draw_frame(){
         ImGui::End();
     }
 
+    camera_movement(delta_time, 0, main_window);
+
     ComponentSystem* camera_sys = get_component_system(0);
+
     int32_t result = 0;
     //for (size_t i = 0; i < cameras->amount; i++)
     {
@@ -189,11 +191,10 @@ void OstenEngine::draw_frame(){
     end_imgui_editor_poll();
 
     frames +=1;
-    last_tick = std::chrono::high_resolution_clock::now();
+    last_tick = platform_get_time_handle();
 }
 
-void OstenEngine::cleanup()
-{
+void OstenEngine::cleanup(){
     VkSurfaceKHR surf = render_pipeline.my_surface;
 
     ImGui_ImplGlfw_Shutdown();

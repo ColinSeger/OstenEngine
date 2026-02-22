@@ -1,9 +1,7 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 #include <fstream>
 #include <string>
 #include "../../../external/math_3d.h"

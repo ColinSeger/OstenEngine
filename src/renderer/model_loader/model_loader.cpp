@@ -1,13 +1,12 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 #include <fstream>
 #include <string>
 #include <unordered_map>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.cpp"
-// #include "../descriptors/descriptors.cpp"
 #include "../../debugger/debugger.h"
 #include "obj_parser.h"
 

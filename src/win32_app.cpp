@@ -1,8 +1,8 @@
 #pragma once
 #include "engine/message_system/message.h"
 #include "platform.h"
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 #include "osten_engine.cpp"
 #include <windows.h>
 #include <minwindef.h>

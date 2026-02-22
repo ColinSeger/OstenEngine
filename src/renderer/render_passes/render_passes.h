@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include <vulkan/vulkan.h>
 #include "../device/vulkan/device.cpp"
 #include "../texture/vulkan/texture.cpp"

@@ -1,6 +1,6 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 #include <vulkan/vulkan_core.h>
 #include "../../../additional_things/arena.h"
 #include "../../device/vulkan/device.cpp"

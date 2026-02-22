@@ -1,8 +1,8 @@
 // #include "entity_system.h"
 #pragma once
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include "components.cpp"
 
 struct System

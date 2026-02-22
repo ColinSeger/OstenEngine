@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@ namespace Debug
     constexpr uint8_t time_capacity = 15;
     struct TimeLog
     {
-        double timers[time_capacity];
+        Timer timers[time_capacity];
         uint8_t index = 0;
     };
 
@@ -42,19 +42,17 @@ namespace Debug
     }
     static inline void profile_time_start()
     {
-        time_logger.timers[time_logger.index] = get_time_since_start();
+        time_logger.timers[time_logger.index] = platform_get_time_handle();
         if(time_logger.index >= time_capacity){
             return;
         }
         time_logger.index++;
     }
 
-    static inline void profile_time_end()
-    {
-        double end_time = get_time_since_start();
+    static inline void profile_time_end(){
         time_logger.index--;
-        double time = end_time - time_logger.timers[time_logger.index];
-        // time*=10;//Converts to seconds
+
+        double time = platform_calc_elapsed_time_seconds(time_logger.timers[time_logger.index]);
 
         std::string time_string = std::to_string(time);
 

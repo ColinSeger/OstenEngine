@@ -1,8 +1,8 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string>
 #include <vector>
 #include "../../../external/imgui_test/imgui.h"
@@ -135,8 +135,11 @@ void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* 
     break;
     case 3:{
             ImGui::Text("Collider");
-            ComponentSystem* transform_system = get_component_system(COLLIDER);
-            SimpleColliderComp* collider = ((SimpleColliderComp*)get_component_by_id(transform_system, 0));
+            ComponentSystem* collider_system = get_component_system(COLLIDER);
+            SimpleColliderComp* collider = ((SimpleColliderComp*)get_component_by_id(collider_system, id));
+
+            ImGui::Text("Collider %i", collider->collision_amount);
+            ImGui::Text("Collider %f", collider->collision_range);
 
         }
     break;
@@ -273,7 +276,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
     }
 }
 
-void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack)
+void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack, vec3_t& target_point)
 {
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0)
     {
@@ -304,6 +307,8 @@ void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* ren
         ImGui::DragFloat("Fov", &camera->field_of_view, 0.1f);
         ImGui::PopID();
     }
+
+    ImGui::DragFloat3("Camera Position", &target_point.x, 0.1f);
 
     show_loaded_assets(render_pipeline, heap_stack);
 

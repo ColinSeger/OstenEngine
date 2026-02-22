@@ -74,7 +74,7 @@ v1.0  2016-02-15  Initial release
 #ifndef MATH_3D_HEADER
 #define MATH_3D_HEADER
 
-#include <cstdint>
+#include <stdint.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -128,9 +128,49 @@ struct vec2_uint_t{
     uint32_t x;
     uint32_t y;
 };
-static inline float parse_float(const char* string_char, size_t& index_jump);
+static inline float parse_float(const char* string_char, size_t& index_jump) {
+    uint32_t int_part = 0;
+    uint32_t frac_part = 0;
+    uint32_t frac_div = 1;
+    int sign = 1;
+    uint8_t jump = 1;
 
-static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump);
+    if (*string_char == '-') {
+        sign = -1;
+        string_char++;
+        jump++;
+    }
+
+    if (*string_char < '0' || *string_char > '9') return 0;
+
+    while (*string_char >= '0' && *string_char <= '9') {
+        int_part = int_part * 10 + (*string_char - '0');
+        string_char++;
+        jump++;
+    }
+
+    if (*string_char == '.') {
+        string_char++;
+        while (*string_char >= '0' && *string_char <= '9') {
+            frac_part = frac_part * 10 + (*string_char - '0');
+            frac_div *= 10;
+            string_char++;
+            jump++;
+        }
+    }
+    index_jump += jump;
+    return (sign * ((float)int_part + (float)frac_part / frac_div));
+}
+
+static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
+    uint32_t result = 0;
+    for(uint8_t i = 0; i < 10; i++){
+        if(string[i] < '0' || string[i] > '9') break;
+        result = result * 10 + (string[i] - '0');
+        index_jump++;
+    }
+    return result;
+}
 
 // static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
 //     uint32_t result = 0;
@@ -680,49 +720,5 @@ mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//
 }
 
 //Osten Implementation
-
-static inline float parse_float(const char* string_char, size_t& index_jump) {
-    uint32_t int_part = 0;
-    uint32_t frac_part = 0;
-    uint32_t frac_div = 1;
-    int sign = 1;
-    uint8_t jump = 1;
-
-    if (*string_char == '-') {
-        sign = -1;
-        string_char++;
-        jump++;
-    }
-
-    if (*string_char < '0' || *string_char > '9') return 0;
-
-    while (*string_char >= '0' && *string_char <= '9') {
-        int_part = int_part * 10 + (*string_char - '0');
-        string_char++;
-        jump++;
-    }
-
-    if (*string_char == '.') {
-        string_char++;
-        while (*string_char >= '0' && *string_char <= '9') {
-            frac_part = frac_part * 10 + (*string_char - '0');
-            frac_div *= 10;
-            string_char++;
-            jump++;
-        }
-    }
-    index_jump += jump;
-    return (sign * ((float)int_part + (float)frac_part / frac_div));
-}
-
-static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
-    uint32_t result = 0;
-    for(uint8_t i = 0; i < 10; i++){
-        if(string[i] < '0' || string[i] > '9') break;
-        result = result * 10 + (string[i] - '0');
-        index_jump++;
-    }
-    return result;
-}
 
 #endif // MATH_3D_IMPLEMENTATION

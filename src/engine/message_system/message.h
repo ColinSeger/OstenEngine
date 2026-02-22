@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <cstdint>
+#include <stdint.h>
 #include "../../renderer/render_pipeline.cpp"
 #include "../../renderer/model_loader/model_loader.cpp"
 #include "../entity_manager/entity_manager.cpp"
@@ -146,7 +146,7 @@ static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* he
     if(messages.size() <= 0) return;
     Message message = messages.front();
     char* action = reinterpret_cast<char*>(message.value);
-    Entity ent = *(Entity*)message.value;
+    //Entity ent = *(Entity*)message.value;
 
     switch (message.type)
     {

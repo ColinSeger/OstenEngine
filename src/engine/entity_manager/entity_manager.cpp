@@ -1,6 +1,6 @@
 // #include "entity_manager.h"
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 #include <string>
 #include <unordered_map>

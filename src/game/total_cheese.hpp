@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
 #include <vulkan/vulkan_core.h>
-#include <cstdint>
+#include <vector>
+#include <stdint.h>
 #include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"
 #include "../osten_engine.cpp"
@@ -41,16 +41,12 @@ static void init_game(OstenEngine& engine){
     ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40, &engine.heap_stack);
 
     army_units.emplace_back(unit1);
-
-    //ArmyUnit unit = init_army_unit(rendera, {0 , 0 , 0}, 255, 40);
-
-    //army_units.emplace_back(unit);
 }
 static double test = 0;
 static void update_game(double delta_time, OstenEngine& engine){
     test+= delta_time;
     for (ArmyUnit& unit : army_units) {
         //test_army(unit);
-        move_towards(unit, {0,0,0}, delta_time);
+        move_towards(unit, engine.target_point, delta_time);
     }
 }
