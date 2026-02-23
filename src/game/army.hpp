@@ -10,6 +10,7 @@ struct ArmyUnit{
     RenderAble* render_able;
     bool alive_units[255];//Bad
     float move_speed = 5.f;
+    vec3_t target_point;
 };
 
 static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack){
@@ -70,7 +71,7 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
     SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
 
 
-    vec2_t target_pos = {target_position.x, target_position.y};
+    vec2_t target_pos = {unit.target_point.x, unit.target_point.y};
     float minimum_distance = 5;
     float seperation_strength = 3;
     for (uint8_t i = 0; i < 255; i++) {

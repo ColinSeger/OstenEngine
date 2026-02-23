@@ -45,10 +45,28 @@ static void init_game(OstenEngine& engine){
     army_units.emplace_back(unit2);
 }
 static double test = 0;
+static int target_index = 0;
+
 static void update_game(double delta_time, OstenEngine& engine){
+    int index = 0;
+    if(glfwGetKey(engine.main_window, GLFW_KEY_1) == GLFW_PRESS){
+        target_index=0;
+        std::string line = std::string("Index is ");
+        line.push_back(target_index);
+        Debug::log(line);
+    }
+    if(glfwGetKey(engine.main_window, GLFW_KEY_2) == GLFW_PRESS){
+        target_index=1;
+        std::string line = std::string("Index is ");
+        line.push_back(target_index);
+        Debug::log(line);
+    }
     test+= delta_time;
     for (ArmyUnit& unit : army_units) {
-        //test_army(unit);
+        if(index == target_index){
+            unit.target_point = engine.target_point;
+        }
         move_towards(unit, engine.target_point, delta_time);
+        index++;
     }
 }
