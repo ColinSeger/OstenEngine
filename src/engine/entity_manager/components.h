@@ -1,7 +1,6 @@
 // #include "components.h"
 #pragma once
 #include <assert.h>
-#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include "../transform.h"
@@ -14,16 +13,17 @@ constexpr uint8_t COLLIDER = 3;
 
 struct Component{
     const uint16_t id;
+    uint16_t entity_id = 0;
 };
 
 struct TransformComponent{
     const uint16_t id = 1;
-    uint16_t entity = 0;
-    Transform transform {};
-    TransformComponent& operator=(TransformComponent& transform){
-        this->transform = transform.transform;
-        return *this;
-    }
+    uint16_t entity_id = 0;
+    Transform transform {};//Could be better
+//    TransformComponent& operator=(TransformComponent& transform){
+//        this->transform = transform.transform;
+//        return *this;
+//    }
 };
 
 struct RenderComponent{
@@ -35,28 +35,44 @@ struct RenderComponent{
 
 struct CameraComponent{
     const uint16_t id = 3;
+    uint16_t entity_id = 0;
     uint16_t transform_id = UINT16_MAX;
     float field_of_view = 45.f;
 
-    CameraComponent& operator=(CameraComponent camera){
-        this->transform_id = camera.transform_id;
-        this->field_of_view = camera.field_of_view;
-        return *this;
-    }
+//    CameraComponent& operator=(CameraComponent camera){
+//        this->transform_id = camera.transform_id;
+//        this->field_of_view = camera.field_of_view;
+//        return *this;
+//    }
 };
 
 struct SimpleColliderComp{
     const uint16_t id = 4;
+    uint16_t entity_id = 0;
     uint16_t transform_id = UINT16_MAX;
-    uint16_t entity = UINT16_MAX;
     uint16_t collision_amount = 0;
     float collision_range = 0;
-    uint16_t nearby_colliders[58];//Bad and can cause issues but to little time to fix
+    uint16_t nearby_colliders[42];//Bad and can cause issues but to little time to fix
     //uint16_t* nearby_colliders;
 };
 
-struct ComponentSystem
-{
+struct HealthComponent{
+    const uint16_t id = 5;
+    uint16_t entity_id = 0;
+    int16_t health;
+    uint16_t damage_taken;
+    uint16_t team_id;
+};
+
+struct MeleeComponent{
+    const uint16_t id = 6;
+    uint16_t entity_id = 0;
+    uint16_t damage;
+    uint16_t nearby_enemy_health_id;
+    float attack_cooldown;
+};
+
+struct ComponentSystem{
     HeapStack* memory_arena;
     size_t components;
     uint16_t amount = 0;
@@ -205,7 +221,6 @@ static inline uint16_t add_collider(uint16_t transform_index, uint16_t entity){
     comp += component_sys->amount;
     comp->collision_range = 5;
     comp->transform_id = transform_index;
-    comp->entity = entity;
     component_sys->amount++;
     return component_sys->amount-1;
 }

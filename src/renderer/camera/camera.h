@@ -1,7 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "../../../external/math_3d.h"
-#include "../../engine/entity_manager/components.hpp"
+#include "../../engine/entity_manager/components.h"
 
 static double xpos, ypos;
 

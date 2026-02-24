@@ -1,13 +1,14 @@
 // #include "entity_manager.h"
 #pragma once
+#include "components.h"
+#include <cstdint>
 #include <stdint.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
 // #include "entity_system.cpp"
 
-struct TempID
-{
+struct TempID{
     uint16_t index = 0;
     uint16_t type = 0;
 };
@@ -24,6 +25,17 @@ void add_component(Entity& entity, TempID component){
     }
     entity.components[entity.amount] = component;
     entity.amount++;
+}
+
+bool get_component(Entity entity, uint16_t component, void* result){
+    for(TempID com : entity.components){
+        if(com.type != component) continue;
+
+        ComponentSystem* component_system = get_component_system(component);
+        result = get_component_by_id(component_system, com.index);
+        return true;
+    }
+    return false;
 }
 
 namespace EntityManager
@@ -79,6 +91,12 @@ void EntityManager::add_entity(Entity entity, std::string name)
     }
 
     entity.id = entities.size();
+
+    for(TempID component : entity.components){
+        ComponentSystem* system = get_component_system(component.type);
+        Component* comp = (Component*)get_component_by_id(system, component.index);
+        comp->entity_id = entity.id;
+    }
 
     entities.emplace_back(entity);
     entity_names[name] = entity.id;

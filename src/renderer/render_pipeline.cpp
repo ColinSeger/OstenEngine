@@ -9,7 +9,7 @@
 #include "texture/vulkan/texture.h"
 #include "swap_chain/vulkan/swap_chain.h"
 #include "model_loader/model_loader.cpp"
-#include "../engine/entity_manager/components.hpp"
+#include "../engine/entity_manager/components.h"
 #include "../../external/imgui_test/imgui_impl_vulkan.h"
 #include "shaders/shaders.h"
 #include "../additional_things/arena.h"

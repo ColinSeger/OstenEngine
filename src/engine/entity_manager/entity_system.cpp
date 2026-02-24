@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "components.cpp"
+#include "components.h"
 
 struct System
 {

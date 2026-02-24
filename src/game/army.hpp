@@ -66,10 +66,7 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* collider_system = get_component_system(COLLIDER);
 
-    //uint16_t collider_index = unit.unit_colliders[0];
-
     SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
-
 
     vec2_t target_pos = {unit.target_point.x, unit.target_point.y};
     float minimum_distance = 5;
@@ -121,5 +118,27 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
         vec3_t move = {final_dir.x * move_speed, final_dir.y * move_speed, 0};
 
         transform->transform.position = v3_add(transform->transform.position, move); //v3_move_towards(current, v3_add(current, v3_muls(final_dir, move_speed)), move_speed);
+    }
+}
+
+
+static inline void calculate_attack(){
+    ComponentSystem* collider_system = get_component_system(COLLIDER);
+
+    SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
+
+    auto entities = EntityManager::get_all_entities();
+
+    for(int i = 0; i < collider_system->amount; i++){
+        SimpleColliderComp collider = colliders[i];
+        for (int x = 0; x < collider.collision_amount; x++) {
+            SimpleColliderComp nearby_collider = colliders[collider.nearby_colliders[x]];
+            Entity entity = entities[nearby_collider.entity_id];
+
+            HealthComponent* health;
+            if(get_component(entity, 0, (void*)health)){
+                health->team_id;
+            }
+        }
     }
 }

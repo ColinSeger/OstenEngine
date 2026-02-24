@@ -9,7 +9,7 @@
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
-#include "engine/entity_manager/components.hpp"
+#include "engine/entity_manager/components.h"
 #include "engine/message_system/message.h"
 #include "../external/math_3d.h"
 #include "renderer/camera/camera.h"
