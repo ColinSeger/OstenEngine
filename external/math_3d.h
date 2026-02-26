@@ -74,6 +74,7 @@ v1.0  2016-02-15  Initial release
 #ifndef MATH_3D_HEADER
 #define MATH_3D_HEADER
 
+#include <cmath>
 #include <stdint.h>
 #include <math.h>
 #include <stdio.h>
@@ -126,6 +127,7 @@ typedef struct { float x, y; } vec2_t;
 
 static inline float  v2_length(vec2_t v)                    { return sqrtf(v.x*v.x + v.y*v.y); }
 static inline vec2_t v2_muls  (vec2_t a, float s)           { return { a.x * s,   a.y * s, };  }
+static inline float v2_dist(vec2_t a, vec2_t b) { return sqrt(((a.y - a.x) * (a.y - a.x)) + ((b.y - b.x) * (b.y - b.x)));}
 
 struct vec2_uint_t{
     uint32_t x;

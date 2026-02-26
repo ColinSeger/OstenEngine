@@ -10,6 +10,8 @@ constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
 constexpr uint8_t RENDER = 2;
 constexpr uint8_t COLLIDER = 3;
+constexpr uint8_t HEALTH = 4;
+constexpr uint8_t MELEE = 5;
 
 struct Component{
     const uint16_t id;
@@ -85,8 +87,11 @@ namespace{
     ComponentSystem transforms{};
     ComponentSystem render_components{};
     ComponentSystem simple_colliders{};
+    ComponentSystem health_system{};
+    ComponentSystem melee_system{};
 }
 
+//I don't like
 static inline uint16_t get_component_size_by_type(uint16_t type){
     switch ((uint8_t)type){
     case TRANSFORM:
@@ -97,6 +102,10 @@ static inline uint16_t get_component_size_by_type(uint16_t type){
         return sizeof(CameraComponent);
     case COLLIDER:
         return sizeof(SimpleColliderComp);
+    case HEALTH:
+        return sizeof(HealthComponent);
+    case MELEE:
+        return sizeof(MeleeComponent);
     default:
         return 0;
     }
@@ -120,6 +129,10 @@ static constexpr ComponentSystem* get_component_system(uint8_t system_id){
         return &render_components;
     case COLLIDER:
         return &simple_colliders;
+    case HEALTH:
+        return &health_system;
+    case MELEE:
+        return &melee_system;
     default:
         return 0;
     }
@@ -190,6 +203,26 @@ static inline void create_collider_system(uint16_t collider_amount, HeapStack* m
     component_sys->type = COLLIDER;
 }
 
+static inline void create_health_system(uint16_t health_capacity, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(HEALTH);
+
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(HealthComponent) * health_capacity);
+    component_sys->capacity = health_capacity;
+    component_sys->amount = 0;
+    component_sys->type = HEALTH;
+}
+
+static inline void create_melee_system(uint16_t melee_capacity, HeapStack* memory_arena){
+    ComponentSystem* component_sys = get_component_system(MELEE);
+
+    component_sys->memory_arena = memory_arena;
+    component_sys->components = arena_alloc_memory(memory_arena, sizeof(MeleeComponent) * melee_capacity);
+    component_sys->capacity = melee_capacity;
+    component_sys->amount = 0;
+    component_sys->type = MELEE;
+}
+
 static inline uint16_t add_camera(uint16_t transform_index){
     ComponentSystem* component_sys = get_component_system(CAMERA);
 
@@ -221,6 +254,27 @@ static inline uint16_t add_collider(uint16_t transform_index, uint16_t entity){
     comp += component_sys->amount;
     comp->collision_range = 5;
     comp->transform_id = transform_index;
+    component_sys->amount++;
+    return component_sys->amount-1;
+}
+
+static inline uint16_t add_healt_comp(uint8_t team,uint16_t entity){
+    ComponentSystem* component_sys = get_component_system(HEALTH);
+    HealthComponent* comp = (HealthComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
+    comp += component_sys->amount;
+    comp->entity_id = entity;
+    comp->health = 100;
+    comp->team_id = team;
+    component_sys->amount++;
+    return component_sys->amount-1;
+}
+
+static inline uint16_t add_melee_comp(uint16_t entity){
+    ComponentSystem* component_sys = get_component_system(MELEE);
+    MeleeComponent* comp = (MeleeComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
+    comp += component_sys->amount;
+    comp->entity_id = entity;
+    comp->damage = 1;
     component_sys->amount++;
     return component_sys->amount-1;
 }
@@ -262,20 +316,30 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
 
     return free_index;
 }
-/*
- *
-static constexpr ComponentSystem* create_component(uint8_t system_id){
-    switch (system_id){
-    case CAMERA:
-        return add_camera(uint16_t transform_index);
-    case TRANSFORM:
-        return &transforms;
-    case RENDER:
-        return &render_components;
-    case COLLIDER:
-        return &simple_colliders;
-    default:
-        return 0;
+
+
+static inline void run_attack_system(){
+    ComponentSystem* health_system = get_component_system(HEALTH);
+    ComponentSystem* melee_system = get_component_system(MELEE);
+
+
+    for (int i = 0; i < melee_system->amount; i++) {
+        MeleeComponent* melee_comp = (MeleeComponent*)get_component_by_id(melee_system, i);
+        HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, melee_comp->nearby_enemy_health_id);
+        health_comps->damage_taken += melee_comp->damage;
     }
 }
-*/
+
+static inline void run_health_system(){
+    ComponentSystem* health_system = get_component_system(HEALTH);
+
+    HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, 0);
+
+    for (int i = 0; i < health_system->amount; i++) {
+        health_comps[i].health -= health_comps[i].damage_taken;
+        health_comps[i].damage_taken = 0;
+        if(health_comps->health <= 0){
+            printf("Dead");
+        }
+    }
+}

@@ -337,7 +337,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
             }
         }
 
-        for(uint16_t i = 0; i < entities[inspecting].amount; i++){
+        for(uint16_t i = 0; i < entities[inspecting].component_amount; i++){
             ImGui::PushID(entities[inspecting].components[i].type);
             inspect(entities[inspecting].components[i].type, entities[inspecting].components[i].index, render_pipeline, heap_stack);
             ImGui::Spacing();

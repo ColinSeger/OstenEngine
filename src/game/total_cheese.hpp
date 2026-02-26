@@ -12,6 +12,7 @@ static struct InstanceData render_ids {};
 static std::vector<ArmyUnit> army_units{};
 
 static void load_game_reasources(){
+
     struct Message message{};
     message.type = MessageType::LoadModel;
     message.value = (void*)"assets/debug_assets/Cube.obj";
@@ -36,10 +37,13 @@ static void load_game_reasources(){
 static void init_game(OstenEngine& engine){
     vkDeviceWaitIdle(engine.render_pipeline.device.virtual_device);
 
+    create_health_system(2000, &engine.heap_stack);
+    create_melee_system(2000, &engine.heap_stack);
+
     struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
 
-    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40, &engine.heap_stack);
-    ArmyUnit unit2 = init_army_unit(rendera, {-20 , 0 , 0}, 255, 40, &engine.heap_stack);
+    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40, &engine.heap_stack, 0);
+    ArmyUnit unit2 = init_army_unit(rendera, {-20 , 0 , 0}, 255, 40, &engine.heap_stack, 1);
 
     army_units.emplace_back(unit1);
     army_units.emplace_back(unit2);
@@ -69,4 +73,7 @@ static void update_game(double delta_time, OstenEngine& engine){
         move_towards(unit, engine.target_point, delta_time);
         index++;
     }
+    calculate_attack(&engine.heap_stack);
+    run_attack_system();
+    run_health_system();
 }

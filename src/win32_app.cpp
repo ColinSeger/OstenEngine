@@ -136,6 +136,7 @@ uint8_t run(OstenEngine& engine){
     calculate_colliders(&engine.heap_stack);
 
     while(!engine.should_close){
+        procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
         size_t free = calculate_colliders(&engine.heap_stack);
         update_game(engine.delta_time, engine);
         engine.draw_frame();

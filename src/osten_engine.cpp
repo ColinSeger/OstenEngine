@@ -10,7 +10,6 @@
 #include "editor/UI/editor_gui.cpp"
 #include "editor/file_explorer/file_explorer.cpp"
 #include "engine/entity_manager/components.h"
-#include "engine/message_system/message.h"
 #include "../external/math_3d.h"
 #include "renderer/camera/camera.h"
 
@@ -137,8 +136,6 @@ void OstenEngine::draw_frame(){
 
     delta_time = platform_calc_elapsed_time_seconds(last_tick);
     double frame_time = platform_calc_elapsed_time_seconds(start_time2);
-
-    procces_all_commands(&render_pipeline, &heap_stack);
 
     if(frame_time > 1) {
         update_graph(platform_memory_mb());

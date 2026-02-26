@@ -16,15 +16,15 @@ struct TempID{
 struct Entity{
     TempID components[5];
     uint16_t id;
-    uint16_t amount;
+    uint16_t component_amount;
 };
 
 void add_component(Entity& entity, TempID component){
     for(TempID com : entity.components){
         if(com.type == component.type) return;
     }
-    entity.components[entity.amount] = component;
-    entity.amount++;
+    entity.components[entity.component_amount] = component;
+    entity.component_amount++;
 }
 
 bool get_component(Entity entity, uint16_t component, void* result){

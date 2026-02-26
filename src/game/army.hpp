@@ -13,7 +13,7 @@ struct ArmyUnit{
     vec3_t target_point;
 };
 
-static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack){
+static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t start_point, uint8_t amount, uint8_t row_size, HeapStack* heap_stack, uint8_t team_id){
     uint8_t row = 0;
     ArmyUnit unit{};
     unit.render_able = render_able;
@@ -41,6 +41,15 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
             (uint16_t)(collider_index),
             (uint16_t)(COLLIDER)
         };
+        struct TempID health{
+            (uint16_t)(add_healt_comp(team_id, 0)),
+            (uint16_t)(HEALTH)
+        };
+        struct TempID melee{
+            (uint16_t)(add_melee_comp(0)),
+            (uint16_t)(MELEE)
+        };
+
 
         TransformComponent* transform = (struct TransformComponent*)get_component_by_id(get_component_system(TRANSFORM), transform_index);
         transform->transform.position = start_point;
@@ -56,6 +65,8 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
         add_component(entity, transform_comp);
         add_component(entity, render);
         add_component(entity, collider);
+        add_component(entity, health);
+        add_component(entity, melee);
         entities_to_create.emplace_back(entity);
     }
     return unit;
@@ -122,22 +133,40 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
 }
 
 
-static inline void calculate_attack(){
+static inline void calculate_attack(struct HeapStack* heap_stack){
     ComponentSystem* collider_system = get_component_system(COLLIDER);
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
     SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
 
-    auto entities = EntityManager::get_all_entities();
+    Entity* entities = EntityManager::get_all_entities().data();
 
     for(int i = 0; i < collider_system->amount; i++){
         SimpleColliderComp collider = colliders[i];
+        Transform my_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[collider.transform_id].transform;
+        HealthComponent health = {};
+        MeleeComponent attack_comp = {};
+        if(!get_component(entities[collider.entity_id], HEALTH, &health)){
+            continue;
+        }
+        if(!get_component(entities[collider.entity_id], MELEE, &attack_comp)){
+            continue;
+        }
+
         for (int x = 0; x < collider.collision_amount; x++) {
             SimpleColliderComp nearby_collider = colliders[collider.nearby_colliders[x]];
-            Entity entity = entities[nearby_collider.entity_id];
+            Transform other_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[nearby_collider.transform_id].transform;
+            if(v2_dist({my_transform.position.x, my_transform.position.y}, {other_transform.position.x, other_transform.position.y}) > 5){
+                continue;
+            }
+            Entity other_entity = entities[nearby_collider.entity_id];
 
-            HealthComponent* health;
-            if(get_component(entity, 0, (void*)health)){
-                health->team_id;
+            HealthComponent other_health = {};
+            if(get_component(other_entity, HEALTH, &other_health)){
+                if(other_health.team_id != health.team_id){
+
+                    attack_comp.nearby_enemy_health_id = other_health.entity_id;
+                }
             }
         }
     }
