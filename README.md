@@ -1,4 +1,4 @@
-# OstenEngin
+# OstenEngine
 
 Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping 
 the development withing resonable time.
