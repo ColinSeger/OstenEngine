@@ -5,7 +5,7 @@
 #include "../texture/vulkan/texture.h"
 #include "vulkan/vulkan_core.h"
 
-static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device& device){
+static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device* device){
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
@@ -26,7 +26,7 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     //color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = Texture::find_depth_formats(device.physical_device);
+    depth_attachment.format = Texture::find_depth_formats(device->physical_device);
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -61,10 +61,10 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass);
+    return vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, render_pass);
 }
 
-static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, const Device& device){
+static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, const Device* device){
     VkSubpassDependency dependencies[2]{};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -110,7 +110,7 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     render_pass_info.dependencyCount = 2;
     render_pass_info.pDependencies = dependencies;
 
-    return vkCreateRenderPass(device.virtual_device, &render_pass_info, nullptr, render_pass);
+    return vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, render_pass);
 }
 
 struct ShadowPass{
@@ -124,7 +124,7 @@ struct ShadowPass{
 };
 
 //Temporaraly placed here
-static inline VkResult create_offscreen_framebuffer(const Device device, const VkExtent2D size, ShadowPass* shadow_pass){
+static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D size, ShadowPass* shadow_pass){
 
     Texture::create_image(
         device,
@@ -133,8 +133,8 @@ static inline VkResult create_offscreen_framebuffer(const Device device, const V
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        shadow_pass->depth_image,
-        shadow_pass->depth_image_memory
+        &shadow_pass->depth_image,
+        &shadow_pass->depth_image_memory
     );
 
     VkImageViewCreateInfo image_view_create_info{};
@@ -148,7 +148,7 @@ static inline VkResult create_offscreen_framebuffer(const Device device, const V
     image_view_create_info.subresourceRange.baseArrayLayer = 0;
     image_view_create_info.subresourceRange.layerCount = 1;
 
-    VkResult creation_status = vkCreateImageView(device.virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
+    VkResult creation_status = vkCreateImageView(device->virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
     if(creation_status != VK_SUCCESS) return creation_status;
 
     VkSamplerCreateInfo sampler_create_info{};
@@ -181,9 +181,9 @@ static inline VkResult create_offscreen_framebuffer(const Device device, const V
     debug_sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 
-    creation_status = vkCreateSampler(device.virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
+    creation_status = vkCreateSampler(device->virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
     if(creation_status != VK_SUCCESS) return creation_status;
-    creation_status = vkCreateSampler(device.virtual_device, &debug_sampler, nullptr, &shadow_pass->debug_sampler);
+    creation_status = vkCreateSampler(device->virtual_device, &debug_sampler, nullptr, &shadow_pass->debug_sampler);
     if(creation_status != VK_SUCCESS) return creation_status;
 
     create_offscreen_render_pass(&shadow_pass->render_pass, device);
@@ -198,6 +198,6 @@ static inline VkResult create_offscreen_framebuffer(const Device device, const V
     frame_buffer_create_info.layers = 1;
     frame_buffer_create_info.flags = 0;
 
-    vkCreateFramebuffer(device.virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
+    vkCreateFramebuffer(device->virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
     return VK_SUCCESS;
 }

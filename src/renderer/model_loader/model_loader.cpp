@@ -116,8 +116,8 @@ namespace ModelLoader
         }
 
         model.index_amount = indices.amount;
-        CommandBuffer::create_vertex_buffer(device, vertices, model.vertex_buffer, model.vertex_buffer_memory, command_pool);
-        CommandBuffer::create_index_buffer(device, indices, model.index_buffer, model.index_buffer_memory, command_pool);
+        CommandBuffer::create_vertex_buffer(&device, &vertices, &model.vertex_buffer, &model.vertex_buffer_memory, command_pool);
+        CommandBuffer::create_index_buffer(&device, &indices, &model.index_buffer, &model.index_buffer_memory, command_pool);
         loaded_models.emplace_back(model);
         loaded_model_index[file_name] = loaded_models.size() -1;
 

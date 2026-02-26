@@ -41,14 +41,14 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
         add_transform();
     }
     uint32_t index = 0;
-    RenderAble* renderable = get_free_renderable(render_pipeline->model_render_data, heap_stack, &index);
+    RenderAble* renderable = get_free_renderable(&render_pipeline->model_render_data, heap_stack, &index);
     renderable->model_index = asset_index->model_index;
     renderable->texture_index = asset_index->texture_index;
     renderable->capacity = asset_index->capacity;
     renderable->instance_amount = 0;
     renderable->transform_index = arena_alloc_memory(heap_stack, sizeof(uint16_t) * renderable->capacity);
 
-    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, render_pipeline->model_render_data, index, heap_stack);
+    create_model_set(render_pipeline->device.virtual_device, render_pipeline->descriptor_pool, render_pipeline->model_set_layout, &render_pipeline->model_render_data, index, heap_stack);
 
     render_pipeline->model_render_data.renderable_amount++;
 }
@@ -66,8 +66,8 @@ static void load_asset(const char* file_name, struct RenderPipeline& render_pipe
     }else if(extention[0] == 'b' || extention[0] == 'B'){
         ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
     }else if(extention[0] == 'p' || extention[0] == 'P'){
-        uint32_t texture_index = Texture::load_texture(render_pipeline.device, (char*)file_name, render_pipeline.command_pool).index;
-        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, texture_index);
+        uint32_t texture_index = Texture::load_texture(&render_pipeline.device, (char*)file_name, render_pipeline.command_pool).index;
+        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, texture_index);
     }
 }
 

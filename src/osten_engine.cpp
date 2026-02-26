@@ -183,7 +183,7 @@ void OstenEngine::draw_frame(){
                 glfwGetFramebufferSize(main_window, &width, &height);
                 glfwWaitEvents();
             }
-            restart_swap_chain(render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, &heap_stack);
+            restart_swap_chain(&render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, &heap_stack);
             result = render_pipeline.draw_frame(*camera, imgui_texture, &heap_stack, *light_source);
         }
     }

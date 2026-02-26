@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <string.h>
 #include <stddef.h>
@@ -60,9 +61,9 @@ namespace Texture
         throw "failed to find supported format!";
     }
 
-    static inline void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device& device, VkCommandPool& command_pool, uint8_t mip_level)
+    static inline void transition_image_layout(VkImage* image, VkFormat format, VkImageLayout old_image_layout, VkImageLayout new_image_layout, Device* device, VkCommandPool command_pool, uint8_t mip_level)
     {
-        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
+        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->virtual_device, command_pool);
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -70,7 +71,7 @@ namespace Texture
         barrier.newLayout = new_image_layout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
+        barrier.image = *image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = mip_level;
@@ -110,12 +111,12 @@ namespace Texture
             1, &barrier
         );
 
-        CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
+        CommandBuffer::end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue, command_buffer);
     }
 
-    static inline void copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D& image_size, Device& device, VkCommandPool& command_pool)
+    static inline void copy_buffer_to_image(VkBuffer buffer, VkImage image, VkExtent2D image_size, Device* device, VkCommandPool command_pool)
     {
-        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
+        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->virtual_device, command_pool);
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
@@ -143,18 +144,18 @@ namespace Texture
             &region
         );
 
-        CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue, command_buffer);
+        CommandBuffer::end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue, command_buffer);
     }
 
     static inline VkResult create_image(
-                        const Device& device,
-                        const VkExtent2D image_size,
+                        Device* device,
+                        VkExtent2D image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
                         VkImageUsageFlags usage_flags,
                         VkMemoryPropertyFlags property_flags,
-                        VkImage& image,
-                        VkDeviceMemory& image_memory
+                        VkImage* image,
+                        VkDeviceMemory* image_memory
                     )
     {
 
@@ -173,25 +174,25 @@ namespace Texture
         image_info.samples = VK_SAMPLE_COUNT_1_BIT;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult result = vkCreateImage(device.virtual_device, &image_info, nullptr, &image);
+        VkResult result = vkCreateImage(device->virtual_device, &image_info, nullptr, image);
 
         if(result != VK_SUCCESS)
             return result;
 
         VkMemoryRequirements memory_requirements;
-        vkGetImageMemoryRequirements(device.virtual_device, image, &memory_requirements);
+        vkGetImageMemoryRequirements(device->virtual_device, *image, &memory_requirements);
 
         VkMemoryAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = memory_requirements.size;
-        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, property_flags);
+        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device->physical_device, memory_requirements.memoryTypeBits, property_flags);
 
-        result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &image_memory);
+        result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, image_memory);
 
         if(result != VK_SUCCESS)
             return result;
 
-        return vkBindImageMemory(device.virtual_device, image, image_memory, 0);
+        return vkBindImageMemory(device->virtual_device, *image, *image_memory, 0);
     }
 
     static inline VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag)
@@ -216,12 +217,12 @@ namespace Texture
         return result;
     }
 
-    static inline VkSampler create_texture_sampler(Device& device)
+    static inline VkSampler create_texture_sampler(Device* device)
     {
         VkSampler textureSampler{};
 
         VkPhysicalDeviceProperties properties{};//Move this out later
-        vkGetPhysicalDeviceProperties(device.physical_device, &properties);
+        vkGetPhysicalDeviceProperties(device->physical_device, &properties);
 
         VkSamplerCreateInfo sampler_info{};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -241,7 +242,7 @@ namespace Texture
         sampler_info.minLod = 0;
         sampler_info.maxLod = VK_LOD_CLAMP_NONE;
 
-        VkResult sampler_status = vkCreateSampler(device.virtual_device, &sampler_info, nullptr, &textureSampler);
+        VkResult sampler_status = vkCreateSampler(device->virtual_device, &sampler_info, nullptr, &textureSampler);
 
         if(sampler_status != VK_SUCCESS){
             throw("Failed to create texture sampler");
@@ -266,13 +267,13 @@ namespace Texture
     }
 
     static inline void create_image(
-                        Device& device,
-                        VkExtent2D& image_size,
+                        Device* device,
+                        VkExtent2D image_size,
                         VkFormat format,
                         VkImageTiling image_tiling,
                         VkImageUsageFlags usage_flags,
                         VkMemoryPropertyFlags property_flags,
-                        TextureImage& image
+                        TextureImage* image
                     )
     {
 
@@ -282,7 +283,7 @@ namespace Texture
         image_info.extent.width = image_size.width;
         image_info.extent.height = image_size.height;
         image_info.extent.depth = 1;
-        image_info.mipLevels = image.mip_levels;
+        image_info.mipLevels = image->mip_levels;
         image_info.arrayLayers = 1;
         image_info.format = format;
         image_info.tiling = image_tiling;
@@ -291,25 +292,25 @@ namespace Texture
         image_info.samples = VK_SAMPLE_COUNT_1_BIT;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult result = vkCreateImage(device.virtual_device, &image_info, nullptr, &image.texture_image);
+        VkResult result = vkCreateImage(device->virtual_device, &image_info, nullptr, &image->texture_image);
 
         if(result != VK_SUCCESS)
             throw("Failed to create image");
 
         VkMemoryRequirements memory_requirements;
-        vkGetImageMemoryRequirements(device.virtual_device, image.texture_image, &memory_requirements);
+        vkGetImageMemoryRequirements(device->virtual_device, image->texture_image, &memory_requirements);
 
         VkMemoryAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = memory_requirements.size;
-        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device.physical_device, memory_requirements.memoryTypeBits, property_flags);
+        alloc_info.memoryTypeIndex = CommandBuffer::find_memory_type(device->physical_device, memory_requirements.memoryTypeBits, property_flags);
 
-        result = vkAllocateMemory(device.virtual_device, &alloc_info, nullptr, &image.texture_image_memory);
+        result = vkAllocateMemory(device->virtual_device, &alloc_info, nullptr, &image->texture_image_memory);
 
         if(result != VK_SUCCESS)
             throw("Failed allocate memory image");
 
-        vkBindImageMemory(device.virtual_device, image.texture_image, image.texture_image_memory, 0);
+        vkBindImageMemory(device->virtual_device, image->texture_image, image->texture_image_memory, 0);
     }
 
     static inline VkImageView create_image_view(VkDevice virtual_device, VkImage texture_image, VkFormat texture_format, VkImageAspectFlags image_aspect_flag, uint8_t mip_level)
@@ -334,18 +335,18 @@ namespace Texture
         return result;
     }
 
-    static inline void generate_mipmap(VkImage image, VkFormat image_format, VkExtent2D image_size, uint32_t mip_level, Device device, VkCommandPool command_pool)
+    static inline void generate_mipmap(VkImage image, VkFormat image_format, VkExtent2D image_size, uint32_t mip_level, Device* device, VkCommandPool command_pool)
     {
         // Check if image format supports linear blitting
         VkFormatProperties format_properties;
-        vkGetPhysicalDeviceFormatProperties(device.physical_device, image_format, &format_properties);
+        vkGetPhysicalDeviceFormatProperties(device->physical_device, image_format, &format_properties);
 
         if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             //Could Generate mipmaps in other ways later
             throw "texture image format does not support linear blitting!";
         }
 
-        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device.virtual_device, command_pool);
+        VkCommandBuffer command_buffer = CommandBuffer::begin_single_time_commands(device->virtual_device, command_pool);
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -439,10 +440,10 @@ namespace Texture
             0, nullptr,
             1, &barrier
         );
-        CommandBuffer::end_single_time_commands(device.virtual_device, command_pool, device.graphics_queue ,command_buffer);
+        CommandBuffer::end_single_time_commands(device->virtual_device, command_pool, device->graphics_queue ,command_buffer);
     }
 
-    static inline TextureImage create_texture_image(Device& device ,const char* texture_location, VkCommandPool& command_pool){
+    static inline TextureImage create_texture_image(Device* device ,const char* texture_location, VkCommandPool command_pool){
         int texture_width = 0;
         int texture_height = 0;
         int texture_channels = 0;
@@ -468,26 +469,26 @@ namespace Texture
             image_size = texture_width * texture_height * image_bit_size;
             image_sizing.width = texture_width;
             image_sizing.height = texture_height;
-            mip_level = static_cast<uint8_t>(std::floor(std::log2(std::max(texture_width, texture_height)))) + 1;
+            mip_level = (uint8_t)(std::floor(std::log2(std::max(texture_width, texture_height)))) + 1;
         }
 
 
-        VkBuffer staging_buffer;
-        VkDeviceMemory staging_buffer_memory;
+        VkBuffer staging_buffer = {};
+        VkDeviceMemory staging_buffer_memory = {};
 
         CommandBuffer::create_buffer(
             device,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             image_size,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            staging_buffer,
-            staging_buffer_memory
+            &staging_buffer,
+            &staging_buffer_memory
         );
 
         void* data;
-        vkMapMemory(device.virtual_device, staging_buffer_memory, 0, image_size, 0, &data);
-        memcpy(data, image_pixels, static_cast<size_t>(image_size));
-        vkUnmapMemory(device.virtual_device, staging_buffer_memory);
+        vkMapMemory(device->virtual_device, staging_buffer_memory, 0, image_size, 0, &data);
+        memcpy(data, image_pixels, (size_t)(image_size));
+        vkUnmapMemory(device->virtual_device, staging_buffer_memory);
 
         TextureImage texture_image{};
         texture_image.mip_levels = mip_level;
@@ -500,10 +501,10 @@ namespace Texture
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            texture_image
+            &texture_image
         );
 
-        transition_image_layout(texture_image.texture_image,  VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, command_pool, mip_level);
+        transition_image_layout(&texture_image.texture_image,  VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device, command_pool, mip_level);
 
         copy_buffer_to_image(staging_buffer, texture_image.texture_image, image_sizing, device, command_pool);
 
@@ -515,12 +516,12 @@ namespace Texture
             stbi_image_free(image_pixels);
         }
 
-        vkDestroyBuffer(device.virtual_device, staging_buffer, nullptr);
+        vkDestroyBuffer(device->virtual_device, staging_buffer, nullptr);
 
         return texture_image;
     }
 
-    static inline TextureStorage load_texture(Device& device, char* texture_location, VkCommandPool& command_pool){
+    static inline TextureStorage load_texture(Device* device, char* texture_location, VkCommandPool command_pool){
 
         for(uint32_t i = 0; i < texture_amount; i++){
             if(!strcmp(texture_storage[i].name, texture_location)){
@@ -528,7 +529,7 @@ namespace Texture
             }
         }
         TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
-        texture_image.image_view = create_image_view(device.virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture_image.mip_levels);
+        texture_image.image_view = create_image_view(device->virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture_image.mip_levels);
         texture_image.texture_sampler = Texture::create_texture_sampler(device);
 
         texture_storage[texture_amount].texture = texture_image;
