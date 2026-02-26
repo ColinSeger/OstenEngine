@@ -1,4 +1,7 @@
-Work in progress game "engine" made in C++ and vulkan
+# OstenEngin
+
+Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping 
+the development withing resonable time.
 
 
 To build this project you need to be able to run the vkcube command, info on that can be found at https://vulkan.lunarg.com/ 
