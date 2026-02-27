@@ -112,6 +112,7 @@ static inline uint16_t get_component_size_by_type(uint16_t type){
 }
 
 static inline void* get_component_by_id(ComponentSystem* component_system, uint16_t id){
+    if(id > component_system->amount) return nullptr;
     uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
     uint16_t size = get_component_size_by_type(component_system->type);
     uint32_t size_offset = size * id;
@@ -151,45 +152,48 @@ static inline uint16_t add_render_component(uint16_t descriptor_index, uint16_t 
 }
 
 static inline void create_transform_system(uint16_t transform_amount, HeapStack* memory_arena){
-    ComponentSystem* component_sys = get_component_system(TRANSFORM);
-    component_sys->components = arena_alloc_memory(memory_arena, sizeof(TransformComponent) * transform_amount);
-    component_sys->memory_arena = memory_arena;
-    component_sys->capacity = transform_amount;
-    component_sys->type = TRANSFORM;
-    for (size_t i = 0; i < transform_amount; i++)
-    {
-        TransformComponent* comp = (TransformComponent*)get_component_by_id(component_sys, i);
+    ComponentSystem* component_system = get_component_system(TRANSFORM);
+    component_system->components = arena_alloc_memory(memory_arena, sizeof(TransformComponent) * transform_amount);
+    component_system->memory_arena = memory_arena;
+    component_system->capacity = transform_amount;
+    component_system->type = TRANSFORM;
+    TransformComponent* comp = (TransformComponent*)get_at_index(component_system->memory_arena, component_system->components);
+
+    for (size_t i = 0; i < transform_amount; i++){
         comp->transform = Transform{};
         comp->transform.scale = {1, 1, 1};
+        comp++;
     }
 }
 
 static inline void create_render_component_system(uint16_t render_amount, HeapStack* memory_arena){
-    ComponentSystem* component_sys = get_component_system(RENDER);
-    component_sys->memory_arena = memory_arena;
-    component_sys->components = arena_alloc_memory(memory_arena, sizeof(RenderComponent) * render_amount);
-    component_sys->type = RENDER;
-    component_sys->capacity = render_amount;
+    ComponentSystem* component_system = get_component_system(RENDER);
+    component_system->memory_arena = memory_arena;
+    component_system->components = arena_alloc_memory(memory_arena, sizeof(RenderComponent) * render_amount);
+    component_system->type = RENDER;
+    component_system->capacity = render_amount;
 
+    RenderComponent* comp = (RenderComponent*)get_at_index(component_system->memory_arena, component_system->components);
     for (size_t i = 0; i < render_amount; i++){
-        RenderComponent* comp = (RenderComponent*)get_component_by_id(component_sys, i);
         comp->transform_id = -1;
         comp->instance_id = 0;
+        comp++;
     }
 }
 
 static inline void create_camera_system(uint8_t camera_amount, HeapStack* memory_arena){
-    ComponentSystem* component_sys = get_component_system(CAMERA);
+    ComponentSystem* component_system = get_component_system(CAMERA);
 
-    component_sys->memory_arena = memory_arena;
-    component_sys->components = arena_alloc_memory(memory_arena, sizeof(CameraComponent) * camera_amount);
-    component_sys->amount = 0;
-    component_sys->type = CAMERA;
-    component_sys->capacity = camera_amount;
+    component_system->memory_arena = memory_arena;
+    component_system->components = arena_alloc_memory(memory_arena, sizeof(CameraComponent) * camera_amount);
+    component_system->amount = 0;
+    component_system->type = CAMERA;
+    component_system->capacity = camera_amount;
 
+    CameraComponent* comp = (CameraComponent*)get_at_index(component_system->memory_arena, component_system->components);
     for (size_t i = 0; i < camera_amount; i++){
-        CameraComponent* comp = (CameraComponent*)get_component_by_id(component_sys, i);
         comp->field_of_view = 45.f;
+        comp++;
     }
 }
 
@@ -258,11 +262,10 @@ static inline uint16_t add_collider(uint16_t transform_index, uint16_t entity){
     return component_sys->amount-1;
 }
 
-static inline uint16_t add_healt_comp(uint8_t team,uint16_t entity){
+static inline uint16_t add_health_comp(uint8_t team,uint16_t entity){
     ComponentSystem* component_sys = get_component_system(HEALTH);
     HealthComponent* comp = (HealthComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
     comp += component_sys->amount;
-    comp->entity_id = entity;
     comp->health = 100;
     comp->team_id = team;
     component_sys->amount++;
@@ -275,6 +278,7 @@ static inline uint16_t add_melee_comp(uint16_t entity){
     comp += component_sys->amount;
     comp->entity_id = entity;
     comp->damage = 1;
+    comp->nearby_enemy_health_id = UINT16_MAX;
     component_sys->amount++;
     return component_sys->amount-1;
 }
@@ -300,11 +304,11 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
                 if(colliders[x].collision_amount > sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0])){
                     //uint16_t to_many = colliders[x].collision_amount;
                     //Debug::log("You had ");
-                    assert(false);
+                    assert(false && "You had to many collisions");
                     break;
                 }
                 if(other_transform_id == 0){
-                    assert(false);
+                    assert(false && "You somehow tried to collide with the camera?");
                     break;
                 }
                 colliders[x].nearby_colliders[colliders[x].collision_amount] = other_transform_id;
@@ -321,25 +325,14 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
 static inline void run_attack_system(){
     ComponentSystem* health_system = get_component_system(HEALTH);
     ComponentSystem* melee_system = get_component_system(MELEE);
+    MeleeComponent* melee_comp = (MeleeComponent*)get_component_by_id(melee_system, 0);
+    HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, 0);
 
 
     for (int i = 0; i < melee_system->amount; i++) {
-        MeleeComponent* melee_comp = (MeleeComponent*)get_component_by_id(melee_system, i);
-        HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, melee_comp->nearby_enemy_health_id);
-        health_comps->damage_taken += melee_comp->damage;
-    }
-}
-
-static inline void run_health_system(){
-    ComponentSystem* health_system = get_component_system(HEALTH);
-
-    HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, 0);
-
-    for (int i = 0; i < health_system->amount; i++) {
-        health_comps[i].health -= health_comps[i].damage_taken;
-        health_comps[i].damage_taken = 0;
-        if(health_comps->health <= 0){
-            printf("Dead");
-        }
+        if(!health_comps) continue;
+        if(melee_comp[i].nearby_enemy_health_id == UINT16_MAX) continue;
+        health_comps[melee_comp[i].nearby_enemy_health_id].damage_taken += melee_comp[i].damage;
+        melee_comp[i].nearby_enemy_health_id = UINT16_MAX;
     }
 }

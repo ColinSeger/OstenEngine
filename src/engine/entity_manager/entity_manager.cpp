@@ -1,7 +1,7 @@
 // #include "entity_manager.h"
 #pragma once
 #include "components.h"
-#include <cstdint>
+#include <string.h>
 #include <stdint.h>
 #include <vector>
 #include <string>
@@ -27,12 +27,10 @@ void add_component(Entity& entity, TempID component){
     entity.component_amount++;
 }
 
-bool get_component(Entity entity, uint16_t component, void* result){
+static inline bool has_component(Entity entity, uint16_t component, uint16_t* index){
     for(TempID com : entity.components){
         if(com.type != component) continue;
-
-        ComponentSystem* component_system = get_component_system(component);
-        result = get_component_by_id(component_system, com.index);
+        *index = com.index;
         return true;
     }
     return false;
@@ -153,4 +151,28 @@ uint16_t get_component_id(Entity entity, uint16_t type){
         if(ids.type == type) return ids.index;
     }
     return UINT16_MAX;
+}
+
+static inline void run_health_system(){
+    ComponentSystem* health_system = get_component_system(HEALTH);
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+
+    HealthComponent* health_comps = (HealthComponent*)get_component_by_id(health_system, 0);
+
+    TransformComponent* transforms = (TransformComponent*)get_component_by_id(transform_system, 0);
+
+    Entity* entities = EntityManager::get_all_entities().data();
+
+    for (int i = 0; i < health_system->amount; i++) {
+        health_comps[i].health -= health_comps[i].damage_taken;
+        health_comps[i].damage_taken = 0;
+        if(health_comps[i].health <= 0){
+            uint16_t transform_index = 0;
+
+            if(has_component(entities[health_comps[i].entity_id], TRANSFORM, &transform_index)){
+                //transforms[transform_index].transform.position = {100000, 10000, 10};
+                transforms[transform_index].transform.scale = {0.2, 0.2, 0.2};
+            }
+        }
+    }
 }

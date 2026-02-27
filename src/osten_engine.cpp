@@ -137,6 +137,8 @@ void OstenEngine::draw_frame(){
     delta_time = platform_calc_elapsed_time_seconds(last_tick);
     double frame_time = platform_calc_elapsed_time_seconds(start_time2);
 
+    if (delta_time > 0.20) delta_time = 0.20;
+
     if(frame_time > 1) {
         update_graph(platform_memory_mb());
 

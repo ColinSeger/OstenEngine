@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <stdint.h>
 #include <vector>
 #include "../engine/message_system/message.h"
@@ -10,6 +9,7 @@ struct ArmyUnit{
     RenderAble* render_able;
     bool alive_units[255];//Bad
     float move_speed = 5.f;
+    uint8_t amount = 0;
     vec3_t target_point;
 };
 
@@ -17,6 +17,7 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
     uint8_t row = 0;
     ArmyUnit unit{};
     unit.render_able = render_able;
+    unit.amount = amount;
     for(uint8_t i = 0; i < amount; i++){
         uint16_t transform_index = UINT16_MAX;
         //uint16_t entity_id = queue_enity_creation();
@@ -42,7 +43,7 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
             (uint16_t)(COLLIDER)
         };
         struct TempID health{
-            (uint16_t)(add_healt_comp(team_id, 0)),
+            (uint16_t)(add_health_comp(team_id, 0)),
             (uint16_t)(HEALTH)
         };
         struct TempID melee{
@@ -82,7 +83,7 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
     vec2_t target_pos = {unit.target_point.x, unit.target_point.y};
     float minimum_distance = 5;
     float seperation_strength = 3;
-    for (uint8_t i = 0; i < 255; i++) {
+    for (uint8_t i = 0; i < unit.amount; i++) {
         uint16_t transform_id = colliders[unit.unit_colliders[i]].transform_id;
 
         assert(colliders[unit.unit_colliders[i]].transform_id != 0);
@@ -136,36 +137,46 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
 static inline void calculate_attack(struct HeapStack* heap_stack){
     ComponentSystem* collider_system = get_component_system(COLLIDER);
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* health_system = get_component_system(HEALTH);
+    ComponentSystem* melee_system = get_component_system(MELEE);
 
-    SimpleColliderComp* colliders = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
+
+
+    SimpleColliderComp* colliders    = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
+    HealthComponent*    health_comps = (struct HealthComponent*)get_component_by_id(health_system, 0);
+    MeleeComponent* melee_comps  = (struct MeleeComponent*)get_component_by_id(melee_system, 0);
 
     Entity* entities = EntityManager::get_all_entities().data();
 
     for(int i = 0; i < collider_system->amount; i++){
         SimpleColliderComp collider = colliders[i];
         Transform my_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[collider.transform_id].transform;
-        HealthComponent health = {};
-        MeleeComponent attack_comp = {};
-        if(!get_component(entities[collider.entity_id], HEALTH, &health)){
+        uint16_t health_index = {};
+        uint16_t attack_index = {};
+        if(!has_component(entities[collider.entity_id], HEALTH, &health_index)){
             continue;
         }
-        if(!get_component(entities[collider.entity_id], MELEE, &attack_comp)){
+        if(!has_component(entities[collider.entity_id], MELEE, &attack_index)){
             continue;
         }
+
+        HealthComponent health = health_comps[health_index];
 
         for (int x = 0; x < collider.collision_amount; x++) {
             SimpleColliderComp nearby_collider = colliders[collider.nearby_colliders[x]];
             Transform other_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[nearby_collider.transform_id].transform;
-            if(v2_dist({my_transform.position.x, my_transform.position.y}, {other_transform.position.x, other_transform.position.y}) > 5){
+            float distance = v2_dist({my_transform.position.x, my_transform.position.y}, {other_transform.position.x, other_transform.position.y});
+            if(distance > 10){
                 continue;
             }
             Entity other_entity = entities[nearby_collider.entity_id];
 
-            HealthComponent other_health = {};
-            if(get_component(other_entity, HEALTH, &other_health)){
-                if(other_health.team_id != health.team_id){
+            uint16_t other_health_index = {};
+            if(has_component(other_entity, HEALTH, &other_health_index)){
+                HealthComponent other = health_comps[other_health_index];
+                if(other.team_id != health.team_id){
 
-                    attack_comp.nearby_enemy_health_id = other_health.entity_id;
+                    melee_comps[attack_index].nearby_enemy_health_id = other.entity_id;
                 }
             }
         }

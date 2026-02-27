@@ -347,6 +347,9 @@ static void restart_swap_chain(RenderPipeline* render_pipeline, VkExtent2D scree
     }
 
     VkResult command_buffers = CommandBuffer::create_command_buffers(render_pipeline->command_buffers, render_pipeline->device.virtual_device, render_pipeline->command_pool, MAX_FRAMES_IN_FLIGHT);
+    if(command_buffers != VK_SUCCESS){
+        throw "Failed to create command buffers";
+    }
 }
 
 static void create_sync_objects(VkDevice virtual_device, RenderData& render_pipe)
