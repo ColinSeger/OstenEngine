@@ -74,6 +74,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
     glfwSetWindowUserPointer(main_window, this);
     glfwSetFramebufferSizeCallback(main_window, resize_callback);
+    glfwSetCursorPosCallback(main_window, camera_mouse_callback);
 
     VkExtent2D window_size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 

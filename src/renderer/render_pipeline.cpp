@@ -381,7 +381,7 @@ static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descr
     Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
 
     //Camera is placeholder name
-    vec3_t forward_vector =  v3_add(camera_transform.position, Transformations::v3_forward_vector(camera_transform));
+    vec3_t forward_vector =  v3_add(camera_transform.position, v3_forward_vector(camera_transform));
 
     mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
@@ -394,7 +394,7 @@ static void update_view_buffer(uint32_t transform_id, CameraDescriptor cam_descr
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(LightUbo));
 }
 
-static void update_uniform_buffer(const CameraComponent& camera, const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
+static void update_uniform_buffer(const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
     for (size_t render_index = 0; render_index < to_render.renderable_amount; render_index++)
@@ -405,7 +405,7 @@ static void update_uniform_buffer(const CameraComponent& camera, const uint8_t c
         for(uint16_t i = 0; i < render_able->instance_amount; i++){
             Transform transform = ((TransformComponent*)get_component_by_id(transform_system, transform_index[i]))->transform;
 
-            model_buffer[i].model = Transformations::get_model_matrix(transform);
+            model_buffer[i].model = get_model_matrix(transform);
         }
     }
 }
@@ -613,9 +613,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index;
 
-    update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 20.f);
+    update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 250.f);
     update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
-    update_uniform_buffer(camera, current_frame, model_render_data, heap_stack);
+    update_uniform_buffer(current_frame, model_render_data, heap_stack);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 

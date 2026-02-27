@@ -7,44 +7,47 @@ struct Transform{
     vec3_t scale = {1.0f, 1.0f, 1.0f};
 };
 
-namespace Transformations
-{
-    static inline mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably
-        mat4_t model = mat4(
-            1,  0,  0,  0,
-            0,  1,  0,  0,
-            0,  0,  1,  0,
-            transform.position.x,  transform.position.y, transform.position.z,  1
-        );
-        model = m4_mul(model, m4_rotation_x(transform.rotation.x));
-        model = m4_mul(model, m4_rotation_y(transform.rotation.y));
-        model = m4_mul(model, m4_rotation_z(transform.rotation.z));
-        model = m4_mul(model, m4_scaling({transform.scale.x, transform.scale.y, transform.scale.z}));
-        return model;
-    }
+struct Camera {
+    vec3_t position;
+    float pitch;
+    float yaw;
 
-    static inline vec3_t v3_forward_vector(Transform transform){
-        float pitch = transform.rotation.x;
-        float yaw = transform.rotation.y;
-        vec3_t vector = {
-            (float)cos(pitch) * (float)cos(yaw),
-            (float)sin(pitch),
-            (float)cos(pitch) * (float)sin(yaw)
-        };
+    static constexpr vec3_t UP {0, 1, 0};
+};
 
-        return v3_norm(vector);
-    }
+static inline mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably
+    mat4_t model = mat4(
+        1,  0,  0,  0,
+        0,  1,  0,  0,
+        0,  0,  1,  0,
+        transform.position.x,  transform.position.y, transform.position.z,  1
+    );
+    model = m4_mul(model, m4_rotation_x(transform.rotation.x));
+    model = m4_mul(model, m4_rotation_y(transform.rotation.y));
+    model = m4_mul(model, m4_rotation_z(transform.rotation.z));
+    model = m4_mul(model, m4_scaling({transform.scale.x, transform.scale.y, transform.scale.z}));
+    return model;
+}
+
+static inline vec3_t v3_forward_vector(Transform transform){
+    float pitch = transform.rotation.x;
+    float yaw = transform.rotation.y;
+
+    vec3_t forward;
+
+    forward.x = cosf(pitch) * cosf(yaw);
+    forward.y = cosf(pitch) * sinf(yaw);
+    forward.z = sinf(pitch);
+
+    return v3_norm(forward);
+}
+static inline vec3_t v3_right_vector(Transform transform){
+    vec3_t forward = v3_forward_vector(transform);
+    return v3_norm(v3_cross(forward, (vec3_t){0,0,1}));
+}
+
 /*
  *
-    vec3_t right_vector(Transform transform){
-        return
-        {
-            cos(transform.rotation.y),
-            0,
-            -sin(transform.rotation.y)
-        };
-    }
-
     vec3_t up_vector(Transform transform){
         vec3_t f = forward_vector(transform);
         vec3_t r = right_vector(transform);
@@ -56,4 +59,3 @@ namespace Transformations
         return {res.x, res.y, res.z};
     }
  */
-}
