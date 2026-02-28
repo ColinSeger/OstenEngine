@@ -6,10 +6,10 @@
 #include "../../validation.h"
 #include "vulkan/vulkan_core.h"
 
-typedef struct {
+struct WindowExtensions{
     const char** window_extensions;
     uint32_t extensions_amount;
-} WindowExtentions;
+};
 
 static inline bool check_validation_layer_support(uint32_t layer_count){
     assert(layer_count < 255);
@@ -32,7 +32,7 @@ static inline bool check_validation_layer_support(uint32_t layer_count){
     return true;
 }
 
-static inline VkResult create_instance(VkInstance* instance, const char* name, WindowExtentions window_extensions){
+static inline VkResult create_instance(VkInstance* instance, const char* name, WindowExtensions window_extensions){
     if(window_extensions.window_extensions == 0) return VK_ERROR_EXTENSION_NOT_PRESENT;
     if(validation_amount > 0){
         uint32_t layer_count;

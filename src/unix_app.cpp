@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include "additional_things/arena.h"
 #include "osten_engine.cpp"
+#include "engine/game_load.h"
 #include "game/total_cheese.hpp"
 
 float platform_memory_mb()
@@ -87,6 +88,7 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 }
 
 uint8_t run(OstenEngine& engine){
+    load_game_data((char*)"src/game/game_data.txt");
     load_game_reasources();
 
     procces_all_commands(&engine.render_pipeline, &engine.heap_stack);

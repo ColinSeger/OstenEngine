@@ -1,0 +1,9 @@
+!1
+#Model_Paths
+assets/debug_assets/Cube.obj
+assets/debug_assets/Cube.bin
+#Texture_Paths
+assets/debug_assets/viking_room.png
+#Render_Instances //Corresponds to model_index/texture_index
+0/1/2000
+1/1/2000

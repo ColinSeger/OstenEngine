@@ -79,13 +79,10 @@ void start_file_explorer(FileExplorer& file_explorer, struct RenderPipeline* ren
     for (size_t i = 0; i < file_explorer.files.size(); i++){
         ImGui::PushID(i);
         if(ImGui::Button(file_explorer.files[i].c_str())){
-            Message load{
-                static_cast<uint32_t>(file_explorer.files[i].size()),
-                MessageType::LoadModel,
-                (void*)file_explorer.files[i].c_str()
-            };
 
-            add_message(load);
+            add_message_f(MessageType::LoadModel, file_explorer.files[i].size(), (char*)file_explorer.files[i].c_str());
+
+
         }
 
         ImGui::Spacing();

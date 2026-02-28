@@ -10,20 +10,16 @@
 #include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
-typedef struct
-{
+struct Model{
     uint32_t index_amount;
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
 
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
+};
 
-    // VkDescriptorSet model_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
-} Model;
-
-enum class LoadMode
-{
+enum class LoadMode{
     OBJ,
     BIN
 };
@@ -96,15 +92,14 @@ namespace ModelLoader
         return mem_index;
     }
 
-    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack* memory_arena)
-    {
+    uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack* memory_arena){
         Model model{};
         auto contains = loaded_model_index.find(file_name);
 
         if(contains != loaded_model_index.end()){
             return loaded_model_index[file_name];
         }
-        size_t file_to_free = memory_arena->capacity;//Temp solution for speed test
+        size_t file_to_free = memory_arena->index;//Temp solution for speed test
         VertexArray vertices;
         Uint32Array indices;
 
@@ -114,6 +109,8 @@ namespace ModelLoader
         }else if(load_mode == LoadMode::BIN){
             file_to_free = de_serialize(file_name, vertices, indices, memory_arena);
         }
+
+        if(file_to_free == memory_arena->index) return 0;
 
         model.index_amount = indices.amount;
         CommandBuffer::create_vertex_buffer(&device, &vertices, &model.vertex_buffer, &model.vertex_buffer_memory, command_pool);

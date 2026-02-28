@@ -83,7 +83,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     // //Gets critical extensions
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
 
-    WindowExtentions window_extentions{ glfw_extensions, glfw_extention_count };
+    WindowExtensions window_extentions{ glfw_extensions, glfw_extention_count };
 
     //Investigate Why so slow
     VkResult result = create_instance(&instance, application_name, window_extentions);

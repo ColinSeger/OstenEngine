@@ -8,7 +8,7 @@ struct Timer{
 struct FileData{
     const char* filename;
     void* file_data;
-    unsigned long long file_size;
+    long long file_size;
 };
 
 float platform_memory_mb();

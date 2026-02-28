@@ -165,11 +165,7 @@ static inline void imgui_hierarchy_pop_up(){
     if(ImGui::BeginPopupContextItem("hierarchy_pop_up")){
         ImGui::Text("PopUp");
         if(ImGui::Button("Spawn Object")){
-            Message entity{};
-            entity.size = 0;
-            entity.type = MessageType::CreateEntity;
-            entity.value = (void*)"GameObject";
-            add_message(entity);
+            add_message_f(MessageType::CreateEntity, sizeof("GameObject"), (char*)"GameObject");
         }
         ImGui::EndPopup();
     }
@@ -216,12 +212,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
     for (auto const& value : loaded_model_index){
         ImGui::PushID(value.second);
         if(ImGui::Button(value.first.c_str()) && value.first[value.first.size()-1] == 'j'){
-            Message serialize{};
-            serialize.value = (void*)value.first.c_str();
-            serialize.size = 0;
-            serialize.type = MessageType::SerializeOBJ;
-
-            add_message(serialize);
+            add_message_f(MessageType::SerializeOBJ, value.first.size(), (char*)value.first.c_str());
         }
         ImGui::Spacing();
         ImGui::PopID();
@@ -237,11 +228,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
     // }
 
     if(ImGui::Button("Create RenderAble")){
-        Message message{};
-        message.size = 0;
-        message.type = MessageType::CreateRenderable;
-        message.value = (void*)&selected_assets;
-        add_message(message);
+        add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&selected_assets);
     }
     if(ImGui::BeginCombo("Models", "")){
         for (auto const& value : loaded_model_index){

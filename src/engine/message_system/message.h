@@ -1,4 +1,5 @@
 #pragma once
+#include <string.h>
 #include <vector>
 #include <stdint.h>
 #include "../../renderer/render_pipeline.cpp"
@@ -53,8 +54,8 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
     render_pipeline->model_render_data.renderable_amount++;
 }
 
-static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack* memory_arena)
-{
+static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack* memory_arena){
+    if(file_name[0] == '\0') return;
     std::string filename = file_name;
     char extention[3];
     extention[0] = filename[filename.length() -3];
@@ -74,13 +75,13 @@ static void load_asset(const char* file_name, struct RenderPipeline& render_pipe
 /// Size, Type, Value
 struct Message
 {
-    uint32_t size;
+    uint8_t size;
     MessageType type = MessageType::None;
-    void* value;
+    char value[255];
 };
 
-struct MessageSystem
-{
+struct MessageSystem{
+    HeapStack memory_arena;
     std::vector<Message> messages;
 };
 
@@ -91,57 +92,29 @@ struct TempComp{
 
 static std::vector<Message> messages;
 static std::vector<Entity> entities_to_create;
-/*
-static uint16_t entity_queue = 0;
-
-static std::vector<TempComp> component_stack;
- *
-static uint16_t queue_enity_creation(){//Actually Stack
-    entities_to_create.emplace_back(Entity{});
-    entity_queue++;
-    return entity_queue-1;
-}
-
-static void queue_component_add(uint16_t entity_id, uint16_t component_to_add){//Actually Stack
-    component_stack.push_back({entity_id, component_to_add});
-}
 
 
-static void handle_entity(){
-    for(int i = 0; i < entity_queue; i++){
-        Entity entity{};
-        for(int x = 0; x < component_stack.size(); x++){
-            if(i != component_stack[x].entity) continue;
-
-            switch (component_stack[x].component){
-            case CAMERA:
-                //add_camera(uint16_t transform_index);
-            break;
-            case TRANSFORM:
-                add_transform();
-            break;
-            case RENDER:
-
-            break;
-            case COLLIDER:
-
-            break;
-            default:
-            break;
-            }
-            add_component(entity, {component_stack[x].component});
-        }
-        EntityManager::add_entity(entity, "G");
-    }
-    Entity& entity = entities_to_create[0];
-
-    entities_to_create.erase(entities_to_create.begin());
-}
-*/
-
-static void add_message(Message message){
+static inline void add_message(Message message){
+    //void* test = malloc(message.size);
+    //memcpy(message.value, message.value, message.size);
     messages.emplace_back(message);
 }
+
+static inline Message create_message(MessageType type, uint8_t size, char value[255]){
+    Message message = {};
+    memcpy(message.value, value, message.size);
+    return message;
+}
+
+static inline void add_message_f(MessageType type, uint8_t size, char value[255]){
+    Message message = {};
+    message.type = type;
+    message.size = size;
+    memcpy(message.value, value, message.size);
+    messages.emplace_back(message);
+}
+
+
 static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     if(messages.size() <= 0) return;
     Message message = messages.front();

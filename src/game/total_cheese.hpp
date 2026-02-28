@@ -2,36 +2,32 @@
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include <stdint.h>
-#include "../engine/message_system/message.h"
+//#include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"
 #include "../osten_engine.cpp"
 #include "army.hpp"
 
-static struct InstanceData render_ids {};
+//static struct InstanceData render_ids {};
 
 static std::vector<ArmyUnit> army_units{};
 
 static void load_game_reasources(){
+    // struct Message message{};
+    // message.type = MessageType::LoadModel;
+    // message.value = (void*)"assets/debug_assets/Cube.obj";
 
-    struct Message message{};
-    message.type = MessageType::LoadModel;
-    message.value = (void*)"assets/debug_assets/Cube.obj";
+    // add_message(message);
 
-    add_message(message);
+    // message.type = MessageType::LoadTexture;
+    // message.value = (void*)"assets/debug_assets/viking_room.png";
 
-    message.type = MessageType::LoadTexture;
-    message.value = (void*)"assets/debug_assets/viking_room.png";
+    // add_message(message);
+    // const uint32_t capacity = 2000;
+    // render_ids.model_index = 0;
+    // render_ids.texture_index = 1;
+    // render_ids.capacity = capacity +2;
 
-    add_message(message);
-    const uint32_t capacity = 2000;
-    render_ids.model_index = 0;
-    render_ids.texture_index = 1;
-    render_ids.capacity = capacity +2;
-
-    message.type = MessageType::CreateRenderable;
-    message.value = (void*)&render_ids;
-
-    add_message(message);
+    // add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 }
 
 static void init_game(OstenEngine& engine){

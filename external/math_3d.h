@@ -177,6 +177,16 @@ static inline uint32_t parse_to_uint32(const char* string, size_t* index_jump){
     return result;
 }
 
+static inline uint32_t parse_to_uint32_length(const char* string, size_t* length){
+    uint32_t result = 0;
+    for(uint8_t i = 0; i < 10; i++){
+        if(string[i] < '0' || string[i] > '9') break;
+        result = result * 10 + (string[i] - '0');
+        *length+= 1;
+    }
+    return result;
+}
+
 // static inline uint32_t parse_to_uint32(const char* start, size_t* index_jump){
 //     uint32_t result = 0;
 //     while (*start >= '0' && *start <= '9') {

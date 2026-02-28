@@ -14,21 +14,6 @@ typedef struct{
     uint32_t normal_index;
 } Indices;
 
-static constexpr bool select_mode(char* char_to_check)//This is ass
-{
-    if (*char_to_check == 'v') {
-        char_to_check++;
-        if(*char_to_check == ' ' || *char_to_check == 't' || *char_to_check == 'n'){
-            return true;
-        }
-        return false;
-    }
-    if(*char_to_check == 'f'){
-        return true;
-    }
-    return false;
-}
-
 static inline vec3_t parse_vertex(const std::string& line, const uint16_t start_index){
     vec3_t result {};
     size_t cord_index = start_index;
@@ -117,7 +102,7 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         model_indicies.values = nullptr;
         model_indicies.amount = 0;
         Debug::log((char*)"Failed to load model");
-        return heap_stack->capacity;
+        return heap_stack->index;
     }
     size_t mem_index = heap_stack->index;
 
