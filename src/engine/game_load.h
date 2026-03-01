@@ -30,7 +30,6 @@ static inline bool get_line(struct Line* line,struct FileData data, long long* o
     if(line->length <= 0 || line->length > 255)  {
         return false;
     }
-    //line->string = (char*)malloc(line->length * sizeof(char));
 
     memcpy(line->string, &((char*)data.file_data)[*offset], line->length * sizeof(char));
     *offset+=line->length +1;

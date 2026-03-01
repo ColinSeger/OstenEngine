@@ -4,7 +4,7 @@
 #include "../../engine/entity_manager/components.h"
 
 
-inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwindow* main_window){
+static inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwindow* main_window){
     ComponentSystem* camera_system = get_component_system(CAMERA);
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
@@ -43,7 +43,7 @@ static float mouse_sensitivity = 0.01f;
 
 static inline void camera_mouse_callback(GLFWwindow* main_window, double position_x, double position_y)
 {
-    if(glfwGetMouseButton(main_window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS){
+    if(glfwGetMouseButton(main_window, GLFW_MOUSE_BUTTON_MIDDLE) != GLFW_PRESS){
         last_x = (float)position_x;
         last_y = (float)position_y;
         return;

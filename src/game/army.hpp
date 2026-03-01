@@ -146,7 +146,7 @@ static inline void calculate_attack(struct HeapStack* heap_stack){
     HealthComponent*    health_comps = (struct HealthComponent*)get_component_by_id(health_system, 0);
     MeleeComponent* melee_comps  = (struct MeleeComponent*)get_component_by_id(melee_system, 0);
 
-    Entity* entities = EntityManager::get_all_entities().data();
+    Entity* entities = get_all_entities().data();
 
     for(int i = 0; i < collider_system->amount; i++){
         SimpleColliderComp collider = colliders[i];

@@ -33,7 +33,7 @@ struct InstanceData{
 
 static void create_entity(const char* name){
     Entity entity{};
-    EntityManager::add_entity(entity, name);
+    add_entity(entity, name);
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
@@ -153,7 +153,7 @@ static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapSta
         handle_message(render_pipeline, heap_stack);
     }
     for(Entity e : entities_to_create){
-        EntityManager::add_entity(e, "Game Object");
+        add_entity(e, "Game Object");
     }
     entities_to_create.clear();
 }

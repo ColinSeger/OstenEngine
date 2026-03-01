@@ -172,7 +172,7 @@ static inline void imgui_hierarchy_pop_up(){
 }
 
 static inline void imgui_hierarchy(bool& open, uint32_t& inspecting){
-    auto& entities = EntityManager::get_all_entities();
+    auto& entities = get_all_entities();
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
         ImGui::Text("Hierarchy!");
@@ -187,7 +187,7 @@ static inline void imgui_hierarchy(bool& open, uint32_t& inspecting){
 
             if(entities.size() > 0)
             {
-                for (auto& name : EntityManager::get_entity_names())
+                for (auto& name : get_entity_names())
                 {
                     ImGui::PushID(name.second);
 
@@ -303,7 +303,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
 
     ImGui::End();
 
-    auto& entities = EntityManager::get_all_entities();
+    auto& entities = get_all_entities();
 
     if(entities.empty()){
         ImGui::End();
@@ -313,7 +313,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
 
     ImGui::End();
     ImGui::Begin("Inspector");
-        for (auto& entity : EntityManager::get_entity_names()){
+        for (auto& entity : get_entity_names()){
             if(entity.second == entities[inspecting].id){
                 char buffer[64] = {};
                 for (size_t i = 0; i < entity.first.length(); i++) {

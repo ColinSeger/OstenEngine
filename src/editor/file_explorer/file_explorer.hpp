@@ -13,7 +13,7 @@ struct FileExplorer{
     std::string current_directory;
 };
 
-void get_folders(const char* folder_to_look, std::vector<std::string>& result){
+static inline void get_folders(const char* folder_to_look, std::vector<std::string>& result){
     for(auto& folders : std::filesystem::directory_iterator(folder_to_look)){
         if (folders.is_directory()){
             result.push_back(folders.path().string());
@@ -21,7 +21,7 @@ void get_folders(const char* folder_to_look, std::vector<std::string>& result){
     }
 }
 
-void get_folders(const std::string folder_to_look, std::vector<std::string>& result){
+static inline void get_folders(const std::string folder_to_look, std::vector<std::string>& result){
     for(auto& folders : std::filesystem::directory_iterator(folder_to_look)){
         if (folders.is_directory()){
             result.push_back(folders.path().string());
@@ -29,7 +29,7 @@ void get_folders(const std::string folder_to_look, std::vector<std::string>& res
     }
 }
 
-void get_folders(FileExplorer& file_explorer){
+static inline void get_folders(FileExplorer& file_explorer){
     for(auto& folders : std::filesystem::directory_iterator(file_explorer.current_directory)){
         if (folders.is_directory()){
             file_explorer.folders.push_back(folders.path().string());
@@ -40,7 +40,7 @@ void get_folders(FileExplorer& file_explorer){
     }
 }
 
-FileExplorer init_file_explorer(){
+static inline FileExplorer init_file_explorer(){
     FileExplorer result;
     auto file_path = std::filesystem::current_path();
 
@@ -51,7 +51,7 @@ FileExplorer init_file_explorer(){
     return result;
 }
 
-void start_file_explorer(FileExplorer& file_explorer, struct RenderPipeline* render_pipeline){ //TODO Optimize as it's very slow
+static inline void start_file_explorer(FileExplorer& file_explorer, struct RenderPipeline* render_pipeline){ //TODO Optimize as it's very slow
     ImGui::Begin("FolderView");
 
     std::string current_dir = file_explorer.current_directory;
@@ -97,7 +97,7 @@ void start_file_explorer(FileExplorer& file_explorer, struct RenderPipeline* ren
     }
 }
 
-void end_file_explorer()
+static inline void end_file_explorer()
 {
     ImGui::End();
 }
