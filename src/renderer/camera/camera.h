@@ -9,27 +9,27 @@ static inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwi
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
     CameraComponent* camera = (CameraComponent*)get_component_by_id(camera_system, camera_id);
-    TransformComponent* camera_tranform = (TransformComponent*)get_component_by_id(transform_system, camera->transform_id);
+    TransformComponent* camera_transform = (TransformComponent*)get_component_by_id(transform_system, camera->transform_id);
 
     int camera_speed = 20;
 
     if(glfwGetKey(main_window, GLFW_KEY_W) == GLFW_PRESS){
-        camera_tranform->transform.position = v3_sub(camera_tranform->transform.position, v3_muls(v3_forward_vector(camera_tranform->transform), delta_time * camera_speed));
+        camera_transform->transform.position = v3_sub(camera_transform->transform.position, v3_muls(v3_forward_vector(camera_transform->transform), delta_time * camera_speed));
     }
     if(glfwGetKey(main_window, GLFW_KEY_S) == GLFW_PRESS){
-        camera_tranform->transform.position = v3_add(camera_tranform->transform.position, v3_muls(v3_forward_vector(camera_tranform->transform), delta_time * camera_speed));
+        camera_transform->transform.position = v3_add(camera_transform->transform.position, v3_muls(v3_forward_vector(camera_transform->transform), delta_time * camera_speed));
     }
     if(glfwGetKey(main_window, GLFW_KEY_A) == GLFW_PRESS){
-        camera_tranform->transform.position = v3_add(camera_tranform->transform.position, v3_muls(v3_right_vector(camera_tranform->transform), delta_time * camera_speed));
+        camera_transform->transform.position = v3_add(camera_transform->transform.position, v3_muls(v3_right_vector(camera_transform->transform), delta_time * camera_speed));
     }
     if(glfwGetKey(main_window, GLFW_KEY_D) == GLFW_PRESS){
-        camera_tranform->transform.position = v3_sub(camera_tranform->transform.position, v3_muls(v3_right_vector(camera_tranform->transform), delta_time * camera_speed));
+        camera_transform->transform.position = v3_sub(camera_transform->transform.position, v3_muls(v3_right_vector(camera_transform->transform), delta_time * camera_speed));
     }
     if(glfwGetKey(main_window, GLFW_KEY_SPACE) == GLFW_PRESS){
-        camera_tranform->transform.position.z += camera_speed * delta_time;
+        camera_transform->transform.position.z += camera_speed * delta_time;
     }
     if(glfwGetKey(main_window, GLFW_KEY_C) == GLFW_PRESS){
-        camera_tranform->transform.position.z -= camera_speed * delta_time;
+        camera_transform->transform.position.z -= camera_speed * delta_time;
     }
 
     if(glfwGetMouseButton(main_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
@@ -41,8 +41,7 @@ static float last_x = 0.0f;
 static float last_y = 0.0f;
 static float mouse_sensitivity = 0.01f;
 
-static inline void camera_mouse_callback(GLFWwindow* main_window, double position_x, double position_y)
-{
+static inline void camera_mouse_callback(GLFWwindow* main_window, double position_x, double position_y){
     if(glfwGetMouseButton(main_window, GLFW_MOUSE_BUTTON_MIDDLE) != GLFW_PRESS){
         last_x = (float)position_x;
         last_y = (float)position_y;

@@ -38,9 +38,9 @@ static void create_entity(const char* name){
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
     //uint16_t transform_id = add_transform();
-    for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
-        add_transform();
-    }
+    // for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
+    //     //add_transform();
+    // }
     uint32_t index = 0;
     RenderAble* renderable = get_free_renderable(&render_pipeline->model_render_data, heap_stack, &index);
     renderable->model_index = asset_index->model_index;

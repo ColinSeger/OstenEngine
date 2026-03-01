@@ -140,8 +140,6 @@ static inline void calculate_attack(struct HeapStack* heap_stack){
     ComponentSystem* health_system = get_component_system(HEALTH);
     ComponentSystem* melee_system = get_component_system(MELEE);
 
-
-
     SimpleColliderComp* colliders    = (struct SimpleColliderComp*)get_component_by_id(collider_system, 0);
     HealthComponent*    health_comps = (struct HealthComponent*)get_component_by_id(health_system, 0);
     MeleeComponent* melee_comps  = (struct MeleeComponent*)get_component_by_id(melee_system, 0);
@@ -151,6 +149,7 @@ static inline void calculate_attack(struct HeapStack* heap_stack){
     for(int i = 0; i < collider_system->amount; i++){
         SimpleColliderComp collider = colliders[i];
         Transform my_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[collider.transform_id].transform;
+        vec2_t my_pos = {my_transform.position.x, my_transform.position.y};
         uint16_t health_index = {};
         uint16_t attack_index = {};
         if(!has_component(entities[collider.entity_id], HEALTH, &health_index)){
@@ -165,7 +164,8 @@ static inline void calculate_attack(struct HeapStack* heap_stack){
         for (int x = 0; x < collider.collision_amount; x++) {
             SimpleColliderComp nearby_collider = colliders[collider.nearby_colliders[x]];
             Transform other_transform = ((TransformComponent*)get_component_by_id(transform_system, 0))[nearby_collider.transform_id].transform;
-            float distance = v2_dist({my_transform.position.x, my_transform.position.y}, {other_transform.position.x, other_transform.position.y});
+            vec2_t other_pos = {other_transform.position.x, other_transform.position.y};
+            float distance = v2_dist(my_pos, other_pos);
             if(distance > 10){
                 continue;
             }

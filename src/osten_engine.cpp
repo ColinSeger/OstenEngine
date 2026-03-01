@@ -78,15 +78,15 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
 
     VkExtent2D window_size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-    uint32_t glfw_extention_count = 0;
+    uint32_t glfw_extension_count = 0;
 
     // //Gets critical extensions
-    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extention_count);
+    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
-    WindowExtensions window_extentions{ glfw_extensions, glfw_extention_count };
+    WindowExtensions window_extensions{ glfw_extensions, glfw_extension_count };
 
     //Investigate Why so slow
-    VkResult result = create_instance(&instance, application_name, window_extentions);
+    VkResult result = create_instance(&instance, application_name, window_extensions);
 
     if(result != VK_SUCCESS){
         throw "Failed to create Instance";

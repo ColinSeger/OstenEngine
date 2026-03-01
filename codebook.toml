@@ -3,4 +3,5 @@ words = [
     "osten",
     "rasterizer",
     "shader",
+    "ubo",
 ]

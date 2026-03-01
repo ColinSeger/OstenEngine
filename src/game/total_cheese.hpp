@@ -6,6 +6,7 @@
 #include "../../external/math_3d.h"
 #include "../osten_engine.cpp"
 #include "army.hpp"
+#include "../renderer/terrain.h"
 
 //static struct InstanceData render_ids {};
 
@@ -38,11 +39,48 @@ static void init_game(OstenEngine& engine){
 
     struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
 
-    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 40, &engine.heap_stack, 0);
-    ArmyUnit unit2 = init_army_unit(rendera, {-20 , 0 , 0}, 255, 40, &engine.heap_stack, 1);
+    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 50, 10, &engine.heap_stack, 0);
+    ArmyUnit unit2 = init_army_unit(rendera, {-20 , 0 , 0}, 50, 10, &engine.heap_stack, 1);
 
     army_units.emplace_back(unit1);
     army_units.emplace_back(unit2);
+
+    Terrain terrain = {};
+
+    create_terrain(10, 10, &terrain);
+
+    create_terrain_mesh(terrain, &engine.render_pipeline);
+    struct InstanceData render_ids = {};
+
+    render_ids.model_index = loaded_models.size()-1;
+    render_ids.texture_index = 0;
+    render_ids.capacity = 2;
+
+    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
+
+
+    // struct Entity entity {};
+
+    // uint16_t transform_index = UINT16_MAX;
+    // transform_index = add_transform();
+    // ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[render_able->instance_amount] = transform_index;
+    // uint16_t collider_index = add_collider(transform_index, 0);
+    // unit.unit_colliders[i] = collider_index;
+
+    // //uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
+
+    // struct TempID transform_comp{
+    //     (uint16_t)(transform_index),
+    //     (uint16_t)(TRANSFORM)
+    // };
+    // struct TempID render{
+    //     (uint16_t)(add_render_component(0, transform_index)),
+    //     (uint16_t)(RENDER)
+    // };
+    // struct TempID collider{
+    //     (uint16_t)(collider_index),
+    //     (uint16_t)(COLLIDER)
+    // };
 }
 static double test = 0;
 static int target_index = 0;

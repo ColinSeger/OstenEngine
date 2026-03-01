@@ -74,7 +74,7 @@ typedef struct{
 static VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
 
 
-//Can Return null if you are accesing outside capacity
+//Can Return null if you are accessing outside capacity
 static RenderAble* get_renderable(ModelData* model_data, uint32_t index, HeapStack* heap_stack){
     if(index > model_data->renderable_amount) return 0;
 
@@ -268,7 +268,7 @@ static VkResult create_shadow_sets(VkDevice virtual_device, CameraDescriptor lig
 }
 
 
-static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer lisght, TextureImage* texture){
+static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer light, TextureImage* texture){
 
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
@@ -304,7 +304,7 @@ static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descri
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(vec3_t);
-        camera_info.buffer = lisght;
+        camera_info.buffer = light;
 
         constexpr uint32_t descriptor_size = 3;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
@@ -337,7 +337,7 @@ static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descri
     }
 }
 
-static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer lisght, uint16_t texture_index){
+static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, TextureDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer light, uint16_t texture_index){
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -351,7 +351,7 @@ static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPo
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(vec3_t);
-        camera_info.buffer = lisght;
+        camera_info.buffer = light;
 
         constexpr uint32_t descriptor_size = 3;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};

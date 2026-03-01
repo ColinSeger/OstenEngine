@@ -57,6 +57,24 @@ namespace ModelLoader
         file.close();
     }
 
+    static inline void serialize2(VertexArray vertices, Uint32Array indices){
+
+        std::ofstream file("new_name.bin", std::ios::binary);
+
+        if(!file.is_open()){
+            abort();
+        }
+        uint32_t index_start = vertices.amount * sizeof(Vertex);
+
+        file.write(reinterpret_cast<const char*>(&index_start), sizeof(uint32_t));
+
+        file.write(reinterpret_cast<char*>(vertices.values), index_start);
+
+        file.write(reinterpret_cast<char*>(indices.values),  indices.amount * sizeof(uint32_t));
+
+        file.close();
+    }
+
     //This Returns a size_t from the memory arena index
     static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, HeapStack* heap_stack){
         Debug::profile_time_start();
@@ -93,7 +111,6 @@ namespace ModelLoader
     }
 
     uint32_t load_model(Device& device, VkCommandPool command_pool, const char* file_name, LoadMode load_mode, HeapStack* memory_arena){
-        Model model{};
         auto contains = loaded_model_index.find(file_name);
 
         if(contains != loaded_model_index.end()){
@@ -111,6 +128,7 @@ namespace ModelLoader
         }
 
         if(file_to_free == memory_arena->index) return 0;
+        Model model{};
 
         model.index_amount = indices.amount;
         CommandBuffer::create_vertex_buffer(&device, &vertices, &model.vertex_buffer, &model.vertex_buffer_memory, command_pool);

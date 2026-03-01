@@ -1,5 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -119,13 +120,18 @@ static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pip
                     name.push_back(c);
                 }
                 if(ImGui::Button(name.c_str())){
-                    RenderAble* renderable = (RenderAble*)get_at_index(heap_stack, render_pipe->model_render_data.renderable_memory_index);
-                    renderable[component->instance_id].instance_amount--;
+                    RenderAble* render_able = (RenderAble*)get_at_index(heap_stack, render_pipe->model_render_data.renderable_memory_index);
+
+                    RenderAble& at_index = render_able[component->instance_id];
+                    at_index.instance_amount--;
 
                     component->instance_id = i;
-                    component->transform_id = renderable[i].transform_index + renderable[i].instance_amount;
+                    uint16_t index = 0;
+                    if(has_component(entities[id], TRANSFORM, &index)){
+                        component->transform_id = index;
+                    }
 
-                    renderable[i].instance_amount++;
+                    render_able[i].instance_amount++;
                 }
             }
             ImGui::EndCombo();
@@ -343,12 +349,17 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
             }
             if(ImGui::Button("Add Render Component")){
                 RenderAble* rendera = get_renderable(&render_pipeline->model_render_data, 0, heap_stack);
-                TempID render{
-                    (uint16_t)(add_render_component(0, rendera->transform_index + rendera->instance_amount)),
-                    (uint16_t)(RENDER)
-                };
-                rendera->instance_amount++;
-                add_component(entities[inspecting], render);
+                uint16_t index = 0;
+                if(has_component(entities[inspecting], TRANSFORM, &index)){
+                    TempID render{
+                        (uint16_t)(add_render_component(0, index)),
+                        (uint16_t)(RENDER)
+                    };
+                    rendera->instance_amount++;
+
+                    add_component(entities[inspecting], render);
+                }
+
                 //entities[inspecting].components.emplace_back(render);
             }
             ImGui::EndPopup();

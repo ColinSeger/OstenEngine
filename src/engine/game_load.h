@@ -38,7 +38,7 @@ static inline bool get_line(struct Line* line,struct FileData data, long long* o
 
 
 static inline void load_game_data(char* file_path){
-    struct InstanceData render_ids {};
+    struct InstanceData render_ids = {};
 
     FileData file_data = platform_load_entire_file(file_path);
     if(file_data.file_size <= 0){
