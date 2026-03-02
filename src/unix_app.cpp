@@ -89,16 +89,29 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 
 uint8_t run(OstenEngine& engine){
     load_game_data((char*)"src/game/game_data.txt");
-    load_game_reasources();
 
     procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
+
+    load_game_reasources(engine);
+    Terrain terrain = {};
+
+    create_terrain(1000, 1000, &terrain);
+
+    create_terrain_mesh(terrain, &engine.render_pipeline);
+    struct InstanceData render_ids = {};
+
+    render_ids.model_index = loaded_models.size()-1;
+    render_ids.texture_index = 0;
+    render_ids.capacity = 2;
+
+    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 
     init_game(engine);
     last_tick = platform_get_time_handle();
     while(!engine.should_close){
         procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
         size_t free = calculate_colliders(&engine.heap_stack);
-        update_game(engine.delta_time, engine);
+        update_game(engine.delta_time, engine, terrain);
         engine.draw_frame();
         free_arena(&engine.heap_stack, free);
     }

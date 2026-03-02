@@ -14,21 +14,18 @@
 
 static std::vector<ArmyUnit> army_units{};
 
-static void load_game_reasources(){
-    // struct Message message{};
-    // message.type = MessageType::LoadModel;
-    // message.value = (void*)"assets/debug_assets/Cube.obj";
+static void load_game_reasources(OstenEngine& engine){
+    // return;
+    // Terrain terrain = {};
 
-    // add_message(message);
+    // create_terrain(10, 10, &terrain);
 
-    // message.type = MessageType::LoadTexture;
-    // message.value = (void*)"assets/debug_assets/viking_room.png";
+    // create_terrain_mesh(terrain, &engine.render_pipeline);
+    // struct InstanceData render_ids = {};
 
-    // add_message(message);
-    // const uint32_t capacity = 2000;
-    // render_ids.model_index = 0;
-    // render_ids.texture_index = 1;
-    // render_ids.capacity = capacity +2;
+    // render_ids.model_index = loaded_models.size()-1;
+    // render_ids.texture_index = 0;
+    // render_ids.capacity = 2;
 
     // add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 }
@@ -53,48 +50,12 @@ static void init_game(OstenEngine& engine){
 
     std::string test = std::to_string((2* unit_amount) * 255);
     Debug::log(test);
-
-    Terrain terrain = {};
-
-    create_terrain(10, 10, &terrain);
-
-    create_terrain_mesh(terrain, &engine.render_pipeline);
-    struct InstanceData render_ids = {};
-
-    render_ids.model_index = loaded_models.size()-1;
-    render_ids.texture_index = 0;
-    render_ids.capacity = 2;
-
-    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
-
-
-    // struct Entity entity {};
-
-    // uint16_t transform_index = UINT16_MAX;
-    // transform_index = add_transform();
-    // ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[render_able->instance_amount] = transform_index;
-    // uint16_t collider_index = add_collider(transform_index, 0);
-    // unit.unit_colliders[i] = collider_index;
-
-    // //uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
-
-    // struct TempID transform_comp{
-    //     (uint16_t)(transform_index),
-    //     (uint16_t)(TRANSFORM)
-    // };
-    // struct TempID render{
-    //     (uint16_t)(add_render_component(0, transform_index)),
-    //     (uint16_t)(RENDER)
-    // };
-    // struct TempID collider{
-    //     (uint16_t)(collider_index),
-    //     (uint16_t)(COLLIDER)
-    // };
 }
+
 static double test = 0;
 static int target_index = 0;
 
-static void update_game(double delta_time, OstenEngine& engine){
+static void update_game(double delta_time, OstenEngine& engine, Terrain terrain){
     int index = 0;
     if(glfwGetKey(engine.main_window, GLFW_KEY_1) == GLFW_PRESS){
         target_index=0;
@@ -113,7 +74,7 @@ static void update_game(double delta_time, OstenEngine& engine){
         if(index == target_index){
             unit.target_point = engine.target_point;
         }
-        move_towards(unit, engine.target_point, delta_time);
+        move_towards(unit, engine.target_point, delta_time, terrain);
         index++;
     }
     calculate_attack(&engine.heap_stack);

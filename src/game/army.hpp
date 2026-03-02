@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include "../engine/message_system/message.h"
+#include "../renderer/terrain.h"
 
 
 struct ArmyUnit{
@@ -73,7 +74,7 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
     return unit;
 }
 
-static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time){
+static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, Terrain test_t){
     if(delta_time <= 0) return;
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* collider_system = get_component_system(COLLIDER);
@@ -92,6 +93,8 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
         vec2_t current = {};
         current.x = transform->transform.position.x;
         current.y = transform->transform.position.y;
+
+        transform->transform.position.z = sample_terrain_height(test_t, current.x, current.y);
 
         vec2_t target = {target_pos.x - current.x, target_pos.y - current.y};
 

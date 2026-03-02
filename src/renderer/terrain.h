@@ -24,11 +24,9 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
     terrain->vertexes.values = (Vertex*)malloc(sizeof(Vertex) * terrain->vertexes.amount);
     terrain->indexes.values = (uint32_t*)malloc(sizeof(uint32_t) * terrain->indexes.amount);
 
-    // Generate heights (example: sine wave terrain)
-    for (int z = 0; z < depth; z++)
-    {
-        for (int x = 0; x < width; x++)
-        {
+    // Generate heights sine wave terrain
+    for (int z = 0; z < depth; z++){
+        for (int x = 0; x < width; x++){
             int i = z * width + x;
 
             float height = sinf(x * 0.2f) * cosf(z * 0.2f) * 2.0f;
@@ -79,4 +77,10 @@ static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_p
     loaded_model_index["Terrain"] = loaded_models.size() -1;
 
  //   ModelLoader::serialize2(terrain.vertexes, terrain.indexes);
+}
+
+static inline float sample_terrain_height(Terrain terrain, int x, int y){
+    if(x * y > terrain.width * terrain.height) return terrain.height_map[terrain.width * terrain.height -1];
+    if(x < 0 || y < 0) return terrain.height_map[0];
+    return terrain.height_map[y * terrain.width + x];
 }

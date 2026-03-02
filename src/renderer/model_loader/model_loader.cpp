@@ -39,7 +39,7 @@ namespace ModelLoader
         new_name[new_name.size()-2] = 'i';
         new_name[new_name.size()-3] = 'b';
 
-        load_obj_v2(filename, vertices, indices, memory_arena);
+        size_t to_free = load_obj_v2(filename, vertices, indices, memory_arena);
 
         std::ofstream file(new_name, std::ios::binary);
 
@@ -55,6 +55,7 @@ namespace ModelLoader
         file.write(reinterpret_cast<char*>(indices.values),  indices.amount * sizeof(uint32_t));
 
         file.close();
+        free_arena(memory_arena, to_free);
     }
 
     static inline void serialize2(VertexArray vertices, Uint32Array indices){
