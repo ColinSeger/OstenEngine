@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <string>
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include <stdint.h>
@@ -39,24 +41,18 @@ static void init_game(OstenEngine& engine){
 
     struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
     struct RenderAble* render2a = get_renderable(&engine.render_pipeline.model_render_data, 1, &engine.heap_stack);
+    uint16_t unit_amount = 1;
+    for(int i = 0; i < unit_amount; i++){
+        ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
+        army_units.emplace_back(unit1);
+    }
+    for(int i = 0; i < unit_amount; i++){
+        ArmyUnit unit1 = init_army_unit(render2a, {-50 + (float)i * 50 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
+        army_units.emplace_back(unit1);
+    }
 
-    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
-    ArmyUnit unit2 = init_army_unit(render2a, {-20 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
-    ArmyUnit unit3 = init_army_unit(rendera, {50 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
-    ArmyUnit unit4 = init_army_unit(render2a, {-100 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
-    ArmyUnit unit5 = init_army_unit(rendera, {200 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
-    ArmyUnit unit6 = init_army_unit(render2a, {-200 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
-    ArmyUnit unit7 = init_army_unit(rendera, {100 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
-    ArmyUnit unit8 = init_army_unit(render2a, {-300 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
-
-    army_units.emplace_back(unit1);
-    army_units.emplace_back(unit2);
-    army_units.emplace_back(unit3);
-    army_units.emplace_back(unit4);
-    army_units.emplace_back(unit5);
-    army_units.emplace_back(unit6);
-    army_units.emplace_back(unit7);
-    army_units.emplace_back(unit8);
+    std::string test = std::to_string((2* unit_amount) * 255);
+    Debug::log(test);
 
     Terrain terrain = {};
 
