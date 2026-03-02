@@ -140,8 +140,9 @@ static inline void run_health_system(){
             uint16_t transform_index = 0;
 
             if(has_component(entities[health_comps[i].entity_id], TRANSFORM, &transform_index)){
-                //transforms[transform_index].transform.position = {100000, 10000, 10};
+                transforms[transform_index].transform.position = {100000, 10000, 10};
                 transforms[transform_index].transform.scale = {0.2, 0.2, 0.2};
+                health_comps[i].health = 10;
             }
         }
     }

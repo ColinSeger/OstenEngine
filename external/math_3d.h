@@ -114,7 +114,7 @@ static inline vec3_t v3_mul   (vec3_t a, vec3_t b)          { return { a.x * b.x
 static inline vec3_t v3_muls  (vec3_t a, float s)           { return { a.x * s,   a.y * s,   a.z * s   }; }
 static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
 static inline vec3_t v3_divs  (vec3_t a, float s)           { return { a.x / s,   a.y / s,   a.z / s   }; }
-static inline float  v3_length(vec3_t v)                    { return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);          }
+static inline float  v3_length(vec3_t v)                    { return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);  }
 static inline vec3_t v3_norm  (vec3_t v);
 static inline float  v3_dot   (vec3_t a, vec3_t b)          { return a.x*b.x + a.y*b.y + a.z*b.z;                 }
 static inline vec3_t v3_proj  (vec3_t v, vec3_t onto);
@@ -125,6 +125,7 @@ static inline vec3_t v3_move_towards (vec3_t a, vec3_t b, float delta);
 //OstenCode
 typedef struct { float x, y; } vec2_t;
 
+static inline vec2_t v2_sub   (vec2_t a, vec2_t b)          { return { a.x - b.x, a.y - b.y}; }
 static inline float  v2_length(vec2_t v)                    { return sqrtf(v.x*v.x + v.y*v.y); }
 static inline vec2_t v2_muls  (vec2_t a, float s)           { return { a.x * s,   a.y * s, };  }
 static inline float v2_dist(vec2_t a, vec2_t b) { return sqrt(((a.y - a.x) * (a.y - a.x)) + ((b.y - b.x) * (b.y - b.x)));}

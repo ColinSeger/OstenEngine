@@ -63,7 +63,7 @@ static Timer start_time2 = platform_get_time_handle();
 static Timer last_tick;
 
 OstenEngine::OstenEngine(const int width, const int height, const char* application_name){
-    init_mem_arena(&heap_stack ,128*MB);
+    init_mem_arena(&heap_stack, 256*MB);
     if(!glfwInit()){
         puts("glfwInit failed");
         throw("GLFW Failed to open");
@@ -117,12 +117,12 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
 
     file_explorer = init_file_explorer();
 
-    create_transform_system(10000, &heap_stack);
+    create_transform_system(20000, &heap_stack);
     create_camera_system(2, &heap_stack);
     add_camera(add_transform());
     add_camera(add_transform());
     create_render_component_system(9000, &heap_stack);
-    create_collider_system(2000, &heap_stack);
+    create_collider_system(10000, &heap_stack);
 }
 
 OstenEngine::~OstenEngine(){

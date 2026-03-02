@@ -34,16 +34,29 @@ static void load_game_reasources(){
 static void init_game(OstenEngine& engine){
     vkDeviceWaitIdle(engine.render_pipeline.device.virtual_device);
 
-    create_health_system(2000, &engine.heap_stack);
-    create_melee_system(2000, &engine.heap_stack);
+    create_health_system(10000, &engine.heap_stack);
+    create_melee_system(10000, &engine.heap_stack);
 
     struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
+    struct RenderAble* render2a = get_renderable(&engine.render_pipeline.model_render_data, 1, &engine.heap_stack);
 
-    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 50, 10, &engine.heap_stack, 0);
-    ArmyUnit unit2 = init_army_unit(rendera, {-20 , 0 , 0}, 50, 10, &engine.heap_stack, 1);
+    ArmyUnit unit1 = init_army_unit(rendera, {20 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
+    ArmyUnit unit2 = init_army_unit(render2a, {-20 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
+    ArmyUnit unit3 = init_army_unit(rendera, {50 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
+    ArmyUnit unit4 = init_army_unit(render2a, {-100 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
+    ArmyUnit unit5 = init_army_unit(rendera, {200 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
+    ArmyUnit unit6 = init_army_unit(render2a, {-200 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
+    ArmyUnit unit7 = init_army_unit(rendera, {100 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
+    ArmyUnit unit8 = init_army_unit(render2a, {-300 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
 
     army_units.emplace_back(unit1);
     army_units.emplace_back(unit2);
+    army_units.emplace_back(unit3);
+    army_units.emplace_back(unit4);
+    army_units.emplace_back(unit5);
+    army_units.emplace_back(unit6);
+    army_units.emplace_back(unit7);
+    army_units.emplace_back(unit8);
 
     Terrain terrain = {};
 

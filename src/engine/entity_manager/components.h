@@ -1,10 +1,10 @@
-// #include "components.h"
 #pragma once
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "../transform.h"
 #include "../../additional_things/arena.h"
+#include "../../debugger/debugger.h"
 
 constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
@@ -300,20 +300,23 @@ static inline size_t calculate_colliders(HeapStack* heap_stack){
             uint16_t other_transform_id = colliders[y].transform_id;
             Transform other = transforms[other_transform_id].transform;
             float length = v3_length(v3_sub(self.position, other.position));
-            if(length < colliders[x].collision_range){
-                if(colliders[x].collision_amount > sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0])){
-                    //uint16_t to_many = colliders[x].collision_amount;
-                    //Debug::log("You had ");
+
+            if(length < colliders[x].collision_range && length > 0.1f){
+                constexpr uint32_t collider_capacity = sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0]);
+
+                if(colliders[x].collision_amount >= collider_capacity){
+                    //Debug::log("You had to many collisions");
+                    continue;
                     assert(false && "You had to many collisions");
                     break;
                 }
                 if(other_transform_id == 0){
+
                     assert(false && "You somehow tried to collide with the camera?");
                     break;
                 }
                 colliders[x].nearby_colliders[colliders[x].collision_amount] = other_transform_id;
                 colliders[x].collision_amount++;
-                //arena_alloc_memory(heap_stack, sizeof(uint16_t));
             }
         }
     }
@@ -331,8 +334,9 @@ static inline void run_attack_system(){
 
     for (int i = 0; i < melee_system->amount; i++) {
         if(!health_comps) continue;
-        if(melee_comp[i].nearby_enemy_health_id == UINT16_MAX) continue;
-        health_comps[melee_comp[i].nearby_enemy_health_id].damage_taken += melee_comp[i].damage;
+        uint16_t enemy_health_id = melee_comp[i].nearby_enemy_health_id;
+        if(enemy_health_id == UINT16_MAX) continue;
+        health_comps[enemy_health_id].damage_taken += melee_comp[i].damage;
         melee_comp[i].nearby_enemy_health_id = UINT16_MAX;
     }
 }

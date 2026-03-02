@@ -22,7 +22,7 @@ static inline bool get_line(struct Line* line,struct FileData data, long long* o
 
     long long test = line->length + *offset;
 
-    while (((char*)data.file_data)[test] != '\n') {
+    while (((char*)data.file_data)[test] != '\n' && data.file_size > test) {
         test++;
     }
 
@@ -30,8 +30,11 @@ static inline bool get_line(struct Line* line,struct FileData data, long long* o
     if(line->length <= 0 || line->length > 255)  {
         return false;
     }
-
+#ifdef _WIN32 //I DESPISE HAVING TO DO THIS
+    memcpy(line->string, &((char*)data.file_data)[*offset], line->length * sizeof(char) -1);
+#else
     memcpy(line->string, &((char*)data.file_data)[*offset], line->length * sizeof(char));
+#endif
     *offset+=line->length +1;
     return true;
 }

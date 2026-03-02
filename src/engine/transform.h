@@ -43,7 +43,8 @@ static inline vec3_t v3_forward_vector(Transform transform){
 }
 static inline vec3_t v3_right_vector(Transform transform){
     vec3_t forward = v3_forward_vector(transform);
-    return v3_norm(v3_cross(forward, (vec3_t){0,0,1}));
+    vec3_t up = {0,0,1};
+    return v3_norm(v3_cross(forward, up));
 }
 
 /*
