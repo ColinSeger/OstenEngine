@@ -74,4 +74,6 @@ static inline void load_game_data(char* file_path){
             add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
         }
     }
+
+    platform_free_file(file_data);
 }

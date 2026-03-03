@@ -79,7 +79,7 @@ struct FileData platform_load_entire_file(const char* filepath){//Add error hand
     close(file);
     return result;
 }
-void free_file(struct FileData file){
+void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 

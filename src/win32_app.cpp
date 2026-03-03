@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/entity_manager/components.h"
 #include "platform.h"
 #include "engine/message_system/message.h"
 #include <stddef.h>
@@ -13,6 +14,7 @@
 #include <winnt.h>
 #include "engine/game_load.h"
 #include "game/total_cheese.hpp"
+#include "renderer/descriptors/descriptors.h"
 
 float platform_memory_mb(){
     PROCESS_MEMORY_COUNTERS memory_counters;
@@ -89,10 +91,13 @@ struct FileData platform_load_entire_file(const char* filepath){
       0,
       0
     );
+
+    CloseHandle(file_handle);
+
     return result;
 }
 
-void free_file(struct FileData file){
+void platform_free_file(struct FileData file){
     VirtualFree(file.file_data, file.file_size, MEM_DECOMMIT);
 }
 
@@ -128,9 +133,52 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 
 uint8_t run(OstenEngine& engine){
     load_game_data((char*)"src/game/game_data.txt");
-    load_game_reasources();
+    //load_game_reasources();
+
+    Terrain terrain = {};
+
+    create_terrain(1000, 1000, &terrain);
+
+    create_terrain_mesh(terrain, &engine.render_pipeline);
+    struct InstanceData render_ids = {};
+
+    render_ids.model_index = loaded_models.size()-1;
+    render_ids.texture_index = 0;
+    render_ids.capacity = 2;
+
+    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 
     procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
+
+    ComponentSystem* transforms = get_component_system(TRANSFORM);
+
+    uint16_t transform_index = UINT16_MAX;
+
+    struct Entity entity {};
+
+    transform_index = add_transform();
+
+    TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
+
+    tr->transform.rotation = {-1.5, -1.5, 0};
+
+    RenderAble* render = get_renderable(&engine.render_pipeline.model_render_data, 2, &engine.heap_stack);
+
+    ((uint16_t*)get_at_index(&engine.heap_stack, render->transform_index))[render->instance_amount] = transform_index;
+
+    struct TempID transform_comp{
+        (uint16_t)(transform_index),
+        (uint16_t)(TRANSFORM)
+    };
+    struct TempID render2{
+        (uint16_t)(add_render_component(0, transform_index)),
+        (uint16_t)(RENDER)
+    };
+
+    add_component(entity, transform_comp);
+    add_component(entity, render2);
+    entities_to_create.emplace_back(entity);
+    render->instance_amount++;
 
     init_game(engine);
 
@@ -139,7 +187,7 @@ uint8_t run(OstenEngine& engine){
     while(!engine.should_close){
         procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
         size_t free = calculate_colliders(&engine.heap_stack);
-        update_game(engine.delta_time, engine);
+        update_game(engine.delta_time, engine, terrain);
         engine.draw_frame();
         free_arena(&engine.heap_stack, free);
     }

@@ -21,7 +21,7 @@ long long platform_get_file_size(const char* filename);
 
 struct FileData platform_load_entire_file(const char* filepath);
 
-void free_file(struct FileData file);
+void platform_free_file(struct FileData file);
 
 struct Timer platform_get_time_handle();
 

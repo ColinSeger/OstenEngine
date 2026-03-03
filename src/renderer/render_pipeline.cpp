@@ -120,8 +120,8 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     bool vertex_result = create_shader(vertex_code, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, &vertex_stage_info);
     bool fragment_result = create_shader(fragment_code, VK_SHADER_STAGE_FRAGMENT_BIT, virtual_device, &fragment_state_info);
 
-    free_file(vertex_code);
-    free_file(fragment_code);
+    platform_free_file(vertex_code);
+    platform_free_file(fragment_code);
 
     if(!vertex_result ||!fragment_result){
         return VK_INCOMPATIBLE_SHADER_BINARY_EXT;
@@ -224,7 +224,7 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipe
     FileData vertex_code = platform_load_entire_file("src/renderer/shaders/quad.vert.spv");
     VkPipelineShaderStageCreateInfo vertex_stage_info = {};
     bool vertex_result = create_shader(vertex_code, VK_SHADER_STAGE_VERTEX_BIT, virtual_device, &vertex_stage_info);
-    free_file(vertex_code);
+    platform_free_file(vertex_code);
 
     if(!vertex_result){
         return VK_INCOMPATIBLE_SHADER_BINARY_EXT;
@@ -588,7 +588,7 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
         RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
 
         if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
-        VkDescriptorSet descriptors[] = { light->descriptor_sets[frame], render_data[render_index].model_descriptor_sets[frame]};
+        VkDescriptorSet descriptors[] = { light->descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
         uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_amount, descriptors, 0, nullptr);

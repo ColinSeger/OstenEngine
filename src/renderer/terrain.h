@@ -41,14 +41,12 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
 
     // Generate triangle indices
     int index = 0;
-    for (int z = 0; z < depth - 1; z++)
-    {
-        for (int x = 0; x < width - 1; x++)
-        {
-            int topLeft     =  z      * width + x;
-            int topRight    =  topLeft + 1;
-            int bottomLeft  = (z + 1) * width + x;
-            int bottomRight =  bottomLeft + 1;
+    for (int x = 0; x < depth - 1; x++) {
+        for (int y = 0; y < width - 1; y++){
+            int topLeft =  x * width + y;
+            int topRight =  topLeft + 1;
+            int bottomLeft = (x + 1) * width + y;
+            int bottomRight = bottomLeft + 1;
 
             // Triangle 1
             terrain->indexes.values[index++] = topLeft;
@@ -61,11 +59,11 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
             terrain->indexes.values[index++] = bottomRight;
         }
     }
-
 }
 
 static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_pipe){
     Model model = {};
+    model.index_amount = terrain.indexes.amount;
     VkResult vertex = CommandBuffer::create_vertex_buffer(&render_pipe->device, &terrain.vertexes, &model.vertex_buffer, &model.vertex_buffer_memory, render_pipe->command_pool);
     VkResult index = CommandBuffer::create_index_buffer(&render_pipe->device, &terrain.indexes, &model.index_buffer, &model.index_buffer_memory, render_pipe->command_pool);
 

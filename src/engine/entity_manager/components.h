@@ -235,9 +235,9 @@ static inline uint16_t add_camera(uint16_t transform_index){
     comp->transform_id = transform_index;
 
     TransformComponent* transform = (TransformComponent*)get_component_by_id(&transforms, comp->transform_id);
-    transform->transform.position.x = 10;
-    transform->transform.position.z = 2;
+    transform->transform.position.x = 20;
     transform->transform.rotation.y = 0;
+    transform->transform.position.z = 5;
 
     component_sys->amount++;
 
