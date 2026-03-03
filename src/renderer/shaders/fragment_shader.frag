@@ -50,7 +50,7 @@ void main()
 
     float shadow = compute_shadow_factor(frag_pos_light_space, shadow_map);
 
-    vec3 lighting = AMBIENT + ((albedo * dont_know_name) * shadow);
+    vec3 lighting = (AMBIENT + (shadow)) * dont_know_name * albedo;
 
     out_color = vec4(lighting, 1);
 }

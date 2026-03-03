@@ -25,17 +25,33 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
     terrain->indexes.values = (uint32_t*)malloc(sizeof(uint32_t) * terrain->indexes.amount);
 
     // Generate heights sine wave terrain
-    for (int z = 0; z < depth; z++){
-        for (int x = 0; x < width; x++){
-            int i = z * width + x;
+    for (int x = 0; x < depth; x++){
+        for (int y = 0; y < width; y++){
+            int i = x * width + y;
 
-            float height = sinf(x * 0.2f) * cosf(z * 0.2f) * 2.0f;
+            float height = sinf(y * 0.2f) * cosf(x * 0.2f) * 2.0f;
 
             terrain->height_map[i] = height;
 
-            terrain->vertexes.values[i].position.x = (float)x;
+            terrain->vertexes.values[i].position.x = (float)y;
             terrain->vertexes.values[i].position.y = height;
-            terrain->vertexes.values[i].position.z = (float)z;
+            terrain->vertexes.values[i].position.z = (float)x;
+
+            terrain->vertexes.values[i].texture_cord.x = (float)x / (float)depth;
+            terrain->vertexes.values[i].texture_cord.y = (float)y / (float)width;
+        }
+    }
+
+    for (int x = 0; x < depth; x++){
+        for (int y = 0; y < width; y++){
+            int triangle = x * width + y;
+            int triangle1 = (1+x) * width + y;
+            int triangle2 = x * width + (y+1);
+            if(triangle1 > depth * width) triangle1 = depth * width;
+            if(triangle2 > depth * width) triangle2 = depth * width;
+
+            terrain->vertexes.values[triangle].normals = v3_cross(terrain->vertexes.values[triangle1].position, terrain->vertexes.values[triangle2].position);
+
         }
     }
 
@@ -80,5 +96,5 @@ static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_p
 static inline float sample_terrain_height(Terrain terrain, int x, int y){
     if(x * y > terrain.width * terrain.height) return terrain.height_map[terrain.width * terrain.height -1];
     if(x < 0 || y < 0) return terrain.height_map[0];
-    return terrain.height_map[y * terrain.width + x];
+    return terrain.height_map[y * terrain.width + x] +1;
 }

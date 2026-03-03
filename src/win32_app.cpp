@@ -143,7 +143,7 @@ uint8_t run(OstenEngine& engine){
     struct InstanceData render_ids = {};
 
     render_ids.model_index = loaded_models.size()-1;
-    render_ids.texture_index = 0;
+    render_ids.texture_index = 1;
     render_ids.capacity = 2;
 
     add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
@@ -160,7 +160,7 @@ uint8_t run(OstenEngine& engine){
 
     TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
 
-    tr->transform.rotation = {-1.5, -1.5, 0};
+    tr->transform.rotation = {-1.6, -1.6, 0};
 
     RenderAble* render = get_renderable(&engine.render_pipeline.model_render_data, 2, &engine.heap_stack);
 
