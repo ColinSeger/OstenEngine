@@ -59,20 +59,20 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
     int index = 0;
     for (int x = 0; x < depth - 1; x++) {
         for (int y = 0; y < width - 1; y++){
-            int topLeft =  x * width + y;
-            int topRight =  topLeft + 1;
-            int bottomLeft = (x + 1) * width + y;
-            int bottomRight = bottomLeft + 1;
+            int top_left =  x * width + y;
+            int top_right =  top_left + 1;
+            int bottom_left = (x + 1) * width + y;
+            int bottom_right = bottom_left + 1;
 
             // Triangle 1
-            terrain->indexes.values[index++] = topLeft;
-            terrain->indexes.values[index++] = bottomLeft;
-            terrain->indexes.values[index++] = topRight;
+            terrain->indexes.values[index++] = top_left;
+            terrain->indexes.values[index++] = bottom_left;
+            terrain->indexes.values[index++] = top_right;
 
             // Triangle 2
-            terrain->indexes.values[index++] = topRight;
-            terrain->indexes.values[index++] = bottomLeft;
-            terrain->indexes.values[index++] = bottomRight;
+            terrain->indexes.values[index++] = top_right;
+            terrain->indexes.values[index++] = bottom_left;
+            terrain->indexes.values[index++] = bottom_right;
         }
     }
 }
@@ -94,7 +94,33 @@ static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_p
 }
 
 static inline float sample_terrain_height(Terrain terrain, int x, int y){
-    if(x * y > terrain.width * terrain.height) return terrain.height_map[terrain.width * terrain.height -1];
+    if(x * y > terrain.width * terrain.height) return terrain.height_map[terrain.width * terrain.height -2];
     if(x < 0 || y < 0) return terrain.height_map[0];
     return terrain.height_map[y * terrain.width + x] +1;
+}
+
+static inline float sample_terrain_height_interpolated(Terrain terrain, float x, float y){
+    if(x * y > terrain.width * terrain.height) return terrain.height_map[(terrain.width - 1) * (terrain.height - 1)];
+    if(x < 0 || y < 0) return terrain.height_map[0];
+
+    int x_int = (int)x;
+    int y_int = (int)y;
+
+    int x_int_corner = x_int + 1;
+    int y_int_corner = y_int + 1;
+
+    // Fractional part
+    float time_x_axis = x - x_int;
+    float time_y_axis = y - y_int;
+
+    // Sample four corners
+    float corner_1 = terrain.height_map[y_int * terrain.width + x_int];
+    float corner_2 = terrain.height_map[y_int * terrain.width + x_int_corner];
+    float corner_3 = terrain.height_map[y_int_corner * terrain.width + x_int];
+    float corner_4 = terrain.height_map[y_int_corner * terrain.width + x_int_corner];
+
+    float hx0 = interpolate_f(corner_1, corner_2, time_x_axis);
+    float hx1 = interpolate_f(corner_3, corner_4, time_x_axis);
+
+    return interpolate_f(hx0, hx1, time_y_axis);
 }

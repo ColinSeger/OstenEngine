@@ -148,7 +148,6 @@ void OstenEngine::draw_frame(){
         frames = 0;
     }
 
-
     begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, &heap_stack, target_point);
 
     start_file_explorer(file_explorer, &render_pipeline);

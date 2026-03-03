@@ -332,6 +332,11 @@ static inline vec3_t v3_move_towards (vec3_t current, vec3_t target, float delta
     vec3_t step = v3_muls(direction, delta / lenght);
     return  v3_add(current, step);
 }
+
+static inline float interpolate_f(float start, float end, float time){
+    return start + (end - start) * time;
+}
+
 //
 // Matrix functions header implementation
 //

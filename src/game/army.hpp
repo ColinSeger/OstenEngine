@@ -94,7 +94,7 @@ static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double d
         current.x = transform->transform.position.x;
         current.y = transform->transform.position.y;
 
-        transform->transform.position.z = sample_terrain_height(test_t, current.x, current.y);
+        transform->transform.position.z = sample_terrain_height_interpolated(test_t, current.x, current.y);
 
         vec2_t target = {target_pos.x - current.x, target_pos.y - current.y};
 

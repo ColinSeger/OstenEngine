@@ -7,12 +7,17 @@
 //#include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"
 #include "../osten_engine.cpp"
+#include "GLFW/glfw3.h"
 #include "army.hpp"
 #include "../renderer/terrain.h"
 
 //static struct InstanceData render_ids {};
 
 static std::vector<ArmyUnit> army_units{};
+
+static uint32_t valid_units = 0;
+
+//static uint32_t selected_unit[9];
 
 static void load_game_reasources(OstenEngine& engine){
     // return;
@@ -39,6 +44,7 @@ static void init_game(OstenEngine& engine){
     struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
     struct RenderAble* render2a = get_renderable(&engine.render_pipeline.model_render_data, 1, &engine.heap_stack);
     uint16_t unit_amount = 1;
+    valid_units = unit_amount;
     for(int i = 0; i < unit_amount; i++){
         ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
         army_units.emplace_back(unit1);
@@ -57,17 +63,14 @@ static int target_index = 0;
 
 static void update_game(double delta_time, OstenEngine& engine, Terrain terrain){
     int index = 0;
-    if(glfwGetKey(engine.main_window, GLFW_KEY_1) == GLFW_PRESS){
-        target_index=0;
-        std::string line = std::string("Index is ");
-        line.push_back(target_index);
-        Debug::log(line);
-    }
-    if(glfwGetKey(engine.main_window, GLFW_KEY_2) == GLFW_PRESS){
-        target_index=1;
-        std::string line = std::string("Index is ");
-        line.push_back(target_index);
-        Debug::log(line);
+    for(int i = 0; i < valid_units; i++){
+        int key = GLFW_KEY_1 + i;
+        if(glfwGetKey(engine.main_window, key) == GLFW_PRESS){
+            target_index= i;
+            //std::string line = std::string("Index is ");
+            //line.push_back(target_index);
+            //Debug::log(line);
+        }
     }
     test+= delta_time;
     for (ArmyUnit& unit : army_units) {
