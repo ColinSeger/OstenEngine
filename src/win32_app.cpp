@@ -160,7 +160,7 @@ uint8_t run(OstenEngine& engine){
 
     TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
 
-    tr->transform.rotation = {-1.6, -1.6, 0};
+    //tr->transform.rotation = {-1.6, -1.6, 0};
 
     RenderAble* render = get_renderable(&engine.render_pipeline.model_render_data, 2, &engine.heap_stack);
 

@@ -600,7 +600,7 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
 
             vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdDrawIndexed(command_buffer, model.index_amount, render_data[render_index].instance_amount, 0, 0, 0);
+            vkCmdDrawIndexed(command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
         }
     }
 

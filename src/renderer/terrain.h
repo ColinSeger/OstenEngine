@@ -33,9 +33,9 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
 
             terrain->height_map[i] = height;
 
-            terrain->vertexes.values[i].position.x = (float)y;
-            terrain->vertexes.values[i].position.y = height;
-            terrain->vertexes.values[i].position.z = (float)x;
+            terrain->vertexes.values[i].position.x = (float)x;
+            terrain->vertexes.values[i].position.y = (float)y;
+            terrain->vertexes.values[i].position.z = height;
 
             terrain->vertexes.values[i].texture_cord.x = (float)x / (float)depth;
             terrain->vertexes.values[i].texture_cord.y = (float)y / (float)width;
