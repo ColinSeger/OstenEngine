@@ -13,16 +13,22 @@ struct Terrain{//Bad
     uint16_t width;
 };
 
-static inline void create_terrain(int width, int depth, Terrain* terrain){
+static inline unsigned long long create_terrain(int width, int depth, Terrain* terrain, HeapStack* heap_stack){
+    unsigned long long mem_index = heap_stack->index;
     terrain->height = depth;
     terrain->width = width;
 
     terrain->vertexes.amount = width * depth;
     terrain->indexes.amount  = (width - 1) * (depth - 1) * 6;
 
-    terrain->height_map = (float*)malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
-    terrain->vertexes.values = (Vertex*)malloc(sizeof(Vertex) * terrain->vertexes.amount);
-    terrain->indexes.values = (uint32_t*)malloc(sizeof(uint32_t) * terrain->indexes.amount);
+    unsigned long long height_map = arena_alloc_memory(heap_stack, sizeof(float) * terrain->vertexes.amount);
+    unsigned long long vertex_values = arena_alloc_memory(heap_stack, sizeof(Vertex) * terrain->vertexes.amount);
+    unsigned long long index_values = arena_alloc_memory(heap_stack, sizeof(uint32_t) * terrain->indexes.amount);
+    mem_index = vertex_values;
+
+    terrain->height_map = (float*)get_at_index(heap_stack, height_map); //(float*)malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
+    terrain->vertexes.values = (Vertex*)get_at_index(heap_stack, vertex_values);
+    terrain->indexes.values = (uint32_t*)get_at_index(heap_stack, index_values);
 
     // Generate heights sine wave terrain
     for (int x = 0; x < depth; x++){
@@ -75,6 +81,7 @@ static inline void create_terrain(int width, int depth, Terrain* terrain){
             terrain->indexes.values[index++] = bottom_right;
         }
     }
+    return mem_index;
 }
 
 static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_pipe){

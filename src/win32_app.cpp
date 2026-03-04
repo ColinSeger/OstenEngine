@@ -1,7 +1,9 @@
 #pragma once
+#include "additional_things/arena.h"
 #include "engine/entity_manager/components.h"
 #include "platform.h"
 #include "engine/message_system/message.h"
+#include <cstddef>
 #include <stddef.h>
 #include <stdint.h>
 #include "osten_engine.cpp"
@@ -137,9 +139,12 @@ uint8_t run(OstenEngine& engine){
 
     Terrain terrain = {};
 
-    create_terrain(1000, 1000, &terrain);
+    size_t free_index = create_terrain(1000, 1000, &terrain, &engine.heap_stack);
 
     create_terrain_mesh(terrain, &engine.render_pipeline);
+
+    free_arena(&engine.heap_stack, free_index);
+
     struct InstanceData render_ids = {};
 
     render_ids.model_index = loaded_models.size()-1;
@@ -187,7 +192,9 @@ uint8_t run(OstenEngine& engine){
     while(!engine.should_close){
         procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
         size_t free = calculate_colliders(&engine.heap_stack);
-        update_game(engine.delta_time, engine, terrain);
+        if(!engine.paused_update){
+            update_game(engine.delta_time, engine, terrain);
+        }
         engine.draw_frame();
         free_arena(&engine.heap_stack, free);
     }

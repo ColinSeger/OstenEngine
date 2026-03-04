@@ -1,6 +1,5 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,6 +12,13 @@
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
 #include "vulkan/vulkan_core.h"
+
+struct UIData{
+    RenderPipeline* render_pipe;
+    uint32_t* inspecting;
+    vec3_t* target_point;
+    bool* paused_state;
+};
 
 static inline  VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
     VkDescriptorPool imgui_pool;
@@ -264,7 +270,9 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
     }
 }
 
-static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct RenderPipeline* render_pipeline, bool& is_open, float fps, uint32_t& inspecting, HeapStack* heap_stack, vec3_t& target_point){
+static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIData* ui_data, bool& is_open, float fps, HeapStack* heap_stack){
+    vec3_t& target_point = *ui_data->target_point;
+
     if (glfwGetWindowAttrib(main_window, GLFW_ICONIFIED) != 0){
         ImGui_ImplGlfw_Sleep(10);
     }
@@ -278,6 +286,10 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
     ImGui::Text("(%f)", ((float)fps));
 
     ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
+
+    if(ImGui::Button("Pause/Start")){
+        *ui_data->paused_state = !*ui_data->paused_state;
+    }
 
     ComponentSystem cameras = *get_component_system(CAMERA);
 
@@ -296,7 +308,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
 
     ImGui::DragFloat3("Camera Position", &target_point.x, 0.1f);
 
-    show_loaded_assets(render_pipeline, heap_stack);
+    show_loaded_assets(ui_data->render_pipe, heap_stack);
 
     ImGui::Begin("Console");
         std::string* editor_logs = Debug::get_all_logs();
@@ -315,12 +327,12 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
         ImGui::End();
         return;
     }
-    imgui_hierarchy(is_open, inspecting);
+    imgui_hierarchy(is_open, *ui_data->inspecting);
 
     ImGui::End();
     ImGui::Begin("Inspector");
         for (auto& entity : get_entity_names()){
-            if(entity.second == entities[inspecting].id){
+            if(entity.second == entities[*ui_data->inspecting].id){
                 char buffer[64] = {};
                 for (size_t i = 0; i < entity.first.length(); i++) {
                     buffer[i] = entity.first[i];
@@ -330,9 +342,9 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
             }
         }
 
-        for(uint16_t i = 0; i < entities[inspecting].component_amount; i++){
-            ImGui::PushID(entities[inspecting].components[i].type);
-            inspect(entities[inspecting].components[i].type, entities[inspecting].components[i].index, render_pipeline, heap_stack);
+        for(uint16_t i = 0; i < entities[*ui_data->inspecting].component_amount; i++){
+            ImGui::PushID(entities[*ui_data->inspecting].components[i].type);
+            inspect(entities[*ui_data->inspecting].components[i].type, entities[*ui_data->inspecting].components[i].index, ui_data->render_pipe, heap_stack);
             ImGui::Spacing();
             ImGui::PopID();
         }
@@ -344,20 +356,20 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct Rende
                     static_cast<uint16_t>(TRANSFORM)
                 };
                 //entities[inspecting].components.emplace_back(transform);
-                add_component(entities[inspecting], transform);
+                add_component(entities[*ui_data->inspecting], transform);
                 // inspecting = &EntityManager::get_all_entities()[inspecting->id];
             }
             if(ImGui::Button("Add Render Component")){
-                RenderAble* rendera = get_renderable(&render_pipeline->model_render_data, 0, heap_stack);
+                RenderAble* rendera = get_renderable(&ui_data->render_pipe->model_render_data, 0, heap_stack);
                 uint16_t index = 0;
-                if(has_component(entities[inspecting], TRANSFORM, &index)){
+                if(has_component(entities[*ui_data->inspecting], TRANSFORM, &index)){
                     TempID render{
                         (uint16_t)(add_render_component(0, index)),
                         (uint16_t)(RENDER)
                     };
                     rendera->instance_amount++;
 
-                    add_component(entities[inspecting], render);
+                    add_component(entities[*ui_data->inspecting], render);
                 }
 
                 //entities[inspecting].components.emplace_back(render);

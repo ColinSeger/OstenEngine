@@ -42,6 +42,8 @@ struct OstenEngine
 
     bool open_window = true;
 
+    bool paused_update = true;
+
     uint32_t inspecting = 0;
 
     double delta_time = 0;
@@ -148,7 +150,13 @@ void OstenEngine::draw_frame(){
         frames = 0;
     }
 
-    begin_imgui_editor_poll(main_window, &render_pipeline, open_window, fps, inspecting, &heap_stack, target_point);
+    UIData ui_data = {};
+    ui_data.inspecting = &inspecting;
+    ui_data.paused_state = &paused_update;
+    ui_data.render_pipe = &render_pipeline;
+    ui_data.target_point = &target_point;
+
+    begin_imgui_editor_poll(main_window, &ui_data, open_window, fps, &heap_stack);
 
     start_file_explorer(file_explorer, &render_pipeline);
 
