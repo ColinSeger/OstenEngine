@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -27,8 +28,9 @@ constexpr uint32_t texture_capacity = 20;
 
 struct TextureStorage{
     TextureImage texture;
-    char* name;
     uint32_t index = 0;
+    char name[255];
+    uint8_t name_lenght;
 };
 
 static TextureStorage texture_storage[texture_capacity] = {};
@@ -531,9 +533,18 @@ namespace Texture
         TextureImage texture_image = create_texture_image(device, texture_location, command_pool);
         texture_image.image_view = create_image_view(device->virtual_device, texture_image.texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture_image.mip_levels);
         texture_image.texture_sampler = Texture::create_texture_sampler(device);
+        uint8_t lenght = 0;
+        for(int i = 0; i < 255; i++){
+            if(texture_location[i] == '.'){
+                lenght+=4;//BAD :)
+                break;
+            }
+            lenght++;
+        }
 
         texture_storage[texture_amount].texture = texture_image;
-        texture_storage[texture_amount].name = texture_location;
+        memcpy(texture_storage[texture_amount].name, texture_location, lenght);
+        texture_storage->name_lenght = lenght;
         texture_storage[texture_amount].index = texture_amount;
         texture_amount++;
         return texture_storage[texture_amount -1];

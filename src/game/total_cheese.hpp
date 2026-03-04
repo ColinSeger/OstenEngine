@@ -13,13 +13,116 @@
 
 //static struct InstanceData render_ids {};
 
+struct GameData{
+    Terrain terrain;
+    void (*game_code)(OstenEngine*, GameData*) = nullptr;
+};
+
 static std::vector<ArmyUnit> army_units{};
 
 static uint32_t valid_units = 0;
 
 //static uint32_t selected_unit[9];
 
-static void load_game_reasources(OstenEngine& engine){
+static int target_index = 0;
+
+static void update_game(OstenEngine* engine, GameData* data){
+    int index = 0;
+    for(int i = 0; i < valid_units; i++){
+        int key = GLFW_KEY_1 + i;
+        if(glfwGetKey(engine->main_window, key) == GLFW_PRESS){
+            target_index= i;
+        }
+    }
+    for (ArmyUnit& unit : army_units) {
+        if(index == target_index){
+            unit.target_point = engine->target_point;
+        }
+        move_towards(unit, engine->target_point, engine->delta_time, data->terrain);
+        index++;
+    }
+    calculate_attack(&engine->heap_stack);
+    run_attack_system();
+    run_health_system();
+}
+
+static void init_game(OstenEngine* engine, GameData* data){
+    vkDeviceWaitIdle(engine->render_pipeline.device.virtual_device);
+
+    struct RenderAble* rendera = get_renderable(&engine->render_pipeline.model_render_data, 0, &engine->heap_stack);
+    struct RenderAble* render2a = get_renderable(&engine->render_pipeline.model_render_data, 1, &engine->heap_stack);
+    uint16_t unit_amount = 1;
+    valid_units = unit_amount;
+    for(int i = 0; i < unit_amount; i++){
+        ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 0);
+        army_units.emplace_back(unit1);
+    }
+    for(int i = 0; i < unit_amount; i++){
+        ArmyUnit unit1 = init_army_unit(render2a, {-50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 1);
+        army_units.emplace_back(unit1);
+    }
+
+    std::string test = std::to_string((2* unit_amount) * 255);
+    Debug::log(test);
+
+    //tr->transform.rotation = {-1.6, -1.6, 0};
+
+    data->game_code = update_game;
+}
+
+
+static void menu_state(OstenEngine* engine, GameData* data){
+    ImGui::Begin("Windo2", &engine->open_window);
+    if(ImGui::Button("Start")){
+        ComponentSystem* transforms = get_component_system(TRANSFORM);
+
+        uint16_t transform_index = UINT16_MAX;
+
+        struct Entity entity {};
+
+        transform_index = add_transform();
+
+        TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
+
+        RenderAble* render = get_renderable(&engine->render_pipeline.model_render_data, 2, &engine->heap_stack);
+
+        ((uint16_t*)get_at_index(&engine->heap_stack, render->transform_index))[render->instance_amount] = transform_index;
+
+        struct TempID transform_comp{
+            (uint16_t)(transform_index),
+            (uint16_t)(TRANSFORM)
+        };
+        struct TempID render2{
+            (uint16_t)(add_render_component(0, transform_index)),
+            (uint16_t)(RENDER)
+        };
+
+        add_component(entity, transform_comp);
+        add_component(entity, render2);
+        entities_to_create.emplace_back(entity);
+        render->instance_amount++;
+        data->game_code = init_game;
+    }
+    ImGui::End();
+}
+
+static void load_game_reasources(OstenEngine* engine, GameData* data){
+
+    size_t free_index = create_terrain(1000, 1000, &data->terrain, &engine->heap_stack);
+
+    create_terrain_mesh(data->terrain, &engine->render_pipeline);
+
+    //free_arena(&engine->heap_stack, free_index);
+
+    struct InstanceData render_ids = {};
+
+    render_ids.model_index = loaded_models.size()-1;
+    render_ids.texture_index = 1;
+    render_ids.capacity = 2;
+
+    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
+
+    data->game_code = menu_state;
     // return;
     // Terrain terrain = {};
 
@@ -33,54 +136,4 @@ static void load_game_reasources(OstenEngine& engine){
     // render_ids.capacity = 2;
 
     // add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
-}
-
-static void init_game(OstenEngine& engine){
-    vkDeviceWaitIdle(engine.render_pipeline.device.virtual_device);
-
-    create_health_system(10000, &engine.heap_stack);
-    create_melee_system(10000, &engine.heap_stack);
-
-    struct RenderAble* rendera = get_renderable(&engine.render_pipeline.model_render_data, 0, &engine.heap_stack);
-    struct RenderAble* render2a = get_renderable(&engine.render_pipeline.model_render_data, 1, &engine.heap_stack);
-    uint16_t unit_amount = 1;
-    valid_units = unit_amount;
-    for(int i = 0; i < unit_amount; i++){
-        ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine.heap_stack, 0);
-        army_units.emplace_back(unit1);
-    }
-    for(int i = 0; i < unit_amount; i++){
-        ArmyUnit unit1 = init_army_unit(render2a, {-50 + (float)i * 50 , 0 , 0}, 255, 10, &engine.heap_stack, 1);
-        army_units.emplace_back(unit1);
-    }
-
-    std::string test = std::to_string((2* unit_amount) * 255);
-    Debug::log(test);
-}
-
-static double test = 0;
-static int target_index = 0;
-
-static void update_game(double delta_time, OstenEngine& engine, Terrain terrain){
-    int index = 0;
-    for(int i = 0; i < valid_units; i++){
-        int key = GLFW_KEY_1 + i;
-        if(glfwGetKey(engine.main_window, key) == GLFW_PRESS){
-            target_index= i;
-            //std::string line = std::string("Index is ");
-            //line.push_back(target_index);
-            //Debug::log(line);
-        }
-    }
-    test+= delta_time;
-    for (ArmyUnit& unit : army_units) {
-        if(index == target_index){
-            unit.target_point = engine.target_point;
-        }
-        move_towards(unit, engine.target_point, delta_time, terrain);
-        index++;
-    }
-    calculate_attack(&engine.heap_stack);
-    run_attack_system();
-    run_health_system();
 }

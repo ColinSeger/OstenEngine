@@ -232,12 +232,12 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
 
     ImGui::Text("Loaded Textures");
 
-    // for (auto const& value : loaded_textures_index){
-    //     ImGui::PushID(value.second);
-    //     ImGui::Button(value.first.c_str());
-    //     ImGui::Spacing();
-    //     ImGui::PopID();
-    // }
+    for (int i = 0; i < texture_amount; i++){
+        ImGui::PushID(i);
+        ImGui::Button(texture_storage[i].name);
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
 
     if(ImGui::Button("Create RenderAble")){
         add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&selected_assets);
@@ -283,7 +283,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
 
     ImGui::Begin("Window", &is_open);
 
-    ImGui::Text("(%f)", ((float)fps));
+    ImGui::Text("Fps: (%f)", ((float)fps));
 
     ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
 

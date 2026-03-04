@@ -6,5 +6,5 @@ assets/debug_assets/Cube.bin
 assets/debug_assets/viking_room.png
 assets/debug_assets/debug_texture.jpg
 #Render_Instances //Corresponds to model_index/texture_index
-1/1/4000
-2/0/4000
+0/1/4000
+1/0/4000

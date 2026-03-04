@@ -42,7 +42,7 @@ struct OstenEngine
 
     bool open_window = true;
 
-    bool paused_update = true;
+    bool paused_update = false;
 
     uint32_t inspecting = 0;
 
@@ -125,6 +125,8 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     add_camera(add_transform());
     create_render_component_system(9000, &heap_stack);
     create_collider_system(10000, &heap_stack);
+    create_health_system(10000, &heap_stack);
+    create_melee_system(10000, &heap_stack);
 }
 
 OstenEngine::~OstenEngine(){
@@ -149,14 +151,6 @@ void OstenEngine::draw_frame(){
         start_time2 = platform_get_time_handle();
         frames = 0;
     }
-
-    UIData ui_data = {};
-    ui_data.inspecting = &inspecting;
-    ui_data.paused_state = &paused_update;
-    ui_data.render_pipe = &render_pipeline;
-    ui_data.target_point = &target_point;
-
-    begin_imgui_editor_poll(main_window, &ui_data, open_window, fps, &heap_stack);
 
     start_file_explorer(file_explorer, &render_pipeline);
 

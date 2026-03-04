@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdlib>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 #include "device/vulkan/device.h"
@@ -21,14 +22,14 @@ static inline unsigned long long create_terrain(int width, int depth, Terrain* t
     terrain->vertexes.amount = width * depth;
     terrain->indexes.amount  = (width - 1) * (depth - 1) * 6;
 
-    unsigned long long height_map = arena_alloc_memory(heap_stack, sizeof(float) * terrain->vertexes.amount);
-    unsigned long long vertex_values = arena_alloc_memory(heap_stack, sizeof(Vertex) * terrain->vertexes.amount);
-    unsigned long long index_values = arena_alloc_memory(heap_stack, sizeof(uint32_t) * terrain->indexes.amount);
-    mem_index = vertex_values;
+    //unsigned long long height_map = malloc(sizeof(float) * terrain->vertexes.amount);
+    //unsigned long long vertex_values = malloc(sizeof(Vertex) * terrain->vertexes.amount);
+    //unsigned long long index_values = arena_alloc_memory(heap_stack, sizeof(uint32_t) * terrain->indexes.amount);
+    //mem_index = vertex_values;
 
-    terrain->height_map = (float*)get_at_index(heap_stack, height_map); //(float*)malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
-    terrain->vertexes.values = (Vertex*)get_at_index(heap_stack, vertex_values);
-    terrain->indexes.values = (uint32_t*)get_at_index(heap_stack, index_values);
+    terrain->height_map = (float*)(float*)malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
+    terrain->vertexes.values = (Vertex*)malloc(sizeof(Vertex) * terrain->vertexes.amount);
+    terrain->indexes.values = (uint32_t*)malloc(sizeof(uint32_t) * terrain->indexes.amount);
 
     // Generate heights sine wave terrain
     for (int x = 0; x < depth; x++){
