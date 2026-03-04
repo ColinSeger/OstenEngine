@@ -28,7 +28,7 @@ static int target_index = 0;
 
 static void update_game(OstenEngine* engine, GameData* data){
     int index = 0;
-    for(int i = 0; i < valid_units; i++){
+    for(uint32_t i = 0; i < valid_units; i++){
         int key = GLFW_KEY_1 + i;
         if(glfwGetKey(engine->main_window, key) == GLFW_PRESS){
             target_index= i;
@@ -43,7 +43,7 @@ static void update_game(OstenEngine* engine, GameData* data){
     }
     calculate_attack(&engine->heap_stack);
     run_attack_system();
-    run_health_system();
+    run_health_system(&engine->render_pipeline, &engine->heap_stack);
 }
 
 static void init_game(OstenEngine* engine, GameData* data){
@@ -74,15 +74,13 @@ static void init_game(OstenEngine* engine, GameData* data){
 static void menu_state(OstenEngine* engine, GameData* data){
     ImGui::Begin("Windo2", &engine->open_window);
     if(ImGui::Button("Start")){
-        ComponentSystem* transforms = get_component_system(TRANSFORM);
+        //ComponentSystem* transforms = get_component_system(TRANSFORM);
 
         uint16_t transform_index = UINT16_MAX;
 
         struct Entity entity {};
 
         transform_index = add_transform();
-
-        TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
 
         RenderAble* render = get_renderable(&engine->render_pipeline.model_render_data, 2, &engine->heap_stack);
 
@@ -108,7 +106,7 @@ static void menu_state(OstenEngine* engine, GameData* data){
 
 static void load_game_reasources(OstenEngine* engine, GameData* data){
 
-    size_t free_index = create_terrain(1000, 1000, &data->terrain, &engine->heap_stack);
+    create_terrain(1000, 1000, &data->terrain, &engine->heap_stack);
 
     create_terrain_mesh(data->terrain, &engine->render_pipeline);
 

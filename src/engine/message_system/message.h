@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string.h>
 #include <vector>
 #include <stdint.h>
@@ -53,6 +54,10 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
 
     render_pipeline->model_render_data.renderable_amount++;
 }
+
+// static void remove_render(struct RenderPipeline* render_pipeline, uint16_t render_id, HeapStack* heap_stack){
+//     RenderAble* renderable = get_renderable(&render_pipeline->model_render_data, render_id, heap_stack);
+// }
 
 static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack* memory_arena){
     if(file_name[0] == '\0') return;

@@ -1,10 +1,10 @@
 #pragma once
 #include <assert.h>
+#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include "../transform.h"
 #include "../../additional_things/arena.h"
-#include "../../debugger/debugger.h"
 
 constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
@@ -112,11 +112,32 @@ static inline uint16_t get_component_size_by_type(uint16_t type){
 }
 
 static inline void* get_component_by_id(ComponentSystem* component_system, uint16_t id){
-    if(id > component_system->amount) return nullptr;
+    assert(id <= component_system->amount);
     uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
     uint16_t size = get_component_size_by_type(component_system->type);
     uint32_t size_offset = size * id;
     comp += size_offset;
+
+    // for(uint16_t i = 0; i < component_system->amount*size_offset; i+=size_offset){
+    // }
+
+    return comp;
+}
+
+
+static inline void* remove_component_by_id(ComponentSystem* component_system, uint16_t id){
+    assert(id <= component_system->amount);
+    uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    uint8_t* replace = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    uint16_t size = get_component_size_by_type(component_system->type);
+    uint32_t size_offset = size * id;
+    comp += size_offset;
+
+    replace += ((component_system->amount-1) * size);
+
+    //memcpy(comp, replace, size);
+
+    //component_system->amount--;
     return comp;
 }
 

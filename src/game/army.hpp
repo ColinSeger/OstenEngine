@@ -148,7 +148,7 @@ static inline void calculate_attack(struct HeapStack* heap_stack){
     MeleeComponent* melee_comps  = (struct MeleeComponent*)get_component_by_id(melee_system, 0);
     TransformComponent* transforms = (struct TransformComponent*)get_component_by_id(transform_system, 0);
 
-    Entity* entities = get_all_entities().data();
+    //Entity* entities = get_all_entities().data();
 
     for(int i = 0; i < collider_system->amount; i++){
         SimpleColliderComp collider = colliders[i];

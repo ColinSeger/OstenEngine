@@ -1,7 +1,4 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>

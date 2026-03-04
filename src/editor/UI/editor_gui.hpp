@@ -1,5 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -184,7 +185,6 @@ static inline void imgui_hierarchy_pop_up(){
 }
 
 static inline void imgui_hierarchy(bool& open, uint32_t& inspecting){
-    auto& entities = get_all_entities();
     ImGui::Begin("Hierarchy", &open);
         imgui_hierarchy_pop_up();
         ImGui::Text("Hierarchy!");
@@ -197,7 +197,7 @@ static inline void imgui_hierarchy(bool& open, uint32_t& inspecting){
         if(ImGui::TreeNode("Tree"))
         {
 
-            if(entities.size() > 0)
+            if(entities_amount > 0)
             {
                 for (auto& name : get_entity_names())
                 {
@@ -232,7 +232,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
 
     ImGui::Text("Loaded Textures");
 
-    for (int i = 0; i < texture_amount; i++){
+    for (uint32_t i = 0; i < texture_amount; i++){
         ImGui::PushID(i);
         ImGui::Button(texture_storage[i].name);
         ImGui::Spacing();
@@ -321,9 +321,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
 
     ImGui::End();
 
-    auto& entities = get_all_entities();
-
-    if(entities.empty()){
+    if(entities_amount <= 0){
         ImGui::End();
         return;
     }

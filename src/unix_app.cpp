@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <fcntl.h>
-#include "additional_things/arena.h"
 #include "osten_engine.cpp"
 #include "engine/game_load.h"
 #include "game/total_cheese.hpp"
@@ -89,31 +88,27 @@ OstenEngine start(uint32_t width, uint32_t height, const char* name){
 
 uint8_t run(OstenEngine& engine){
     load_game_data((char*)"src/game/game_data.txt");
+    GameData game_data = {};
 
-    procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
+    game_data.game_code = load_game_reasources;
 
-    load_game_reasources(engine);
-    Terrain terrain = {};
-
-    create_terrain(1000, 1000, &terrain);
-
-    create_terrain_mesh(terrain, &engine.render_pipeline);
-    struct InstanceData render_ids = {};
-
-    render_ids.model_index = loaded_models.size()-1;
-    render_ids.texture_index = 0;
-    render_ids.capacity = 2;
-
-    add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
-
-    init_game(engine);
     last_tick = platform_get_time_handle();
+
+    UIData ui_data = {};
+    ui_data.inspecting = &engine.inspecting;
+    ui_data.paused_state = &engine.paused_update;
+    ui_data.render_pipe = &engine.render_pipeline;
+    ui_data.target_point = &engine.target_point;
+
     while(!engine.should_close){
         procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
-        size_t free = calculate_colliders(&engine.heap_stack);
-        update_game(engine.delta_time, engine, terrain);
+        begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
+        if(!engine.paused_update){
+            calculate_colliders(&engine.heap_stack);
+
+            game_data.game_code(&engine, &game_data);
+        }
         engine.draw_frame();
-        free_arena(&engine.heap_stack, free);
     }
     return 0;
 }
