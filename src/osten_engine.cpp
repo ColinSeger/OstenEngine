@@ -152,18 +152,6 @@ void OstenEngine::draw_frame(){
         frames = 0;
     }
 
-    start_file_explorer(file_explorer, &render_pipeline);
-
-    end_file_explorer();
-    if(imgui_texture != VK_NULL_HANDLE){
-        ImGui::Begin("ShadowMap");
-        ImGui::Image(
-            (ImTextureID)imgui_texture,
-            ImVec2(256, 256)
-        );
-        ImGui::End();
-    }
-
     camera_movement(delta_time, 0, main_window);
 
     ComponentSystem* camera_sys = get_component_system(0);

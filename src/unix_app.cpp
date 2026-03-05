@@ -99,6 +99,10 @@ uint8_t run(OstenEngine& engine){
     ui_data.paused_state = &engine.paused_update;
     ui_data.render_pipe = &engine.render_pipeline;
     ui_data.target_point = &engine.target_point;
+    ui_data.file_explorer = &engine.file_explorer;
+    ui_data.target_index = &target_index;
+
+    game_data.paused_state = &engine.paused_update;
 
     while(!engine.should_close){
         procces_all_commands(&engine.render_pipeline, &engine.heap_stack);

@@ -11,13 +11,16 @@
 #include "../../engine/message_system/message.h"
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/entity_manager/entity_manager.cpp"
+#include "../file_explorer/file_explorer.hpp"
 #include "vulkan/vulkan_core.h"
 
 struct UIData{
+    int* target_index;
     RenderPipeline* render_pipe;
     uint32_t* inspecting;
     vec3_t* target_point;
     bool* paused_state;
+    FileExplorer* file_explorer;
 };
 
 static inline  VkDescriptorPool create_imgui_descriptor_pool(VkDevice virtual_device){
@@ -281,15 +284,16 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Window", &is_open);
-
     ImGui::Text("Fps: (%f)", ((float)fps));
-
-    ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
-
     if(ImGui::Button("Pause/Start")){
         *ui_data->paused_state = !*ui_data->paused_state;
     }
+    ImGui::Text("Selected Unit %i", *ui_data->target_index);
+    ImGui::DragFloat3("Selected Unit Target", &target_point.x, 0.1f);
+    if(!is_open) return;
+    ImGui::Begin("Window", &is_open);
+
+    ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
 
     ComponentSystem cameras = *get_component_system(CAMERA);
 
@@ -306,8 +310,6 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
         ImGui::PopID();
     }
 
-    ImGui::DragFloat3("Camera Position", &target_point.x, 0.1f);
-
     show_loaded_assets(ui_data->render_pipe, heap_stack);
 
     ImGui::Begin("Console");
@@ -320,6 +322,18 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
         ImGui::EndChild();
 
     ImGui::End();
+
+    start_file_explorer(*ui_data->file_explorer, ui_data->render_pipe);
+
+    end_file_explorer();
+    // if(imgui_texture != VK_NULL_HANDLE){
+    //     ImGui::Begin("ShadowMap");
+    //     ImGui::Image(
+    //         (ImTextureID)imgui_texture,
+    //         ImVec2(256, 256)
+    //     );
+    //     ImGui::End();
+    // }
 
     auto& entities = get_all_entities();
 

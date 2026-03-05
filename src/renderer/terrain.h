@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdlib>
+#include <stdlib.h>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 #include "device/vulkan/device.h"
@@ -12,7 +12,13 @@ struct Terrain{//Bad
     float* height_map;
     uint16_t height;
     uint16_t width;
+    float* pos_x;
+    float* pos_y;
 };
+
+static inline uint32_t index_terrain(Terrain* terrain, int x, int y){
+    return x * terrain->width + y;
+}
 
 static inline unsigned long long create_terrain(int width, int depth, Terrain* terrain, HeapStack* heap_stack){
     unsigned long long mem_index = heap_stack->index;
@@ -22,19 +28,19 @@ static inline unsigned long long create_terrain(int width, int depth, Terrain* t
     terrain->vertexes.amount = width * depth;
     terrain->indexes.amount  = (width - 1) * (depth - 1) * 6;
 
-    //unsigned long long height_map = malloc(sizeof(float) * terrain->vertexes.amount);
-    //unsigned long long vertex_values = malloc(sizeof(Vertex) * terrain->vertexes.amount);
-    //unsigned long long index_values = arena_alloc_memory(heap_stack, sizeof(uint32_t) * terrain->indexes.amount);
-    //mem_index = vertex_values;
+    unsigned long long height_map = arena_alloc_memory(heap_stack, sizeof(float) * terrain->vertexes.amount);
+    unsigned long long vertex_values = arena_alloc_memory(heap_stack, sizeof(Vertex) * terrain->vertexes.amount);
+    unsigned long long index_values = arena_alloc_memory(heap_stack, sizeof(uint32_t) * terrain->indexes.amount);
+    mem_index = vertex_values;
 
-    terrain->height_map = (float*)(float*)malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
-    terrain->vertexes.values = (Vertex*)malloc(sizeof(Vertex) * terrain->vertexes.amount);
-    terrain->indexes.values = (uint32_t*)malloc(sizeof(uint32_t) * terrain->indexes.amount);
+    terrain->height_map = (float*)get_at_index(heap_stack, height_map);//malloc(sizeof(float) * terrain->vertexes.amount);//Fix later
+    terrain->vertexes.values = (Vertex*)get_at_index(heap_stack, vertex_values);
+    terrain->indexes.values = (uint32_t*)get_at_index(heap_stack, index_values);
 
     // Generate heights sine wave terrain
     for (int x = 0; x < depth; x++){
         for (int y = 0; y < width; y++){
-            int i = x * width + y;
+            int i = index_terrain(terrain, x, y);
 
             float height = sinf(y * 0.2f) * cosf(x * 0.2f) * 2.0f;
 
@@ -97,8 +103,6 @@ static inline void create_terrain_mesh(Terrain terrain, RenderPipeline* render_p
 
     loaded_models.emplace_back(model);
     loaded_model_index["Terrain"] = loaded_models.size() -1;
-
- //   ModelLoader::serialize2(terrain.vertexes, terrain.indexes);
 }
 
 static inline float sample_terrain_height(Terrain terrain, int x, int y){
@@ -107,25 +111,33 @@ static inline float sample_terrain_height(Terrain terrain, int x, int y){
     return terrain.height_map[y * terrain.width + x] +1;
 }
 
-static inline float sample_terrain_height_interpolated(Terrain terrain, float x, float y){
-    if(x * y > terrain.width * terrain.height) return terrain.height_map[(terrain.width - 1) * (terrain.height - 1)];
-    if(x < 0 || y < 0) return terrain.height_map[0];
+static inline float sample_terrain_height_interpolated(Terrain* terrain, float x, float y){
 
-    int x_int = (int)x;
-    int y_int = (int)y;
+    // Convert world coordinates to terrain-local coordinates
+    float local_x = x - *terrain->pos_x;
+    float local_y = y - *terrain->pos_y;
+
+    if(local_x < 0 || local_y < 0)
+        return terrain->height_map[0];
+
+    if(local_x >= terrain->width - 1 || local_y >= terrain->height - 1)
+        return terrain->height_map[(terrain->height - 1) * terrain->width + (terrain->width - 1)];
+
+    int x_int = (int)local_x;
+    int y_int = (int)local_y;
 
     int x_int_corner = x_int + 1;
     int y_int_corner = y_int + 1;
 
     // Fractional part
-    float time_x_axis = x - x_int;
-    float time_y_axis = y - y_int;
+    float time_x_axis = local_x - x_int;
+    float time_y_axis = local_y - y_int;
 
     // Sample four corners
-    float corner_1 = terrain.height_map[y_int * terrain.width + x_int];
-    float corner_2 = terrain.height_map[y_int * terrain.width + x_int_corner];
-    float corner_3 = terrain.height_map[y_int_corner * terrain.width + x_int];
-    float corner_4 = terrain.height_map[y_int_corner * terrain.width + x_int_corner];
+    float corner_1 = terrain->height_map[index_terrain(terrain, x_int, y_int)];
+    float corner_2 = terrain->height_map[index_terrain(terrain, x_int_corner, y_int)];
+    float corner_3 = terrain->height_map[index_terrain(terrain, x_int, y_int_corner)];
+    float corner_4 = terrain->height_map[index_terrain(terrain, x_int_corner, y_int_corner)];
 
     float hx0 = interpolate_f(corner_1, corner_2, time_x_axis);
     float hx1 = interpolate_f(corner_3, corner_4, time_x_axis);

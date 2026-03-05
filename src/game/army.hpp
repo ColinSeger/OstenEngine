@@ -74,7 +74,7 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
     return unit;
 }
 
-static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, Terrain test_t){
+static inline void move_towards(ArmyUnit& unit, vec3_t target_position, double delta_time, Terrain* test_t){
     if(delta_time <= 0) return;
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     ComponentSystem* collider_system = get_component_system(COLLIDER);
@@ -207,4 +207,22 @@ static inline bool is_unit_alive(ArmyUnit* unit){
         }
     }
     return false;
+}
+
+
+static inline vec3_t get_position(ArmyUnit* unit){
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    ComponentSystem* collider_system = get_component_system(COLLIDER);
+
+    SimpleColliderComp* colliders = 0;
+
+    for(int i = 0; i < 255; i++){
+        colliders = (SimpleColliderComp*)get_component_by_id(collider_system, unit->unit_colliders[i]);
+        TransformComponent* transforms = (TransformComponent*)get_component_by_id(transform_system, colliders->transform_id);
+        if(transforms->transform.position.x < 1000){
+
+            return transforms->transform.position;
+        }
+    }
+    return {};
 }

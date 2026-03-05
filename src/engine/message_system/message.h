@@ -2,6 +2,7 @@
 #include <string.h>
 #include <vector>
 #include <stdint.h>
+#include <vulkan/vulkan_core.h>
 #include "../../renderer/render_pipeline.cpp"
 #include "../../renderer/model_loader/model_loader.cpp"
 #include "../entity_manager/entity_manager.cpp"
@@ -37,6 +38,8 @@ static void create_entity(const char* name){
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
+
+    vkDeviceWaitIdle(render_pipeline->device.virtual_device);
     //uint16_t transform_id = add_transform();
     // for(uint16_t transform = 0; transform < asset_index->capacity; transform++){
     //     //add_transform();

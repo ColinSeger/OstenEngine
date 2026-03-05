@@ -14,6 +14,7 @@
 //static struct InstanceData render_ids {};
 
 struct GameData{
+    bool* paused_state;
     Terrain terrain;
     void (*game_code)(OstenEngine*, GameData*) = nullptr;
 };
@@ -38,12 +39,13 @@ static void update_game(OstenEngine* engine, GameData* data){
         if(index == target_index){
             unit.target_point = engine->target_point;
         }
-        move_towards(unit, engine->target_point, engine->delta_time, data->terrain);
+        move_towards(unit, engine->target_point, engine->delta_time, &data->terrain);
         index++;
     }
     calculate_attack(&engine->heap_stack);
     run_attack_system();
     run_health_system();
+
     uint16_t friendly_units = 0;
     for(uint32_t i = 0; i < valid_units; i++){
         if(is_unit_alive(&army_units[i])){
@@ -51,9 +53,12 @@ static void update_game(OstenEngine* engine, GameData* data){
         }
     }
     uint16_t enemy_units = 0;
-    for(uint32_t i = friendly_units; i < army_units.size(); i++){
+    for(uint32_t i = valid_units; i < army_units.size(); i++){
         if(is_unit_alive(&army_units[i])){
             enemy_units++;
+            if(friendly_units > 0){
+                army_units[i].target_point = get_position(&army_units[friendly_units-1]);
+            }
         }
     }
     char test[255];
@@ -78,15 +83,15 @@ static void init_game(OstenEngine* engine, GameData* data){
 
     struct RenderAble* rendera = get_renderable(&engine->render_pipeline.model_render_data, 0, &engine->heap_stack);
     struct RenderAble* render2a = get_renderable(&engine->render_pipeline.model_render_data, 1, &engine->heap_stack);
-    uint16_t enemy_units = 10;
-    uint16_t friendly_units = 10;
+    uint16_t enemy_units = 2;
+    uint16_t friendly_units = 2;
     valid_units = friendly_units;
     for(int i = 0; i < friendly_units; i++){
-        ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 0);
+        ArmyUnit unit1 = init_army_unit(rendera, {250 , 50 + (float)i * 50 , 0}, 255, 10, &engine->heap_stack, 0);
         army_units.emplace_back(unit1);
     }
     for(int i = 0; i < enemy_units; i++){
-        ArmyUnit unit1 = init_army_unit(render2a, {-50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 1);
+        ArmyUnit unit1 = init_army_unit(render2a, {-250 , -50 + (float)i * 50 , 0}, 255, 10, &engine->heap_stack, 1);
         army_units.emplace_back(unit1);
     }
 
@@ -94,13 +99,13 @@ static void init_game(OstenEngine* engine, GameData* data){
     Debug::log(test);
 
     //tr->transform.rotation = {-1.6, -1.6, 0};
-
+    engine->open_window = false;
     data->game_code = update_game;
 }
 
 
 static void menu_state(OstenEngine* engine, GameData* data){
-    ImGui::Begin("Windo2", &engine->open_window);
+    ImGui::Begin("Game UI", &engine->open_window);
     if(ImGui::Button("Start")){
 
         uint16_t transform_index = UINT16_MAX;
@@ -112,6 +117,15 @@ static void menu_state(OstenEngine* engine, GameData* data){
         RenderAble* render = get_renderable(&engine->render_pipeline.model_render_data, 2, &engine->heap_stack);
 
         ((uint16_t*)get_at_index(&engine->heap_stack, render->transform_index))[render->instance_amount] = transform_index;
+
+        ComponentSystem* transfomr = get_component_system(TRANSFORM);
+
+        TransformComponent* tr = (TransformComponent*)get_component_by_id(transfomr, transform_index);
+
+        tr->transform.position = {-((float)data->terrain.width/2), -((float)data->terrain.height/2), 0};
+
+        data->terrain.pos_x = &tr->transform.position.x;
+         data->terrain.pos_y = &tr->transform.position.y;
 
         struct TempID transform_comp{
             (uint16_t)(transform_index),
