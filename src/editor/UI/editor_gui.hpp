@@ -232,7 +232,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
 
     ImGui::Text("Loaded Textures");
 
-    for (int i = 0; i < texture_amount; i++){
+    for (uint32_t i = 0; i < texture_amount; i++){
         ImGui::PushID(i);
         ImGui::Button(texture_storage[i].name);
         ImGui::Spacing();

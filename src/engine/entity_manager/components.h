@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "../transform.h"
 #include "../../additional_things/arena.h"
-#include "../../debugger/debugger.h"
 
 constexpr uint8_t CAMERA = 0;
 constexpr uint8_t TRANSFORM = 1;
@@ -119,6 +118,23 @@ static inline void* get_component_by_id(ComponentSystem* component_system, uint1
     comp += size_offset;
     return comp;
 }
+
+static inline void* remove_component_by_id(ComponentSystem* component_system, uint16_t id){
+    assert(id <= component_system->amount);
+    uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    uint8_t* replace = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    uint16_t size = get_component_size_by_type(component_system->type);
+    uint32_t size_offset = size * id;
+    comp += size_offset;
+
+    replace += ((component_system->amount-1) * size);
+
+    //memcpy(comp, replace, size);
+
+    component_system->amount--;
+    return comp;
+}
+
 
 static constexpr ComponentSystem* get_component_system(uint8_t system_id){
     switch (system_id){
@@ -283,45 +299,44 @@ static inline uint16_t add_melee_comp(uint16_t entity){
     return component_sys->amount-1;
 }
 
-static inline size_t calculate_colliders(HeapStack* heap_stack){
-    size_t free_index = heap_stack->index;
+static inline void calculate_colliders(){
     ComponentSystem* collider_system = get_component_system(COLLIDER);
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    SimpleColliderComp* colliders = (SimpleColliderComp*)get_at_index(heap_stack, collider_system->components);
-    TransformComponent* transforms = (TransformComponent*)get_at_index(heap_stack, transform_system->components);
+    SimpleColliderComp* colliders = (SimpleColliderComp*)get_at_index(collider_system->memory_arena, collider_system->components);
+    TransformComponent* transforms = (TransformComponent*)get_at_index(transform_system->memory_arena, transform_system->components);
+    constexpr uint32_t collider_capacity = sizeof(colliders[0].nearby_colliders) / sizeof(colliders[0].nearby_colliders[0]);
 
     for(int x = 0; x < collider_system->amount; x++){
-        colliders[x].collision_amount = 0;
-        //size_t index = arena_alloc_memory(heap_stack, sizeof(uint16_t));
-        //colliders[x].nearby_colliders = (uint16_t*)get_at_index(heap_stack, index);
-        Transform self = transforms[colliders[x].transform_id].transform;
+        SimpleColliderComp& my_collider = colliders[x];
+        my_collider.collision_amount = 0;
+        Transform self = transforms[my_collider.transform_id].transform;
 
         for(int y = 0; y < collider_system->amount; y++){
             uint16_t other_transform_id = colliders[y].transform_id;
             Transform other = transforms[other_transform_id].transform;
-            float length = v3_length(v3_sub(self.position, other.position));
+            vec3_t diff = v3_sub(self.position, other.position);
+            float dist_sq = v3_dot(diff, diff);
 
-            if(length < colliders[x].collision_range && length > 0.1f){
-                constexpr uint32_t collider_capacity = sizeof(colliders[x].nearby_colliders) / sizeof(colliders[x].nearby_colliders[0]);
+            float range = my_collider.collision_range;
+            if (dist_sq < range * range && dist_sq > 0.1f){
+            //if(length < colliders[x].collision_range && length > 0.1f){
 
-                if(colliders[x].collision_amount >= collider_capacity){
+                if(my_collider.collision_amount >= collider_capacity){
                     //Debug::log("You had to many collisions");
                     continue;
                     assert(false && "You had to many collisions");
-                    break;
+                    //break;
                 }
                 if(other_transform_id == 0){
 
                     assert(false && "You somehow tried to collide with the camera?");
-                    break;
+                    //break;
                 }
-                colliders[x].nearby_colliders[colliders[x].collision_amount] = other_transform_id;
-                colliders[x].collision_amount++;
+                my_collider.nearby_colliders[my_collider.collision_amount] = other_transform_id;
+                my_collider.collision_amount++;
             }
         }
     }
-
-    return free_index;
 }
 
 

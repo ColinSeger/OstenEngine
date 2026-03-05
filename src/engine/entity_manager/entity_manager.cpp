@@ -84,10 +84,8 @@ static inline void remove_entity(Entity entity)
     //std::find(entities.begin(), entities.end(), entity);
 }
 
-static inline void remove_entity(uint32_t entity)
-{
-    for (size_t i = 0; i < entities.size(); i++)
-    {
+static inline void remove_entity(uint32_t entity){
+    for (size_t i = 0; i < entities.size(); i++){
         if(entities[i].id == entity)
         {
             entities.erase(entities.begin() + i);
@@ -96,13 +94,11 @@ static inline void remove_entity(uint32_t entity)
     }
 }
 
-static inline uint32_t get_entity_amount()
-{
+static inline uint32_t get_entity_amount(){
     return entities.size();
 }
 
-static inline void rename_entity(std::string current_name, std::string new_name)
-{
+static inline void rename_entity(std::string current_name, std::string new_name){
     auto contains = entity_names.find(current_name);
     if(contains != get_entity_names().end()){
         uint32_t id = entity_names[current_name];
@@ -111,8 +107,7 @@ static inline void rename_entity(std::string current_name, std::string new_name)
     }
 }
 
-static inline std::vector<Entity>& get_all_entities()
-{
+static inline std::vector<Entity>& get_all_entities(){
     return entities;
 }
 
@@ -134,15 +129,18 @@ static inline void run_health_system(){
     Entity* entities = get_all_entities().data();
 
     for (int i = 0; i < health_system->amount; i++) {
-        health_comps[i].health -= health_comps[i].damage_taken;
-        health_comps[i].damage_taken = 0;
-        if(health_comps[i].health <= 0){
+        if(health_comps[i].health > 0){
+            health_comps[i].health -= health_comps[i].damage_taken;
+            health_comps[i].damage_taken = 0;
+        }
+        else{
             uint16_t transform_index = 0;
 
             if(has_component(entities[health_comps[i].entity_id], TRANSFORM, &transform_index)){
-                transforms[transform_index].transform.position = {100000, 10000, 10};
-                transforms[transform_index].transform.scale = {0.2, 0.2, 0.2};
-                health_comps[i].health = 10;
+                if(transforms[transform_index].transform.position.x < 1000){
+                    transforms[transform_index].transform.position = {100000, 100000, 100};
+                    transforms[transform_index].transform.scale = {0.2, 0.2, 0.2};
+                }
             }
         }
     }

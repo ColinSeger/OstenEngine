@@ -1,8 +1,8 @@
 #pragma once
-#include <cstdint>
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include <vector>
+#include <stdio.h>
 #include <stdint.h>
 //#include "../engine/message_system/message.h"
 #include "../../external/math_3d.h"
@@ -28,7 +28,7 @@ static int target_index = 0;
 
 static void update_game(OstenEngine* engine, GameData* data){
     int index = 0;
-    for(int i = 0; i < valid_units; i++){
+    for(uint32_t i = 0; i < valid_units; i++){
         int key = GLFW_KEY_1 + i;
         if(glfwGetKey(engine->main_window, key) == GLFW_PRESS){
             target_index= i;
@@ -44,6 +44,33 @@ static void update_game(OstenEngine* engine, GameData* data){
     calculate_attack(&engine->heap_stack);
     run_attack_system();
     run_health_system();
+    uint16_t friendly_units = 0;
+    for(uint32_t i = 0; i < valid_units; i++){
+        if(is_unit_alive(&army_units[i])){
+            friendly_units++;
+        }
+    }
+    uint16_t enemy_units = 0;
+    for(uint32_t i = friendly_units; i < army_units.size(); i++){
+        if(is_unit_alive(&army_units[i])){
+            enemy_units++;
+        }
+    }
+    char test[255];
+    sprintf(test, "Friendly Units Alive %i", friendly_units);
+    ImGui::Text("%s", test);
+
+    char enemy[255];
+    sprintf(enemy, "Enemy Units Alive %i", enemy_units);
+    ImGui::Text("%s", enemy);
+
+    if(friendly_units <= 0){
+        ImGui::Text("You Lost");
+    }
+    if(enemy_units <= 0){
+        ImGui::Text("You Win");
+    }
+
 }
 
 static void init_game(OstenEngine* engine, GameData* data){
@@ -51,18 +78,19 @@ static void init_game(OstenEngine* engine, GameData* data){
 
     struct RenderAble* rendera = get_renderable(&engine->render_pipeline.model_render_data, 0, &engine->heap_stack);
     struct RenderAble* render2a = get_renderable(&engine->render_pipeline.model_render_data, 1, &engine->heap_stack);
-    uint16_t unit_amount = 1;
-    valid_units = unit_amount;
-    for(int i = 0; i < unit_amount; i++){
+    uint16_t enemy_units = 10;
+    uint16_t friendly_units = 10;
+    valid_units = friendly_units;
+    for(int i = 0; i < friendly_units; i++){
         ArmyUnit unit1 = init_army_unit(rendera, {50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 0);
         army_units.emplace_back(unit1);
     }
-    for(int i = 0; i < unit_amount; i++){
+    for(int i = 0; i < enemy_units; i++){
         ArmyUnit unit1 = init_army_unit(render2a, {-50 + (float)i * 50 , 0 , 0}, 255, 10, &engine->heap_stack, 1);
         army_units.emplace_back(unit1);
     }
 
-    std::string test = std::to_string((2* unit_amount) * 255);
+    std::string test = std::to_string((friendly_units + enemy_units) * 255);
     Debug::log(test);
 
     //tr->transform.rotation = {-1.6, -1.6, 0};
@@ -74,15 +102,12 @@ static void init_game(OstenEngine* engine, GameData* data){
 static void menu_state(OstenEngine* engine, GameData* data){
     ImGui::Begin("Windo2", &engine->open_window);
     if(ImGui::Button("Start")){
-        ComponentSystem* transforms = get_component_system(TRANSFORM);
 
         uint16_t transform_index = UINT16_MAX;
 
         struct Entity entity {};
 
         transform_index = add_transform();
-
-        TransformComponent* tr = (TransformComponent*)get_component_by_id(transforms, transform_index);
 
         RenderAble* render = get_renderable(&engine->render_pipeline.model_render_data, 2, &engine->heap_stack);
 
@@ -106,9 +131,9 @@ static void menu_state(OstenEngine* engine, GameData* data){
     ImGui::End();
 }
 
-static void load_game_reasources(OstenEngine* engine, GameData* data){
+static void load_game_resources(OstenEngine* engine, GameData* data){
 
-    size_t free_index = create_terrain(1000, 1000, &data->terrain, &engine->heap_stack);
+    create_terrain(1000, 1000, &data->terrain, &engine->heap_stack);
 
     create_terrain_mesh(data->terrain, &engine->render_pipeline);
 
@@ -123,17 +148,4 @@ static void load_game_reasources(OstenEngine* engine, GameData* data){
     add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 
     data->game_code = menu_state;
-    // return;
-    // Terrain terrain = {};
-
-    // create_terrain(10, 10, &terrain);
-
-    // create_terrain_mesh(terrain, &engine.render_pipeline);
-    // struct InstanceData render_ids = {};
-
-    // render_ids.model_index = loaded_models.size()-1;
-    // render_ids.texture_index = 0;
-    // render_ids.capacity = 2;
-
-    // add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
 }

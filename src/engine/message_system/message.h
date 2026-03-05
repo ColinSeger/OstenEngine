@@ -66,7 +66,7 @@ static void load_asset(const char* file_name, struct RenderPipeline& render_pipe
         ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ, memory_arena);
     }else if(extention[0] == 'b' || extention[0] == 'B'){
         ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
-    }else if(extention[0] == 'p' || extention[0] == 'P'){
+    }else if(extention[0] == 'p' || extention[0] == 'P' || extention[0] == 'j'){
         uint32_t texture_index = Texture::load_texture(&render_pipeline.device, (char*)file_name, render_pipeline.command_pool).index;
         create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, texture_index);
     }
