@@ -93,7 +93,7 @@ static inline void init_imgui(GLFWwindow* main_window, struct RenderPipeline* re
 static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pipe, HeapStack* heap_stack){
     switch (type)
     {
-    case 0:{
+    case CAMERA:{
             ImGui::Text("Camera");
             ComponentSystem* transform_system = get_component_system(TRANSFORM);
             Transform camera_transform = reinterpret_cast<TransformComponent*>(get_component_by_id(transform_system, reinterpret_cast<CameraComponent*>(cameras.components)[0].transform_id))->transform;
@@ -102,14 +102,16 @@ static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pip
             ImGui::DragFloat("Fov", &static_cast<CameraComponent*>(get_component_by_id(&cameras, id))->field_of_view, 0.1f);
         }
         break;
-    case 1:
+    case TRANSFORM:
         ImGui::Text("Transform");
         ImGui::DragFloat3("Position", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.position.x, 0.1f);
         ImGui::DragFloat3("Rotation", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.rotation.x, 0.1f);
         ImGui::DragFloat3("Scale", &static_cast<TransformComponent*>(get_component_by_id(&transforms, id))->transform.scale.x, 0.1f);
         break;
-    case 2:{
+    case RENDER:{
         ImGui::Text("Render Component");
+        ImGui::NewLine();
+/*
         ComponentSystem* transform_system = get_component_system(TRANSFORM);
         ComponentSystem* render_system = get_component_system(RENDER);
         RenderComponent* component = static_cast<RenderComponent*>(get_component_by_id(render_system, id));
@@ -118,7 +120,7 @@ static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pip
         ImGui::DragFloat3("Render_Position", &render_component_transform.position.x, 0.1f);
         ImGui::DragFloat3("Render Rotation", &render_component_transform.rotation.x, 0.1f);
         ImGui::DragFloat3("Render Scale", &render_component_transform.scale.x, 0.1f);
-
+ *
         if(ImGui::BeginCombo("Instance", "")){
             for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
 
@@ -145,17 +147,33 @@ static inline void inspect(uint8_t type, uint16_t id, RenderPipeline* render_pip
             }
             ImGui::EndCombo();
         }
+ */
     }
     break;
-    case 3:{
+    case COLLIDER:{
             ImGui::Text("Collider");
             ComponentSystem* collider_system = get_component_system(COLLIDER);
             SimpleColliderComp* collider = ((SimpleColliderComp*)get_component_by_id(collider_system, id));
 
-            ImGui::Text("Collider %i", collider->collision_amount);
-            ImGui::Text("Collider %f", collider->collision_range);
-
+            ImGui::Text("Collider Amount %i", collider->collision_amount);
+            ImGui::DragFloat("Collider Range %f", &collider->collision_range);
+            ImGui::NewLine();
         }
+    break;
+    case HEALTH:{
+        ImGui::Text("Health");
+        ComponentSystem* collider_system = get_component_system(HEALTH);
+        HealthComponent* collider = ((HealthComponent*)get_component_by_id(collider_system, id));
+
+        ImGui::Text("Collider Amount %i", collider->health);
+        ImGui::DragInt("Collider Range %i", (int*)&collider->team_id);
+
+        ImGui::NewLine();
+    }
+    break;
+    case MELEE:{
+        ImGui::Text("Melee");
+    }
     break;
     default:
         break;
@@ -253,16 +271,16 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
         }
         ImGui::EndCombo();
     }
-    // if(ImGui::BeginCombo("Textures", "")){
-    //     for (auto const& value : loaded_textures_index)
-    //     {
-    //         if (ImGui::Button(value.first.c_str()))
-    //         {
-    //             selected_assets.texture_index = value.second;
-    //         }
-    //     }
-    //     ImGui::EndCombo();
-    // }
+    if(ImGui::BeginCombo("Textures", "")){
+        for (int i = 0; i < texture_amount; i++)
+        {
+            if (ImGui::Button(texture_storage[i].name))
+            {
+                selected_assets.texture_index = texture_storage[i].index;
+            }
+        }
+        ImGui::EndCombo();
+    }
     ImGui::InputInt("Capacity", &selected_assets.capacity);
     ImGui::Text("Existing RenderAble");
     for(uint32_t i = 0; i < render_pipe->model_render_data.renderable_amount; i++){
@@ -271,7 +289,11 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
         ImGui::Text("Texture %i", renderable->texture_index);
         ImGui::Text("Model %i", renderable->model_index);
     }
+
+
 }
+static char buffer[255] = {};
+static int last_id = 99999;
 
 static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIData* ui_data, bool& is_open, float fps, HeapStack* heap_stack){
     vec3_t& target_point = *ui_data->target_point;
@@ -290,7 +312,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
     }
     ImGui::Text("Selected Unit %i", *ui_data->target_index);
     ImGui::DragFloat3("Selected Unit Target", &target_point.x, 0.1f);
-    if(!is_open) return;
+    //if(!is_open) return;
     ImGui::Begin("Window", &is_open);
 
     ImGui::PlotLines("Memory Usage", memory_stats, graph_size, 0, nullptr, 0, highest_value  * 1.5f, {100, 100});
@@ -347,12 +369,16 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
     ImGui::Begin("Inspector");
         for (auto& entity : get_entity_names()){
             if(entity.second == entities[*ui_data->inspecting].id){
-                char buffer[64] = {};
-                for (size_t i = 0; i < entity.first.length(); i++) {
-                    buffer[i] = entity.first[i];
+                if(last_id != *ui_data->inspecting){
+                    last_id = *ui_data->inspecting;
+                    for (size_t i = 0; i < entity.first.length(); i++) {
+                        buffer[i] = entity.first[i];
+                    }
                 }
-                ImGui::InputText("Name" , buffer , 64, 0);
-                //EntityManager::rename_entity(entity.first, std::string(buffer));
+                if(ImGui::InputText("Name" , buffer , 255, ImGuiInputTextFlags_EnterReturnsTrue)){
+                    rename_entity(entity.first, std::string(buffer));
+                    break;
+                }
             }
         }
 
@@ -388,6 +414,34 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
 
                 //entities[inspecting].components.emplace_back(render);
             }
+            if(ImGui::Button("Add Collider")){
+                uint16_t index = 0;
+                if(has_component(entities[*ui_data->inspecting], TRANSFORM, &index)){
+                    TempID render{
+                        (uint16_t)(add_collider(index, *ui_data->inspecting)),
+                        (uint16_t)(COLLIDER)
+                    };
+
+                    add_component(entities[*ui_data->inspecting], render);
+                }
+            }
+            if(ImGui::Button("Add Health")){
+                TempID render{
+                    (uint16_t)(add_health_comp(0, *ui_data->inspecting)),
+                    (uint16_t)(HEALTH)
+                };
+
+                add_component(entities[*ui_data->inspecting], render);
+            }
+            if(ImGui::Button("Add Melee")){
+                TempID render{
+                    (uint16_t)(add_melee_comp(*ui_data->inspecting)),
+                    (uint16_t)(MELEE)
+                };
+
+                add_component(entities[*ui_data->inspecting], render);
+            }
+
             ImGui::EndPopup();
         }
         if(ImGui::Button("Add Component"))
