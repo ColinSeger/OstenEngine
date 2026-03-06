@@ -5,12 +5,19 @@ the development within a resonable time.
 
 To build this project you need to be able to run the vkcube command, info on that can be found at https://vulkan.lunarg.com/ 
 
+
+## Build
+
 ### Windows
 
--Requirements
-- Cmake
-- Cmake compatible C++ compiler
-- Vulkan
+#### Prerequisites
+
+You will need Cmake to be able to build the build files You can find out more on that here https://cmake.org/.
+
+Vulkan is required for this project to run, you can check if you have Vulkan dev tools installed by running the console command 
+"vkcube" and if a cube saying lunarg shows up you have Vulkan tools already, otherwhise go to https://vulkan.lunarg.com/ and install the Vulkan tools.
+
+The compiler I used for testing on Windows was their MSVC compiler but I belive it should be able to compile using other compilers that can be used with Cmake.
 
 On windows it should just be to run cmake --build command in the Engine folder if that does not work you might not have a compiler installed,
 it could also be that you need to install GLFW on you system.
