@@ -1,11 +1,13 @@
 #version 450
+#define MAX_LIGHTS 8
+
 layout(set = 2, binding = 0) uniform sampler2D textures[20];
 
-layout(set = 2, binding = 1) uniform sampler2D shadow_map;
+layout(set = 2, binding = 1) uniform sampler2D shadow_maps[MAX_LIGHTS];
 
 layout(set = 2, binding = 2) uniform LightParams {
-    vec3 light_dir;
-} light;
+    vec3 light_dirs[MAX_LIGHTS];
+} lights;
 
 layout(location = 0) in vec3 frag_normal;
 layout(location = 1) in vec2 frag_tex_cord;
@@ -13,8 +15,7 @@ layout(location = 2) in vec4 frag_pos_light_space;
 
 layout(location = 0) out vec4 out_color;
 
-layout( push_constant ) uniform constants
-{
+layout( push_constant ) uniform constants{
 	uint texture_index;
 } push_constants;
 
@@ -25,7 +26,7 @@ const float SHININESS = 32.0;
 float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 {
     // Convert light space position to NDC
-    vec3 light_space_ndc = frag_pos_light_space.xyz / frag_pos_light_space.w;
+    vec3 light_space_ndc = light_space_pos.xyz / light_space_pos.w;
 
     if (light_space_ndc.x > 1.0 ||
             light_space_ndc.y > 1.0 ||
@@ -45,14 +46,14 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 
 void main()
 {
-    vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
-    vec3 normal = normalize(frag_normal);
+    vec3 total_lighting = vec3(0.0);
 
-    float dont_know_name = max(dot(normal, light.light_dir), 0.0);
+    for (int i = 0; i < MAX_LIGHTS; i++)
+    {
+        float NdotL = max(dot(frag_normal, normalize(lights.light_dirs[i])), 0.0);
+        float shadow = compute_shadow_factor(frag_pos_light_space, shadow_maps[i]);
+        total_lighting += (AMBIENT + shadow) * NdotL * texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
+    }
 
-    float shadow = compute_shadow_factor(frag_pos_light_space, shadow_map);
-
-    vec3 lighting = (AMBIENT + (shadow)) * dont_know_name * albedo;
-
-    out_color = vec4(lighting, 1);
+    out_color = vec4(total_lighting, 1.0);
 }

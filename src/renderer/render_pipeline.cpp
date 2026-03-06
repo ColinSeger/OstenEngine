@@ -499,15 +499,22 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.shadow_pass);
     create_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, &texture);
 
-    VkPushConstantRange push_constant;
-	push_constant.offset = 0;
-	push_constant.size = sizeof(uint32_t);
-	push_constant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkPushConstantRange vertex_constant;
+	vertex_constant.offset = 0;
+	vertex_constant.size = sizeof(uint32_t);
+	vertex_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkPushConstantRange fragment_constant;
+	fragment_constant.offset = 0;
+	fragment_constant.size = sizeof(uint32_t);
+	fragment_constant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkPushConstantRange push_constants[] = { fragment_constant };
 
     pipeline_layout_info.setLayoutCount = forward_layout_amount;
     pipeline_layout_info.pSetLayouts = forward_layouts;
-    pipeline_layout_info.pPushConstantRanges = &push_constant;
-    pipeline_layout_info.pushConstantRangeCount = 1;
+    pipeline_layout_info.pPushConstantRanges = push_constants;
+    pipeline_layout_info.pushConstantRangeCount = sizeof(push_constants) / sizeof(push_constants[0]);
     if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.pipeline_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
@@ -535,6 +542,8 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
         Model model = loaded_models[render_data->model_index];
 
         if(model.index_amount <= 0) return;
+        uint32_t test = 1;
+        //vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &test);
 
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &render_data->texture_index);
 
@@ -611,7 +620,7 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
 int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source)
 {
     static uint8_t current_frame = 0;//TODO Make better
-    static uint32_t image_index;
+    static uint32_t image_index = 0;
 
     update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 250.f);
     update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);

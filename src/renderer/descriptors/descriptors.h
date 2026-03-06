@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <stddef.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
@@ -8,6 +9,7 @@
 #include "../texture/vulkan/texture.h"
 
 constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
+constexpr uint8_t MAX_LIGHTS = 8;
 
 struct RenderDescriptors{
     uint32_t object_amount;
@@ -167,7 +169,7 @@ static VkResult create_fragment_layout(VkDevice virtual_device, VkDescriptorSetL
 
     VkDescriptorSetLayoutBinding shadow_sampler_layout_binding{};
     shadow_sampler_layout_binding.binding = 1;
-    shadow_sampler_layout_binding.descriptorCount = 1;
+    shadow_sampler_layout_binding.descriptorCount = MAX_LIGHTS;
     shadow_sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     shadow_sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -225,10 +227,10 @@ static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light
 
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo camera_info{};
-        camera_info.offset = 0;
-        camera_info.range = sizeof(ViewMatrix);
-        camera_info.buffer = light.uniform_buffers[i];
+        VkDescriptorBufferInfo light_info{};
+        light_info.offset = 0;
+        light_info.range = sizeof(ViewMatrix);
+        light_info.buffer = light.uniform_buffers[i];
 
         constexpr uint32_t descriptor_size = 1;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
@@ -239,7 +241,7 @@ static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &camera_info;
+        descriptor_writes[0].pBufferInfo = &light_info;
 
         vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
@@ -268,6 +270,12 @@ static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descri
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
     image_info.sampler = sampler;
+
+    VkDescriptorImageInfo shadow_maps[MAX_LIGHTS] = {};
+
+    for(int i = 0; i < MAX_LIGHTS; i++){
+        shadow_maps[i] = image_info;
+    }
 
     for(uint32_t i = 0; i < texture_capacity; i++){
         VkDescriptorImageInfo texture_info{
@@ -301,8 +309,8 @@ static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descri
         descriptor_writes[1].dstBinding = 1;
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pImageInfo = &image_info;
+        descriptor_writes[1].descriptorCount = MAX_LIGHTS;
+        descriptor_writes[1].pImageInfo = shadow_maps;
 
         descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[2].dstSet = descriptor->descriptor_sets[i];
@@ -455,7 +463,7 @@ static inline VkResult create_model_set(VkDevice virtual_device, VkDescriptorPoo
     return VK_SUCCESS;
 }
 
-static inline  void create_view_uniform_buffer(ViewDescriptor* render_descriptor, Device* device) {
+static inline void create_view_uniform_buffer(ViewDescriptor* render_descriptor, Device* device) {
     VkDeviceSize bufferSize = sizeof(ViewMatrix);
 
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
