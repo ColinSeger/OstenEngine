@@ -1,8 +1,7 @@
 #version 460
 
 layout(set = 0, binding = 0) uniform CameraBuffer {
-    mat4 view;
-    mat4 proj;
+    mat4 view_projection;
 } camera_buffer;
 
 layout(set = 1, binding = 0) readonly buffer ModelBuffer {
@@ -11,7 +10,6 @@ layout(set = 1, binding = 0) readonly buffer ModelBuffer {
 
 layout(set = 0, binding = 1) uniform LightBuffer {
     mat4 light_view;
-    mat4 proj;
 } light_buffer;
 
 layout(location = 0) in vec3 in_position;
@@ -26,10 +24,10 @@ void main() {
     mat4 model = model_buffer.model_matrix[gl_InstanceIndex];
     vec4 world_pos = model * vec4(in_position, 1.0);
 
-    gl_Position = camera_buffer.proj * camera_buffer.view * world_pos;
+    gl_Position = camera_buffer.view_projection * world_pos;
 
     frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
 
-    frag_pos_light_space = light_buffer.proj * light_buffer.light_view * world_pos;
+    frag_pos_light_space = light_buffer.light_view * world_pos;
 }

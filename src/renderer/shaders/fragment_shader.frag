@@ -19,6 +19,8 @@ layout( push_constant ) uniform constants
 } push_constants;
 
 const float AMBIENT = 0.08;
+const float SPECULAR_STRENGTH = 0.5;
+const float SHININESS = 32.0;
 
 float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 {
@@ -44,7 +46,7 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
 void main()
 {
     vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
-    vec3 normal = normalize(frag_normal); //Do I even need to do this?
+    vec3 normal = normalize(frag_normal);
 
     float dont_know_name = max(dot(normal, light.light_dir), 0.0);
 
