@@ -209,7 +209,8 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, graphics_pipeline);
 
     if(result != VK_SUCCESS){
-        throw "Failed to create pipeline";
+        return result;
+        //throw "Failed to create pipeline";
     }
 
     vkDestroyShaderModule(virtual_device, fragment_state_info.module, nullptr);
@@ -308,7 +309,7 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, ShadowPass* shadow_pa
     return VK_SUCCESS;
 }
 
-static void restart_swap_chain(RenderPipeline* render_pipeline, VkExtent2D screen_size, HeapStack* memory_arena)
+static VkResult restart_swap_chain(RenderPipeline* render_pipeline, VkExtent2D screen_size, HeapStack* memory_arena)
 {
     vkDeviceWaitIdle(render_pipeline->device.virtual_device);
 
@@ -327,7 +328,8 @@ static void restart_swap_chain(RenderPipeline* render_pipeline, VkExtent2D scree
     }
     VkResult command_pool = CommandBuffer::create_command_pool(&render_pipeline->device, render_pipeline->my_surface, memory_arena, &render_pipeline->command_pool);
     if(command_pool != VK_SUCCESS){
-        throw "Failed to create commandpool";
+        return command_pool;
+        //throw "Failed to create commandpool";
     }
 
     render_pipeline->swap_chain_images.depth_image_view = create_depth_resources
@@ -341,16 +343,19 @@ static void restart_swap_chain(RenderPipeline* render_pipeline, VkExtent2D scree
     VkResult frambuffer_status = create_frame_buffers(&render_pipeline->swap_chain_images, render_pipeline->device.virtual_device, render_pipeline->render_pass, render_pipeline->swap_chain_images.depth_image_view, render_pipeline->swap_chain.screen_extent, memory_arena);
 
     if(frambuffer_status != VK_SUCCESS){
-        throw "FrameBuffers could not be created";
+        return frambuffer_status;
+        //throw "FrameBuffers could not be created";
     }
 
     VkResult command_buffers = CommandBuffer::create_command_buffers(render_pipeline->command_buffers, render_pipeline->device.virtual_device, render_pipeline->command_pool, MAX_FRAMES_IN_FLIGHT);
     if(command_buffers != VK_SUCCESS){
-        throw "Failed to create command buffers";
+        return command_buffers;
+        //throw "Failed to create command buffers";
     }
+    return VK_SUCCESS;
 }
 
-static void create_sync_objects(VkDevice virtual_device, RenderData& render_pipe)
+static VkResult create_sync_objects(VkDevice virtual_device, RenderData& render_pipe)
 {
     VkSemaphoreCreateInfo semaphore_info{};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -361,16 +366,25 @@ static void create_sync_objects(VkDevice virtual_device, RenderData& render_pipe
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.image_available_semaphores[i]) != VK_SUCCESS){
-            throw "Failed To Create Semaphore";
+        VkResult result = vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.image_available_semaphores[i]);
+        if(result != VK_SUCCESS){
+            return result;
+
+            // "Failed To Create Semaphore";
         }
-        if(vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.render_finished_semaphores[i]) != VK_SUCCESS){
-            throw "Failed To Create Semaphore";
+        result = vkCreateSemaphore(virtual_device, &semaphore_info, nullptr, &render_pipe.render_finished_semaphores[i]);
+        if(result != VK_SUCCESS){
+            return result;
+            //throw "Failed To Create Semaphore";
         }
-        if(vkCreateFence(virtual_device, &fence_info, nullptr, &render_pipe.in_flight_fences[i]) != VK_SUCCESS){
-            throw "Failed To Create Fence";
+
+        result = vkCreateFence(virtual_device, &fence_info, nullptr, &render_pipe.in_flight_fences[i]);
+        if(result != VK_SUCCESS){
+            return result;
+            //throw "Failed To Create Fence";
         }
     }
+    return VK_SUCCESS;
 }
 
 static void update_view_buffer(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
@@ -383,6 +397,25 @@ static void update_view_buffer(uint32_t transform_id, ViewDescriptor cam_descrip
 
     mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
+    mat4_t v_matrix = m4_mul(projection, view_matrix);
+
+    ViewMatrix uniform_buffer{
+        v_matrix
+    };
+
+    memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(ViewMatrix));
+}
+
+static void update_view_buffer_orthographic(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
+    //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
+    ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
+
+    //Camera is placeholder name
+    //vec3_t forward_vector =  v3_add(camera_transform.position, v3_forward_vector(camera_transform));
+
+    mat4_t view_matrix = m4_look_at(camera_transform.position, {0, 0, 0}, {0, 0, 1});
+    mat4_t projection = m4_orthographic_matrix(-10.0f, 10.0f, -10.0f, 10.0f, 0.8f, 2000);
     mat4_t v_matrix = m4_mul(projection, view_matrix);
 
     ViewMatrix uniform_buffer{
@@ -408,13 +441,18 @@ static void update_uniform_buffer(const uint8_t current_frame, ModelData& to_ren
     }
 }
 
-static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack* heap_stack)
-{
+static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, RenderPipeline& render_pipeline, HeapStack* heap_stack){
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
-    create_device(&render_pipeline.device, instance, surface, heap_stack);
+    result = create_device(&render_pipeline.device, instance, surface, heap_stack);
+    render_pipeline.lights.light_amount = 1;
 
-    restart_swap_chain(&render_pipeline, screen_size, heap_stack);
+    if(result != VK_SUCCESS){
+        //"Descriptorpool failed to create"
+        return result;
+    }
+
+    result = restart_swap_chain(&render_pipeline, screen_size, heap_stack);
 
     create_forward_descriptor_set_layout(render_pipeline.device.virtual_device, &render_pipeline.descriptor_set_layout);
     create_shadow_set_layout(render_pipeline.device.virtual_device, &render_pipeline.shadow_layout);
@@ -427,8 +465,6 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     result = init_model_data(&render_pipeline.model_render_data, &render_pipeline.device, heap_stack);
 
-    //render_pipeline.test_descriptor.object_amount = 1024 * 10;//Magic value is max supported renderables
-
     create_view_uniform_buffer(&render_pipeline.camera_descript, &render_pipeline.device);
     create_view_uniform_buffer(&render_pipeline.light_test, &render_pipeline.device);
     create_view_uniform_buffer(&render_pipeline.light, &render_pipeline.device);
@@ -440,37 +476,9 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
         return result;
     }
 
-    //create_uniform_buffers(render_pipeline.test_descriptor, render_pipeline.test_descriptor.object_amount, render_pipeline.device);
-
-    // uint32_t index = Texture::load_texture(render_pipeline.device, ".png", render_pipeline.command_pool);
     TextureImage texture = Texture::load_texture(&render_pipeline.device, (char*)".png", render_pipeline.command_pool).texture;
 
-    //Start Move out
-    VkDeviceMemory mem = {};
-    void* light_memory;
-
-    result = CommandBuffer::create_buffer(
-        &render_pipeline.device,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        sizeof(vec3_t) * MAX_LIGHTS,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &render_pipeline.lights.light_position_buffer,
-        &mem
-    );
-    if(result != VK_SUCCESS)
-        return result;
-
-    result = vkMapMemory(render_pipeline.device.virtual_device, mem, 0, sizeof(vec3_t)*MAX_LIGHTS, 0, &light_memory);
-
-    if(result != VK_SUCCESS)
-        return result;
-
-    render_pipeline.lights.light_positions[0] = {10, 0, 2};
-
-    memcpy(light_memory, render_pipeline.lights.light_positions, sizeof(vec3_t)*MAX_LIGHTS);
-    //End Move out
-
-    //create_model_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.model_set_layout, render_pipeline.model_render_data, heap_stack);
+    init_light_positions(&render_pipeline.device, &render_pipeline.lights);
 
     result = create_descriptor_set(render_pipeline.device.virtual_device, &render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, &render_pipeline.camera_descript, &render_pipeline.light_test);
     if(result != VK_SUCCESS)
@@ -492,8 +500,11 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     pipeline_layout_info.setLayoutCount = shadow_layout_amount;
     pipeline_layout_info.pSetLayouts = shadow_layouts;
-    if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.shadow_pass.shadow_pipe_layout) != VK_SUCCESS){
-        throw "Failed to create pipeline";
+
+    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.shadow_pass.shadow_pipe_layout);
+    if(result != VK_SUCCESS){
+        return result;
+        // throw "Failed to create pipeline";
     }
     create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.shadow_pass);
     create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, &render_pipeline.lights, &texture);
@@ -514,8 +525,12 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     pipeline_layout_info.pSetLayouts = forward_layouts;
     pipeline_layout_info.pPushConstantRanges = push_constants;
     pipeline_layout_info.pushConstantRangeCount = sizeof(push_constants) / sizeof(push_constants[0]);
-    if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.pipeline_layout) != VK_SUCCESS){
-        throw "Failed to create pipeline";
+
+    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.pipeline_layout);
+
+    if(result != VK_SUCCESS){
+        return result;
+        //throw "Failed to create pipeline";
     }
 
     setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.shadow_pass);
@@ -619,10 +634,16 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass
 
 int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source)
 {
+    vkDeviceWaitIdle(device.virtual_device);//Fix Later. Sinks about 300fps
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index = 0;
 
-    update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 250.f);
+    ComponentSystem* trans_sys = get_component_system(TRANSFORM);
+    TransformComponent* t = (TransformComponent*)get_component_by_id(trans_sys, light_source.transform_id);
+
+
+    update_lights(&lights, &t->transform.position, 1);
+    update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 2000.f);
     update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
     update_uniform_buffer(current_frame, model_render_data, heap_stack);
 

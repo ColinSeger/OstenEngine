@@ -23,37 +23,30 @@ const float AMBIENT = 0.08;
 const float SPECULAR_STRENGTH = 0.5;
 const float SHININESS = 32.0;
 
-float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1)
-{
-    // Convert light space position to NDC
-    vec3 light_space_ndc = light_space_pos.xyz / light_space_pos.w;
+float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1){
+    vec3 projected_cords = light_space_pos.xyz /= light_space_pos.w;
 
-    if (light_space_ndc.x > 1.0 ||
-            light_space_ndc.y > 1.0 ||
-            light_space_ndc.z > 1.0)
-        return 0.0;
+    vec2 shadow_map_coord = projected_cords.xy * 0.5 + 0.5;
 
-    // Translate from NDC to shadow map space (Vulkan's Z is already in [0..1])
-    vec2 shadow_map_coord = light_space_ndc.xy * 0.5 + 0.5;
+    float closest = texture(shadow_map1, shadow_map_coord.xy).x;
 
-    // Check if the sample is in the light or in the shadow
-    if (light_space_ndc.z > texture(shadow_map1, shadow_map_coord.xy).x)
-        return 0.0; // In the shadow
+    float current = projected_cords.z;
 
-    // In the light
-    return 1.0;
+    float shadow = current > closest  ? 0 : 1;
+
+    return shadow;
 }
 
 void main()
 {
-    vec3 total_lighting = vec3(0.0);
+    vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
+    vec3 normal = normalize(frag_normal);
 
-    for (int i = 0; i < MAX_LIGHTS; i++)
-    {
-        float NdotL = max(dot(frag_normal, normalize(lights.light_dirs[i])), 0.0);
-        float shadow = compute_shadow_factor(frag_pos_light_space, shadow_maps[i]);
-        total_lighting += (AMBIENT + shadow) * NdotL * texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
-    }
+    float dont_know_name = max(dot(normal, lights.light_dirs[0]), 0.0);
 
-    out_color = vec4(total_lighting, 1.0);
+    float shadow = compute_shadow_factor(frag_pos_light_space, shadow_maps[0]);
+
+    vec3 lighting = (AMBIENT + (shadow)) * dont_know_name * albedo;
+
+    out_color = vec4(lighting, 1);
 }

@@ -31,7 +31,7 @@ void main() {
     frag_normal = normalize(mat3(model) * in_normal);
     frag_tex_cord = in_tex_cord;
 
+    frag_pos_light_space[0] = light_buffer.light_views[0] * world_pos;
     for (int i = 0; i < MAX_LIGHTS; i++){
-        frag_pos_light_space[i] = light_buffer.light_views[i] * world_pos;
     }
 }

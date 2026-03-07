@@ -24,6 +24,9 @@ int main()
 
     OstenEngine engine = start(1920, 1080, name);
 
+    if(!engine.render_pipeline.device.virtual_device){
+        return 1;
+    }
     run(engine);
 
     return 0;

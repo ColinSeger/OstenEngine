@@ -215,7 +215,7 @@ static inline bool contains(VkDeviceQueueCreateInfo queue_create_infos[], const 
     return false;
 }
 
-static void create_virtual_device(Device* device, VkSurfaceKHR surface, HeapStack* memory_arena){
+static VkResult create_virtual_device(Device* device, VkSurfaceKHR surface, HeapStack* memory_arena){
     QueueFamilyIndices indices = find_queue_families(device->physical_device, surface, memory_arena);
     uint32_t family_array[] = {indices.graphics_family.number, indices.present_family.number};
 
@@ -265,21 +265,23 @@ static void create_virtual_device(Device* device, VkSurfaceKHR surface, HeapStac
 
     if(result != VK_SUCCESS){
         Debug::log((char*)"Issue in creation of virtual device ");
-
-        throw "Failed to create device";
+        return result;
+        // "Failed to create device";
     }
 
     vkGetDeviceQueue(device->virtual_device, indices.graphics_family.number, 0, &device->graphics_queue);
     vkGetDeviceQueue(device->virtual_device, indices.present_family.number, 0, &device->present_queue);
+    return VK_SUCCESS;
 }
 
-static inline void create_device(Device* device, VkInstance instance, VkSurfaceKHR surface_reference, HeapStack* heap_stack){
+static inline VkResult create_device(Device* device, VkInstance instance, VkSurfaceKHR surface_reference, HeapStack* heap_stack){
     uint32_t device_amount = 0;
 
     vkEnumeratePhysicalDevices(instance, &device_amount, nullptr);
 
     if(device_amount <= 0){
-        throw "There is no device that supports vulkan on this computer";
+        return VK_ERROR_DEVICE_LOST;
+        //"There is no device that supports vulkan on this computer";
     }
     size_t mem_index = arena_alloc_memory(heap_stack, sizeof(VkPhysicalDevice) * device_amount);
     VkPhysicalDevice* devices = (VkPhysicalDevice*)get_at_index(heap_stack, mem_index);
@@ -293,10 +295,11 @@ static inline void create_device(Device* device, VkInstance instance, VkSurfaceK
     }
 
     if(device->physical_device == VK_NULL_HANDLE){
-        throw "No vulkan supported graphics found";
+        return VK_ERROR_DEVICE_LOST;
+        //"No vulkan supported graphics found";
     }
     free_arena(heap_stack, mem_index);
-    create_virtual_device(device, surface_reference, heap_stack);
+    return create_virtual_device(device, surface_reference, heap_stack);
 }
 
 static inline void destroy_device(Device& device)
@@ -352,7 +355,7 @@ namespace CommandBuffer
             }
         }
         Debug::log((char*)"Failed to find memory");
-        throw("failed to find suitable memory type!");
+        //("failed to find suitable memory type!");
         return 0;
     }
 

@@ -269,6 +269,7 @@ static inline mat4_t m4_rotation_z   (float angle_in_rad);
               mat4_t m4_ortho        (float left, float right, float bottom, float top, float back, float front);
               mat4_t m4_perspective  (float vertical_field_of_view_in_deg, float aspect_ratio, float near_view_distance, float far_view_distance);
               mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar);//MADE BY ME FOR VULKAN
+              mat4_t m4_orthographic_matrix(float left, float right, float bottom, float top, float zNear, float zFar);
               mat4_t m4_look_at      (vec3_t from, vec3_t to, vec3_t up);
 
 static inline mat4_t m4_transpose    (mat4_t matrix);
@@ -748,6 +749,15 @@ mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//
     );
 }
 
+mat4_t m4_orthographic_matrix(float left, float right, float bottom, float top, float zNear, float zFar)
+{
+    return mat4(
+        2.f / (right - left), 0, 0, 0,
+        0, -2.f / (top - bottom), 0, 0,
+        0, 0, 1.f / (zNear - zFar), 0,
+       -(right + left) / (right - left),-(top + bottom) / (top - bottom),zNear / (zNear - zFar),1
+    );
+}
 //Osten Implementation
 
 #endif // MATH_3D_IMPLEMENTATION

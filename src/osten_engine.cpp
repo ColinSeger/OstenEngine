@@ -66,12 +66,16 @@ static Timer last_tick;
 
 OstenEngine::OstenEngine(const int width, const int height, const char* application_name){
     init_mem_arena(&heap_stack, 256*MB);
+
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+
     if(!glfwInit()){
         puts("glfwInit failed");
-        throw("GLFW Failed to open");
+        return;
+        //("GLFW Failed to open");
     }
-
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 
     main_window = glfwCreateWindow(width, height, application_name, nullptr, nullptr);
     glfwSetWindowUserPointer(main_window, this);
@@ -91,6 +95,7 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     VkResult result = create_instance(&instance, application_name, window_extensions);
 
     if(result != VK_SUCCESS){
+        return;
         throw "Failed to create Instance";
     }
 
@@ -99,12 +104,14 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     result = glfwCreateWindowSurface(instance, main_window, nullptr, &surface);
 
     if(result != VK_SUCCESS){
+        return;
         throw "Failed to create surface";
     }
 
     result = create_render_pipeline(window_size, instance, surface, this->render_pipeline, &heap_stack);
 
     if(result != VK_SUCCESS){
+        return;
         throw "Failed to create render pipeline";
     }
 
@@ -151,7 +158,14 @@ void OstenEngine::draw_frame(){
         start_time2 = platform_get_time_handle();
         frames = 0;
     }
-
+    if(imgui_texture != VK_NULL_HANDLE){
+        ImGui::Begin("ShadowMap");
+        ImGui::Image(
+            (ImTextureID)imgui_texture,
+            ImVec2(256, 256)
+        );
+        ImGui::End();
+    }
     camera_movement(delta_time, 0, main_window);
 
     ComponentSystem* camera_sys = get_component_system(0);

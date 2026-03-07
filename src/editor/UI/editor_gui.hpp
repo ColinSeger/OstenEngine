@@ -348,14 +348,6 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
     start_file_explorer(*ui_data->file_explorer, ui_data->render_pipe);
 
     end_file_explorer();
-    // if(imgui_texture != VK_NULL_HANDLE){
-    //     ImGui::Begin("ShadowMap");
-    //     ImGui::Image(
-    //         (ImTextureID)imgui_texture,
-    //         ImVec2(256, 256)
-    //     );
-    //     ImGui::End();
-    // }
 
     auto& entities = get_all_entities();
 

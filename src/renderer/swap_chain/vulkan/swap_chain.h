@@ -84,7 +84,7 @@ static inline VkPresentModeKHR select_swap_present_mode(VkPresentModeKHR* availa
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-static inline void create_swap_chain(Device* device, VkExtent2D window, VkSurfaceKHR surface, SwapChain* swap_chain, HeapStack* memory_arena){
+static inline VkResult create_swap_chain(Device* device, VkExtent2D window, VkSurfaceKHR surface, SwapChain* swap_chain, HeapStack* memory_arena){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface, memory_arena);
 
     VkSurfaceFormatKHR surface_format = select_swap_surface_format((VkSurfaceFormatKHR*)swap_chain_support.surface_data, swap_chain_support.surface_amount);
@@ -134,10 +134,12 @@ static inline void create_swap_chain(Device* device, VkExtent2D window, VkSurfac
     VkResult result = vkCreateSwapchainKHR(device->virtual_device, &create_info, nullptr, &swap_chain->swap_chain);
 
     if(result != VK_SUCCESS){
-        throw("Failed to create swap chain");
+        return result;
+        //("Failed to create swap chain");
     }
     swap_chain->screen_extent = screen_extent;
     swap_chain->swap_chain_image_format = surface_format.format;
+    return VK_SUCCESS;
 }
 
 static inline int clean_swap_chain(VkDevice virtual_device, SwapChain* swap_chain, SwapChainImages* swap_chain_images, HeapStack* heap_stack){
@@ -188,7 +190,7 @@ static inline VkResult create_image_views(SwapChainImages* swap_images, VkDevice
     return VK_SUCCESS;
 }
 
-static inline void create_swap_chain_images(Device* device, SwapChain* swap_chain, VkSurfaceKHR surface, SwapChainImages* swap_images, HeapStack* heap_stack){
+static inline VkResult create_swap_chain_images(Device* device, SwapChain* swap_chain, VkSurfaceKHR surface, SwapChainImages* swap_images, HeapStack* heap_stack){
     SwapChainSupportDetails swap_chain_support = find_swap_chain_support(device->physical_device, surface, heap_stack);
 
     uint32_t image_amount = swap_chain_support.surface_capabilities.minImageCount + 1;
@@ -201,8 +203,7 @@ static inline void create_swap_chain_images(Device* device, SwapChain* swap_chai
     vkGetSwapchainImagesKHR(device->virtual_device, swap_chain->swap_chain, &image_amount, (VkImage*)get_at_index(heap_stack, swap_images->swap_chain_images));
 
     VkResult images_result = create_image_views(swap_images, device->virtual_device, swap_chain->swap_chain_image_format, heap_stack);
-
-    if(images_result != VK_SUCCESS) throw "Failed to create swapchain images";
+    return images_result;
 }
 
 static inline VkResult create_frame_buffers(SwapChainImages* swap_images, VkDevice virtual_device, VkRenderPass render_pass, VkImageView depth_image_view, VkExtent2D extent, HeapStack* heap_stack){
@@ -320,7 +321,7 @@ static inline OffScreenImage create_offscreen_image(Device* device, VkExtent2D e
 
     VkResult creation_status = vkCreateImageView(device->virtual_device, &create_info, nullptr, &offscreen_image.swap_chain_image_view);
 
-    if(creation_status != VK_SUCCESS) throw;
+    if(creation_status != VK_SUCCESS) return {};
 
     VkImageView attachments[2] = {
         offscreen_image.swap_chain_image_view,
@@ -338,7 +339,7 @@ static inline OffScreenImage create_offscreen_image(Device* device, VkExtent2D e
 
     creation_status = vkCreateFramebuffer(device->virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(get_at_index(heap_stack, offscreen_image.mem_index_frame_buffer)));
 
-    if(creation_status != VK_SUCCESS) throw;
+    if(creation_status != VK_SUCCESS) return{};
 
     return offscreen_image;
 }

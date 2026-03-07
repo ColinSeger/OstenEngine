@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <stddef.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
@@ -54,6 +55,8 @@ struct ObjectUBO{
 };
 struct LightSources{
     VkBuffer light_position_buffer;
+    VkDeviceMemory device_memory = {};
+    void* light_memory;
     FrameDescriptor lights_desc[MAX_LIGHTS];
     vec3_t light_positions[MAX_LIGHTS];
     uint8_t light_amount;
@@ -513,4 +516,39 @@ static inline VkResult init_model_data(ModelData* model_data, Device* device, He
     }
 
     return VK_SUCCESS;
+}
+
+static inline VkResult init_light_positions(Device* device, LightSources* lights){
+
+    VkResult result = CommandBuffer::create_buffer(
+        device,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        sizeof(vec3_t) * MAX_LIGHTS,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &lights->light_position_buffer,
+        &lights->device_memory
+    );
+    if(result != VK_SUCCESS)
+        return result;
+
+    result = vkMapMemory(device->virtual_device, lights->device_memory, 0, sizeof(vec3_t)*MAX_LIGHTS, 0, &lights->light_memory);
+
+    if(result != VK_SUCCESS)
+        return result;
+
+    for(auto& light : lights->light_positions){
+        light = v3_norm({0, 0, 0});
+    }
+
+    memcpy(lights->light_memory, lights->light_positions, sizeof(vec3_t)*MAX_LIGHTS);
+
+    return VK_SUCCESS;
+}
+
+static inline void update_lights(LightSources* lights, vec3_t* pos, uint8_t pos_amount){
+    for(uint8_t i = 0; i < pos_amount; i++){
+        *lights->light_positions = v3_norm(pos[i]);
+    }
+
+    memcpy(lights->light_memory, lights->light_positions, sizeof(vec3_t)*MAX_LIGHTS);
 }
