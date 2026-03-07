@@ -31,23 +31,23 @@ static inline ArmyUnit init_army_unit(struct RenderAble* render_able, vec3_t sta
 
         //uint16_t t = ((uint16_t*)get_at_index(heap_stack, render_able->transform_index))[i];
 
-        struct TempID transform_comp{
+        struct ComponentID transform_comp{
             (uint16_t)(transform_index),
             (uint16_t)(TRANSFORM)
         };
-        struct TempID render{
+        struct ComponentID render{
             (uint16_t)(add_render_component(0, transform_index)),
             (uint16_t)(RENDER)
         };
-        struct TempID collider{
+        struct ComponentID collider{
             (uint16_t)(collider_index),
             (uint16_t)(COLLIDER)
         };
-        struct TempID health{
+        struct ComponentID health{
             (uint16_t)(add_health_comp(team_id, 0)),
             (uint16_t)(HEALTH)
         };
-        struct TempID melee{
+        struct ComponentID melee{
             (uint16_t)(add_melee_comp(0)),
             (uint16_t)(MELEE)
         };

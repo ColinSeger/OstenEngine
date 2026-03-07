@@ -39,7 +39,6 @@ struct RenderPipeline{
     VkPipelineLayout pipeline_layout;
 
     VkPipeline graphics_pipeline;
-    VkPipeline shadow_pipeline;
 
     VkSurfaceKHR my_surface;
 
@@ -52,15 +51,14 @@ struct RenderPipeline{
     //TEMP
     // SHADOWPASS
     ShadowPass shadow_pass;
-    VkPipelineLayout shadow_pipe_layout;
     VkDescriptorSetLayout shadow_layout;
     VkDescriptorSetLayout fragment_layout;
     ViewDescriptor camera_descript;
 
     ViewDescriptor light;
+    LightSources lights;
 
     FrameDescriptor render_descripts;
-    FrameDescriptor test_lights_desc;
     FrameDescriptor texture_descriptor;
     VkDescriptorSetLayout model_set_layout;
 
@@ -69,7 +67,7 @@ struct RenderPipeline{
 
     ViewDescriptor light_test;
 
-    VkBuffer light_position;
+    //VkBuffer light_position;
 
     ModelData model_render_data;
 
@@ -219,7 +217,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     return VK_SUCCESS;
 }
 
-static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipeline_layout, VkPipeline* shadow_pipeline, VkRenderPass shadow_pass){
+static VkResult setup_shadow_pipe(VkDevice virtual_device, ShadowPass* shadow_pass){
     //ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
     FileData vertex_code = platform_load_entire_file("src/renderer/shaders/quad.vert.spv");
     VkPipelineShaderStageCreateInfo vertex_stage_info = {};
@@ -299,11 +297,11 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, VkPipelineLayout pipe
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = 0;
     pipeline_info.pDynamicState = &dynamic_state;
-    pipeline_info.layout = pipeline_layout;
+    pipeline_info.layout = shadow_pass->shadow_pipe_layout;
     pipeline_info.subpass = 0;
-    pipeline_info.renderPass = shadow_pass;
+    pipeline_info.renderPass = shadow_pass->render_pass;
 
-    VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, shadow_pipeline);
+    VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &shadow_pass->shadow_pipeline);
 
     vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
     if(result != VK_SUCCESS) return result;
@@ -449,26 +447,27 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     //Start Move out
     VkDeviceMemory mem = {};
-    void* tts;
+    void* light_memory;
 
     result = CommandBuffer::create_buffer(
         &render_pipeline.device,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        sizeof(vec3_t),
+        sizeof(vec3_t) * MAX_LIGHTS,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &render_pipeline.light_position,
+        &render_pipeline.lights.light_position_buffer,
         &mem
     );
     if(result != VK_SUCCESS)
         return result;
 
-    result = vkMapMemory(render_pipeline.device.virtual_device, mem, 0, sizeof(vec3_t), 0, &tts);
+    result = vkMapMemory(render_pipeline.device.virtual_device, mem, 0, sizeof(vec3_t)*MAX_LIGHTS, 0, &light_memory);
 
     if(result != VK_SUCCESS)
         return result;
 
-    vec3_t assd = v3_norm({10, 0 , 2});
-    memcpy(tts, &assd, sizeof(vec3_t));
+    render_pipeline.lights.light_positions[0] = {10, 0, 2};
+
+    memcpy(light_memory, render_pipeline.lights.light_positions, sizeof(vec3_t)*MAX_LIGHTS);
     //End Move out
 
     //create_model_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.model_set_layout, render_pipeline.model_render_data, heap_stack);
@@ -477,7 +476,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     if(result != VK_SUCCESS)
         return result;
 
-    result = create_shadow_sets(render_pipeline.device.virtual_device, render_pipeline.light_test, &render_pipeline.test_lights_desc, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
+    result = create_shadow_sets(render_pipeline.device.virtual_device, render_pipeline.light_test, &render_pipeline.lights, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
 
     if(result != VK_SUCCESS)
         return result;
@@ -493,16 +492,16 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     pipeline_layout_info.setLayoutCount = shadow_layout_amount;
     pipeline_layout_info.pSetLayouts = shadow_layouts;
-    if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.shadow_pipe_layout) != VK_SUCCESS){
+    if(vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.shadow_pass.shadow_pipe_layout) != VK_SUCCESS){
         throw "Failed to create pipeline";
     }
     create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.shadow_pass);
-    create_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, render_pipeline.light_position, &texture);
+    create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, &render_pipeline.lights, &texture);
 
-    VkPushConstantRange vertex_constant;
-	vertex_constant.offset = 0;
-	vertex_constant.size = sizeof(uint32_t);
-	vertex_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+ //    VkPushConstantRange vertex_constant;
+	// vertex_constant.offset = 0;
+	// vertex_constant.size = sizeof(uint32_t);
+	// vertex_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkPushConstantRange fragment_constant;
 	fragment_constant.offset = 0;
@@ -519,7 +518,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
         throw "Failed to create pipeline";
     }
 
-    setup_shadow_pipe(render_pipeline.device.virtual_device, render_pipeline.shadow_pipe_layout, &render_pipeline.shadow_pipeline, render_pipeline.shadow_pass.render_pass);
+    setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.shadow_pass);
 
     setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline);
 
@@ -542,7 +541,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
         Model model = loaded_models[render_data->model_index];
 
         if(model.index_amount <= 0) return;
-        uint32_t test = 1;
+        //uint32_t test = 1;
         //vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &test);
 
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &render_data->texture_index);
@@ -556,21 +555,21 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
     }
 }
 
-static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& frame_buffer, VkRenderPass render_pass, const VkExtent2D viewport_extent, VkPipeline shadow_pipe, VkPipelineLayout layout, FrameDescriptor* light, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
+static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass* shadow_pass, const VkExtent2D viewport_extent, LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
 
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_info.renderPass = render_pass;
-    render_pass_info.framebuffer = frame_buffer;
+    render_pass_info.renderPass = shadow_pass->render_pass;
+    render_pass_info.framebuffer = shadow_pass->framebuffer;
     render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent = viewport_extent;
     render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
     render_pass_info.pClearValues = clear_values;
 
-    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(*command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -579,42 +578,43 @@ static void start_shadow_pass(VkCommandBuffer& command_buffer, VkFramebuffer& fr
     viewport.height =((float)viewport_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+    vkCmdSetViewport(*command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
     scissor.extent = viewport_extent;
-    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    vkCmdSetScissor(*command_buffer, 0, 1, &scissor);
 
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pipe);
+    vkCmdBindPipeline(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pass->shadow_pipeline);
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0){
-        vkCmdEndRenderPass(command_buffer);
+        vkCmdEndRenderPass(*command_buffer);
         return;
     }
     constexpr VkDeviceSize offsets[] = {0};
+    for(uint8_t light_index = 0; light_index < lights->light_amount; light_index++){
+        for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
+            RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
 
-    for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
-        RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
+            if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
+            VkDescriptorSet descriptors[] = { lights->lights_desc[light_index].descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
+            uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
-        if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
-        VkDescriptorSet descriptors[] = { light->descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
-        uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
+            vkCmdBindDescriptorSets(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pass->shadow_pipe_layout, 0, descriptor_amount, descriptors, 0, nullptr);
 
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_amount, descriptors, 0, nullptr);
+            Model model = loaded_models[render_data->model_index];
 
-        Model model = loaded_models[render_data->model_index];
+            if(model.index_amount > 0){
+                vkCmdBindVertexBuffers(*command_buffer, 0, 1, &model.vertex_buffer, offsets);
 
-        if(model.index_amount > 0){
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
+                vkCmdBindIndexBuffer(*command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindIndexBuffer(command_buffer, model.index_buffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
+                vkCmdDrawIndexed(*command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
+            }
         }
     }
 
 
-    vkCmdEndRenderPass(command_buffer);
+    vkCmdEndRenderPass(*command_buffer);
 }
 
 int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source)
@@ -638,11 +638,10 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
     VkCommandBuffer command_buffer = command_buffers[current_frame];
     vkResetCommandBuffer(command_buffer, 0);
 
-    if(CommandBuffer::record_command_buffer(command_buffer) != VK_SUCCESS){
-        throw result;
-    }
+    if(CommandBuffer::record_command_buffer(command_buffer) != VK_SUCCESS)
+        return result;
 
-    start_shadow_pass(command_buffer, shadow_pass.framebuffer, shadow_pass.render_pass, {1024, 1024},shadow_pipeline, shadow_pipe_layout, &test_lights_desc, model_render_data, current_frame, heap_stack);
+    start_shadow_pass(&command_buffer, &shadow_pass, {1024, 1024}, &lights, model_render_data, current_frame, heap_stack);
 
     void* frame_buffer = get_at_index(heap_stack, swap_chain_images.swap_chain_frame_buffers);
 

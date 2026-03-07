@@ -272,7 +272,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
         ImGui::EndCombo();
     }
     if(ImGui::BeginCombo("Textures", "")){
-        for (int i = 0; i < texture_amount; i++)
+        for (uint32_t i = 0; i < texture_amount; i++)
         {
             if (ImGui::Button(texture_storage[i].name))
             {
@@ -293,7 +293,7 @@ static inline void show_loaded_assets(RenderPipeline* render_pipe, HeapStack* he
 
 }
 static char buffer[255] = {};
-static int last_id = 99999;
+static uint16_t last_id = UINT16_MAX;
 
 static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIData* ui_data, bool& is_open, float fps, HeapStack* heap_stack){
     vec3_t& target_point = *ui_data->target_point;
@@ -391,7 +391,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
         if(ImGui::BeginPopupContextItem("components_pop_up")){
             ImGui::Text("Components");
             if(ImGui::Button("Add Transform")){
-                TempID transform{
+                ComponentID transform{
                     static_cast<uint16_t>(add_transform()),
                     static_cast<uint16_t>(TRANSFORM)
                 };
@@ -403,7 +403,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
                 RenderAble* rendera = get_renderable(&ui_data->render_pipe->model_render_data, 0, heap_stack);
                 uint16_t index = 0;
                 if(has_component(entities[*ui_data->inspecting], TRANSFORM, &index)){
-                    TempID render{
+                    ComponentID render{
                         (uint16_t)(add_render_component(0, index)),
                         (uint16_t)(RENDER)
                     };
@@ -417,7 +417,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
             if(ImGui::Button("Add Collider")){
                 uint16_t index = 0;
                 if(has_component(entities[*ui_data->inspecting], TRANSFORM, &index)){
-                    TempID render{
+                    ComponentID render{
                         (uint16_t)(add_collider(index, *ui_data->inspecting)),
                         (uint16_t)(COLLIDER)
                     };
@@ -426,7 +426,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
                 }
             }
             if(ImGui::Button("Add Health")){
-                TempID render{
+                ComponentID render{
                     (uint16_t)(add_health_comp(0, *ui_data->inspecting)),
                     (uint16_t)(HEALTH)
                 };
@@ -434,7 +434,7 @@ static inline void begin_imgui_editor_poll(GLFWwindow* main_window, struct UIDat
                 add_component(entities[*ui_data->inspecting], render);
             }
             if(ImGui::Button("Add Melee")){
-                TempID render{
+                ComponentID render{
                     (uint16_t)(add_melee_comp(*ui_data->inspecting)),
                     (uint16_t)(MELEE)
                 };

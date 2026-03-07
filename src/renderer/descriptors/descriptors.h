@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <stddef.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
@@ -43,6 +42,7 @@ struct ModelData{
     // uint16_t renderable_capacity;
 };
 
+
 struct FrameDescriptor{
     VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 };
@@ -51,6 +51,12 @@ struct ViewMatrix{
 };
 struct ObjectUBO{
     mat4_t model;
+};
+struct LightSources{
+    VkBuffer light_position_buffer;
+    FrameDescriptor lights_desc[MAX_LIGHTS];
+    vec3_t light_positions[MAX_LIGHTS];
+    uint8_t light_amount;
 };
 
 static VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
@@ -208,7 +214,7 @@ static VkResult create_shadow_set_layout(VkDevice virtual_device, VkDescriptorSe
     return vkCreateDescriptorSetLayout(virtual_device, &layoutInfo, nullptr, descriptor_set_layout);
 }
 
-static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light, FrameDescriptor* render_data, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout){
+static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light, LightSources* lights, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout){
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
     for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
         layouts[i] = descriptor_set_layout;
@@ -220,7 +226,7 @@ static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light
     allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
     allocInfo.pSetLayouts = layouts;
 
-    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, render_data->descriptor_sets);
+    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, lights->lights_desc->descriptor_sets);
 
     if(allocation_status != VK_SUCCESS)
         return allocation_status;
@@ -236,7 +242,7 @@ static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
 
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = render_data->descriptor_sets[i];
+        descriptor_writes[0].dstSet = lights->lights_desc->descriptor_sets[i];
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -248,83 +254,9 @@ static VkResult create_shadow_sets(VkDevice virtual_device, ViewDescriptor light
     return VK_SUCCESS;
 }
 
+static VkDescriptorImageInfo shadow_maps[MAX_LIGHTS] = {};
 
-static void create_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, FrameDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer light, TextureImage* texture){
-
-    VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
-    for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
-        layouts[i] = descriptor_set_layout;
-    }
-
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptor_pool;
-    allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
-    allocInfo.pSetLayouts = layouts;
-
-    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, descriptor->descriptor_sets);
-
-    if(allocation_status != VK_SUCCESS) return;
-
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = image_view;
-    image_info.sampler = sampler;
-
-    VkDescriptorImageInfo shadow_maps[MAX_LIGHTS] = {};
-
-    for(int i = 0; i < MAX_LIGHTS; i++){
-        shadow_maps[i] = image_info;
-    }
-
-    for(uint32_t i = 0; i < texture_capacity; i++){
-        VkDescriptorImageInfo texture_info{
-            .sampler = texture->texture_sampler,
-            .imageView = texture->image_view,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        };
-        image_descriptors_info[i] = texture_info;
-    }
-    //constexpr uint32_t image_amount = sizeof(image_descriptors_info) / sizeof(image_descriptors_info[0]);
-
-    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo camera_info{};
-        camera_info.offset = 0;
-        camera_info.range = sizeof(vec3_t);
-        camera_info.buffer = light;
-
-        constexpr uint32_t descriptor_size = 3;
-        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
-
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = descriptor->descriptor_sets[i];
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[0].descriptorCount = texture_capacity;
-        descriptor_writes[0].pImageInfo = image_descriptors_info;
-
-        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = descriptor->descriptor_sets[i];
-        descriptor_writes[1].dstBinding = 1;
-        descriptor_writes[1].dstArrayElement = 0;
-        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = MAX_LIGHTS;
-        descriptor_writes[1].pImageInfo = shadow_maps;
-
-        descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[2].dstSet = descriptor->descriptor_sets[i];
-        descriptor_writes[2].dstBinding = 2;
-        descriptor_writes[2].dstArrayElement = 0;
-        descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[2].descriptorCount = 1;
-        descriptor_writes[2].pBufferInfo = &camera_info;
-
-        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
-    }
-}
-
-static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, FrameDescriptor* descriptor, VkImageView image_view, VkSampler sampler, VkBuffer light, uint16_t texture_index){
+static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, FrameDescriptor* descriptor, VkImageView image_view, VkSampler sampler, LightSources* light, uint16_t texture_index){
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = image_view;
@@ -337,8 +269,8 @@ static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPo
     for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
-        camera_info.range = sizeof(vec3_t);
-        camera_info.buffer = light;
+        camera_info.range = sizeof(vec3_t)*MAX_LIGHTS;
+        camera_info.buffer = light->light_position_buffer;
 
         constexpr uint32_t descriptor_size = 3;
         VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
@@ -370,6 +302,81 @@ static inline  void create_fragment_set2(VkDevice virtual_device, VkDescriptorPo
         vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
 }
+
+static VkResult create_new_fragment_set(VkDevice virtual_device, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, FrameDescriptor* descriptor, VkImageView image_view, VkSampler sampler, LightSources* lights, TextureImage* texture){
+
+    VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};
+    for(uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++){
+        layouts[i] = descriptor_set_layout;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptor_pool;
+    allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
+    allocInfo.pSetLayouts = layouts;
+
+    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, descriptor->descriptor_sets);
+
+    if(allocation_status != VK_SUCCESS) return allocation_status;
+
+    VkDescriptorImageInfo image_info{};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
+
+
+    for(int i = 0; i < MAX_LIGHTS; i++){
+        shadow_maps[i] = image_info;
+    }
+
+    for(uint32_t i = 0; i < texture_capacity; i++){
+        VkDescriptorImageInfo texture_info{
+            .sampler = texture->texture_sampler,
+            .imageView = texture->image_view,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        };
+        image_descriptors_info[i] = texture_info;
+    }
+
+    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo camera_info{};
+        camera_info.offset = 0;
+        camera_info.range = sizeof(vec3_t)*MAX_LIGHTS;
+        camera_info.buffer = lights->light_position_buffer;
+
+        constexpr uint32_t descriptor_size = 3;
+        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = descriptor->descriptor_sets[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[0].descriptorCount = texture_capacity;
+        descriptor_writes[0].pImageInfo = image_descriptors_info;
+
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = descriptor->descriptor_sets[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = MAX_LIGHTS;
+        descriptor_writes[1].pImageInfo = shadow_maps;
+
+        descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[2].dstSet = descriptor->descriptor_sets[i];
+        descriptor_writes[2].dstBinding = 2;
+        descriptor_writes[2].dstArrayElement = 0;
+        descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[2].descriptorCount = 1;
+        descriptor_writes[2].pBufferInfo = &camera_info;
+
+        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
+    }
+    return VK_SUCCESS;
+}
+
 
 static VkResult create_descriptor_set(VkDevice virtual_device, FrameDescriptor* rendering_descriptor, VkDescriptorPool descriptor_pool, VkDescriptorSetLayout descriptor_set_layout, ViewDescriptor* camera, ViewDescriptor* light) {
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT] = {};

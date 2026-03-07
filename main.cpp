@@ -3,7 +3,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "src/win32_app.cpp"
 #else
 #include "src/unix_app.cpp"

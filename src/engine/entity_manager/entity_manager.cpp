@@ -8,19 +8,19 @@
 #include <unordered_map>
 // #include "entity_system.cpp"
 
-struct TempID{
+struct ComponentID{
     uint16_t index = 0;
     uint16_t type = 0;
 };
 
 struct Entity{
-    TempID components[5];
+    ComponentID components[5];
     uint16_t id;
     uint16_t component_amount;
 };
 
-static inline void add_component(Entity& entity, TempID component){
-    for(TempID com : entity.components){
+static inline void add_component(Entity& entity, ComponentID component){
+    for(ComponentID com : entity.components){
         if(com.type == component.type) return;
     }
     entity.components[entity.component_amount] = component;
@@ -28,28 +28,32 @@ static inline void add_component(Entity& entity, TempID component){
 }
 
 static inline bool has_component(Entity entity, uint16_t component, uint16_t* index){
-    for(TempID com : entity.components){
+    for(ComponentID com : entity.components){
         if(com.type != component) continue;
         *index = com.index;
-        return true;
+        return 1;
     }
-    return false;
+    return 0;
 }
 
+// struct String {
+//     char value[255];
+//     uint8_t length;
+// };
+
 namespace {
-    std::unordered_map<std::string, uint32_t> entity_names;
+    std::unordered_map<std::string, uint16_t> entity_names;
     std::vector<Entity> entities;
 }
-static inline std::unordered_map<std::string, uint32_t>& get_entity_names(){
+static inline std::unordered_map<std::string, uint16_t>& get_entity_names(){
     return entity_names;
 }
 
-static inline void add_entity(Entity entity, std::string name)
-{
+static inline void add_entity(Entity entity, std::string name){
     auto contains = entity_names.find(name);
     while(contains != get_entity_names().end())
     {
-        char buf[11];
+        char buf[32];
         snprintf(buf, sizeof(buf), "%u", (uint32_t)entities.size());
         for(char c : buf){
             name.push_back(c);
@@ -69,7 +73,7 @@ static inline void add_entity(Entity entity, std::string name)
 
     entity.id = entities.size();
 
-    for(TempID component : entity.components){
+    for(ComponentID component : entity.components){
         ComponentSystem* system = get_component_system(component.type);
         Component* comp = (Component*)get_component_by_id(system, component.index);
         comp->entity_id = entity.id;
@@ -112,7 +116,7 @@ static inline std::vector<Entity>& get_all_entities(){
 }
 
 static inline uint16_t get_component_id(Entity entity, uint16_t type){
-    for (TempID ids : entity.components) {
+    for (ComponentID ids : entity.components) {
         if(ids.type == type) return ids.index;
     }
     return UINT16_MAX;

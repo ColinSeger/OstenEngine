@@ -186,6 +186,8 @@ void OstenEngine::draw_frame(){
 void OstenEngine::cleanup(){
     VkSurfaceKHR surf = render_pipeline.my_surface;
 
+    vkDeviceWaitIdle(render_pipeline.device.virtual_device);
+
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplVulkan_Shutdown();
     render_cleanup(render_pipeline, &heap_stack);

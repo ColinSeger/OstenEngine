@@ -127,11 +127,11 @@ static void menu_state(OstenEngine* engine, GameData* data){
         data->terrain.pos_x = &tr->transform.position.x;
          data->terrain.pos_y = &tr->transform.position.y;
 
-        struct TempID transform_comp{
+        struct ComponentID transform_comp{
             (uint16_t)(transform_index),
             (uint16_t)(TRANSFORM)
         };
-        struct TempID render2{
+        struct ComponentID render2{
             (uint16_t)(add_render_component(0, transform_index)),
             (uint16_t)(RENDER)
         };

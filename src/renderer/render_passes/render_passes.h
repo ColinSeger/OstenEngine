@@ -114,6 +114,8 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
 }
 
 struct ShadowPass{
+    VkPipeline shadow_pipeline;
+    VkPipelineLayout shadow_pipe_layout;
     VkImage depth_image;
     VkDeviceMemory depth_image_memory;
     VkImageView image_view;
