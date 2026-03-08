@@ -9,44 +9,76 @@ layout(set = 2, binding = 2) uniform LightParams {
     vec3 light_dirs[MAX_LIGHTS];
 } lights;
 
-layout(location = 0) in vec3 frag_normal;
-layout(location = 1) in vec2 frag_tex_cord;
-layout(location = 2) in vec4 frag_pos_light_space;
+layout(location = 0) in vec3 frag_position;
+layout(location = 1) in vec3 frag_normal;
+layout(location = 2) in vec2 frag_tex_cord;
+layout(location = 3) in vec4 frag_pos_light_space[MAX_LIGHTS];
 
 layout(location = 0) out vec4 out_color;
 
 layout( push_constant ) uniform constants{
 	uint texture_index;
+	vec3 camera_position;
 } push_constants;
 
-const float AMBIENT = 0.08;
+const float AMBIENT = 0.05;
 const float SPECULAR_STRENGTH = 0.5;
-const float SHININESS = 32.0;
+const float SHININESS = 64.0;
 
 float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1){
-    vec3 projected_cords = light_space_pos.xyz /= light_space_pos.w;
+    vec3 projected_cords = light_space_pos.xyz / light_space_pos.w;
+
+	if(projected_cords.z > 1.0 || projected_cords.z  < 0.0)
+		return 1.0;
 
     vec2 shadow_map_coord = projected_cords.xy * 0.5 + 0.5;
+
+	if(shadow_map_coord.x < 0.0 || shadow_map_coord.x > 1.0 ||
+	   shadow_map_coord.y < 0.0 || shadow_map_coord.y > 1.0)
+		return 1.0;
 
     float closest = texture(shadow_map1, shadow_map_coord.xy).x;
 
     float current = projected_cords.z;
 
-    float shadow = current > closest  ? 0 : 1;
+	//float bias = 0.005;
+	//float shadow = current - bias > closest ? 1.0 : 0.0;
+
+    float shadow = current > closest  ? 1.0 : 0.0;
 
     return shadow;
 }
 
-void main()
-{
+void main(){
     vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
     vec3 normal = normalize(frag_normal);
+	float shadow = 0;
+	float specular = 0;
+	vec3 diffuse = vec3(0);
+	for(int i = 0; i < MAX_LIGHTS; i++){
+		vec3 light_dir = normalize(lights.light_dirs[i] - frag_position);
+		//vec3 light_dir = normalize(-lights.light_dirs[0]);
 
-    float dont_know_name = max(dot(normal, lights.light_dirs[0]), 0.0);
+		float diff = max(dot(normal, light_dir), 0.0);
 
-    float shadow = compute_shadow_factor(frag_pos_light_space, shadow_maps[0]);
+		diffuse = diff * vec3(1);
 
-    vec3 lighting = (AMBIENT + (shadow)) * dont_know_name * albedo;
+		vec3 view_dir = normalize(push_constants.camera_position - frag_position);
+
+		vec3 halfway_dir = normalize(light_dir + view_dir);
+
+		specular += pow(max(dot(normal, halfway_dir), 0), SHININESS);
+
+		shadow += compute_shadow_factor(frag_pos_light_space[i], shadow_maps[i]);
+
+		//vec3 lighting = (AMBIENT + (1 - shadow)) * (diffuse + specular) * albedo;
+	}
+
+
+    vec3 lighting = (AMBIENT * albedo) + ((1.0 - shadow) * (diffuse * albedo + specular));
 
     out_color = vec4(lighting, 1);
+	//out_color = vec4(vec3(diff), 1.0);
+	//out_color = vec4(vec3(shadow), 1.0);
+	//out_color = texture(shadow_maps[0], frag_tex_cord);
 }

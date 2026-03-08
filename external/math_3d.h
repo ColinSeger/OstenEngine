@@ -752,11 +752,11 @@ mat4_t m4_perspective_matrix(float fov, float aspect, float zNear, float zFar)//
 mat4_t m4_orthographic_matrix(float left, float right, float bottom, float top, float zNear, float zFar)
 {
     return mat4(
-        2.f / (right - left), 0, 0, 0,
-        0, -2.f / (top - bottom), 0, 0,
-        0, 0, 1.f / (zNear - zFar), 0,
-       -(right + left) / (right - left),-(top + bottom) / (top - bottom),zNear / (zNear - zFar),1
-    );
+            2.0f / (right - left), 0, 0, 0,
+            0, -2.0f / (top - bottom), 0, 0,
+            0, 0, 1.0f / (zFar - zNear), 0,
+            -(right + left) / (right - left),-(top + bottom) / (top - bottom),-zNear / (zFar - zNear),1.0f
+        );
 }
 //Osten Implementation
 

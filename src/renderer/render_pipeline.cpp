@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -516,7 +517,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     VkPushConstantRange fragment_constant;
 	fragment_constant.offset = 0;
-	fragment_constant.size = sizeof(uint32_t);
+	fragment_constant.size = sizeof(uint32_t) + sizeof(vec3_t);
 	fragment_constant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkPushConstantRange push_constants[] = { fragment_constant };
@@ -541,7 +542,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     return VK_SUCCESS;
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack){
+static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos){
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
@@ -560,6 +561,7 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
         //vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &test);
 
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &render_data->texture_index);
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 16, sizeof(vec3_t), &cam_pos);
 
         constexpr VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
@@ -670,7 +672,9 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    swap_draw_frame(command_buffer, &render_descripts, &texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack);
+    TransformComponent* cam = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
+
+    swap_draw_frame(command_buffer, &render_descripts, &texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack, cam->transform.position);
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);

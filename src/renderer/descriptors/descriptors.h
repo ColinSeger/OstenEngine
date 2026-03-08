@@ -537,7 +537,7 @@ static inline VkResult init_light_positions(Device* device, LightSources* lights
         return result;
 
     for(auto& light : lights->light_positions){
-        light = v3_norm({0, 0, 0});
+        light = {0, 0, 0};
     }
 
     memcpy(lights->light_memory, lights->light_positions, sizeof(vec3_t)*MAX_LIGHTS);
