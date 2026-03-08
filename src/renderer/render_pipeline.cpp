@@ -51,12 +51,12 @@ struct RenderPipeline{
 
     //TEMP
     // SHADOWPASS
-    ShadowPass shadow_pass;
+    //ShadowPass shadow_pass;
     VkDescriptorSetLayout shadow_layout;
     VkDescriptorSetLayout fragment_layout;
     ViewDescriptor camera_descript;
 
-    ViewDescriptor light;
+    //ViewDescriptor light;
     LightSources lights;
 
     FrameDescriptor render_descripts;
@@ -66,13 +66,13 @@ struct RenderPipeline{
     //RenderDescriptors test_descriptor;
 
 
-    ViewDescriptor light_test;
+    //ViewDescriptor light_test;
 
     //VkBuffer light_position;
 
     ModelData model_render_data;
 
-    int32_t draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source);
+    int32_t draw_frame(CameraComponent& camera, HeapStack* heap_stack);
 };
 
 void render_cleanup(struct RenderPipeline& pipeline, HeapStack* memory_stack)
@@ -388,15 +388,15 @@ static VkResult create_sync_objects(VkDevice virtual_device, RenderData& render_
     return VK_SUCCESS;
 }
 
-static void update_view_buffer(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
+static void update_view_buffer(Transform transform, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
+    //ComponentSystem* transform_system = get_component_system(TRANSFORM);
+    //Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
 
     //Camera is placeholder name
-    vec3_t forward_vector =  v3_add(camera_transform.position, v3_forward_vector(camera_transform));
+    vec3_t forward_vector =  v3_add(transform.position, v3_forward_vector(transform));
 
-    mat4_t view_matrix = m4_look_at(camera_transform.position, forward_vector, {0, 0, 1});
+    mat4_t view_matrix = m4_look_at(transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
     mat4_t v_matrix = m4_mul(projection, view_matrix);
 
@@ -407,7 +407,7 @@ static void update_view_buffer(uint32_t transform_id, ViewDescriptor cam_descrip
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(ViewMatrix));
 }
 
-static void update_view_buffer_orthographic(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
+static inline void update_view_buffer_orthographic(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
     //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
@@ -426,7 +426,7 @@ static void update_view_buffer_orthographic(uint32_t transform_id, ViewDescripto
     memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(ViewMatrix));
 }
 
-static void update_uniform_buffer(const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
+static inline void update_uniform_buffer(const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
 
     for (size_t render_index = 0; render_index < to_render.renderable_amount; render_index++)
@@ -446,7 +446,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
     result = create_device(&render_pipeline.device, instance, surface, heap_stack);
-    render_pipeline.lights.light_amount = 1;
+    render_pipeline.lights.light_amount = 8;
 
     if(result != VK_SUCCESS){
         //"Descriptorpool failed to create"
@@ -467,8 +467,10 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     result = init_model_data(&render_pipeline.model_render_data, &render_pipeline.device, heap_stack);
 
     create_view_uniform_buffer(&render_pipeline.camera_descript, &render_pipeline.device);
-    create_view_uniform_buffer(&render_pipeline.light_test, &render_pipeline.device);
-    create_view_uniform_buffer(&render_pipeline.light, &render_pipeline.device);
+    //create_view_uniform_buffer(&render_pipeline.light_test, &render_pipeline.device);
+    for(uint8_t i = 0; i < MAX_LIGHTS; i++){
+        create_view_uniform_buffer(&render_pipeline.lights.view_descriptor[i], &render_pipeline.device);
+    }
 
     result = create_descriptor_pool(&render_pipeline.descriptor_pool, render_pipeline.device.virtual_device, 100);
 
@@ -481,11 +483,11 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     init_light_positions(&render_pipeline.device, &render_pipeline.lights);
 
-    result = create_descriptor_set(render_pipeline.device.virtual_device, &render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, &render_pipeline.camera_descript, &render_pipeline.light_test);
+    result = create_descriptor_set(render_pipeline.device.virtual_device, &render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, &render_pipeline.camera_descript, render_pipeline.lights.view_descriptor);
     if(result != VK_SUCCESS)
         return result;
 
-    result = create_shadow_sets(render_pipeline.device.virtual_device, render_pipeline.light_test, &render_pipeline.lights, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
+    result = create_shadow_sets(render_pipeline.device.virtual_device, &render_pipeline.lights, render_pipeline.descriptor_pool, render_pipeline.shadow_layout);
 
     if(result != VK_SUCCESS)
         return result;
@@ -502,13 +504,15 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     pipeline_layout_info.setLayoutCount = shadow_layout_amount;
     pipeline_layout_info.pSetLayouts = shadow_layouts;
 
-    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.shadow_pass.shadow_pipe_layout);
+    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.lights.shadow_pass[0].shadow_pipe_layout);
     if(result != VK_SUCCESS){
         return result;
         // throw "Failed to create pipeline";
     }
-    create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.shadow_pass);
-    create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.shadow_pass.image_view, render_pipeline.shadow_pass.sampler, &render_pipeline.lights, &texture);
+    for(uint8_t i = 0; i < MAX_LIGHTS; i++){
+        create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.lights.shadow_pass[i]);
+    }
+    create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.lights.shadow_pass[0].image_view, render_pipeline.lights.shadow_pass[0].sampler, &render_pipeline.lights, &texture);
 
  //    VkPushConstantRange vertex_constant;
 	// vertex_constant.offset = 0;
@@ -534,7 +538,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
         //throw "Failed to create pipeline";
     }
 
-    setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.shadow_pass);
+    setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.lights.shadow_pass[0]);
 
     setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline);
 
@@ -571,6 +575,9 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
         vkCmdDrawIndexed(command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
     }
 }
+
+
+static vec3_t test[8] = {};
 
 static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass* shadow_pass, const VkExtent2D viewport_extent, LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
     //Begining of shadow pass
@@ -634,19 +641,34 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass
     vkCmdEndRenderPass(*command_buffer);
 }
 
-int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& imgui_texture, HeapStack* heap_stack, CameraComponent& light_source)
+static Transform tasd[MAX_LIGHTS] = {};
+
+int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stack)
 {
     vkDeviceWaitIdle(device.virtual_device);//Fix Later. Sinks about 300fps
     static uint8_t current_frame = 0;//TODO Make better
     static uint32_t image_index = 0;
 
     ComponentSystem* trans_sys = get_component_system(TRANSFORM);
-    TransformComponent* t = (TransformComponent*)get_component_by_id(trans_sys, light_source.transform_id);
+    //TransformComponent* t = (TransformComponent*)get_component_by_id(trans_sys, light_source.transform_id);
+    TransformComponent* cam = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
 
+    for(int i = 0; i < MAX_LIGHTS; i++){
+        ImGui::PushID(i);
+        ImGui::DragFloat3("Camera Position", &tasd[i].position.x);
+        test[i] = tasd[i].position;
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
 
-    update_lights(&lights, &t->transform.position, 1);
-    update_view_buffer(light_source.transform_id, light_test, current_frame, 1, light_source.field_of_view, 2000.f);
-    update_view_buffer(camera.transform_id, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
+    update_lights(&lights, test, 8);
+
+    for(int i = 0; i < MAX_LIGHTS; i++){
+        update_view_buffer(tasd[i], lights.view_descriptor[i], current_frame, 1, camera.field_of_view, 2000.f);
+    }
+
+    //update_view_buffer(light_source.transform_id, light_tes, current_frame, 1, light_source.field_of_view, 2000.f);
+    update_view_buffer(cam->transform, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
     update_uniform_buffer(current_frame, model_render_data, heap_stack);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
@@ -664,7 +686,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
     if(CommandBuffer::record_command_buffer(command_buffer) != VK_SUCCESS)
         return result;
 
-    start_shadow_pass(&command_buffer, &shadow_pass, {1024, 1024}, &lights, model_render_data, current_frame, heap_stack);
+    start_shadow_pass(&command_buffer, &lights.shadow_pass[0], {1024, 1024}, &lights, model_render_data, current_frame, heap_stack);
 
     void* frame_buffer = get_at_index(heap_stack, swap_chain_images.swap_chain_frame_buffers);
 
@@ -672,7 +694,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, VkDescriptorSet& img
 
     bind_pipeline(command_buffer, graphics_pipeline, swap_chain.screen_extent);
 
-    TransformComponent* cam = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
+    //TransformComponent* cam2 = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
 
     swap_draw_frame(command_buffer, &render_descripts, &texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack, cam->transform.position);
 

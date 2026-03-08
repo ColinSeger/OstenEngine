@@ -5,6 +5,7 @@
 #include <vulkan/vulkan_core.h>
 #include "platform.h"
 #include "additional_things/arena.h"
+#include "renderer/descriptors/descriptors.h"
 #include "renderer/instance/vulkan/instance.h"
 #include "renderer/render_pipeline.cpp"
 #include "editor/UI/editor_gui.hpp"
@@ -24,7 +25,7 @@ struct OstenEngine
     GLFWwindow* main_window = nullptr;
     vec3_t target_point = {};
 
-    VkDescriptorSet imgui_texture = VK_NULL_HANDLE;
+    VkDescriptorSet imgui_texture[MAX_LIGHTS];
 
     VkInstance instance;
 
@@ -116,13 +117,15 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     }
 
     init_imgui(main_window, &render_pipeline, instance, &heap_stack);
+    for(uint8_t i = 0; i < MAX_LIGHTS; i++){
+        imgui_texture[i] = ImGui_ImplVulkan_AddTexture
+        (
+            render_pipeline.lights.shadow_pass[i].debug_sampler,
+            render_pipeline.lights.shadow_pass[i].image_view,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
 
-    imgui_texture = ImGui_ImplVulkan_AddTexture
-    (
-        render_pipeline.shadow_pass.debug_sampler,
-        render_pipeline.shadow_pass.image_view,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+    }
 
     file_explorer = init_file_explorer();
 
@@ -158,14 +161,16 @@ void OstenEngine::draw_frame(){
         start_time2 = platform_get_time_handle();
         frames = 0;
     }
-    if(imgui_texture != VK_NULL_HANDLE){
-        ImGui::Begin("ShadowMap");
-        ImGui::Image(
-            (ImTextureID)imgui_texture,
-            ImVec2(256, 256)
-        );
-        ImGui::End();
+    ImGui::Begin("ShadowMap");
+    for(uint8_t i = 0; i < MAX_LIGHTS; i++){
+        if(imgui_texture[i] != VK_NULL_HANDLE){
+            ImGui::Image(
+                (ImTextureID)imgui_texture[i],
+                ImVec2(256, 256)
+            );
+        }
     }
+    ImGui::End();
     camera_movement(delta_time, 0, main_window);
 
     ComponentSystem* camera_sys = get_component_system(0);
@@ -174,8 +179,8 @@ void OstenEngine::draw_frame(){
     //for (size_t i = 0; i < cameras->amount; i++)
     {
         CameraComponent* camera = (CameraComponent*)get_component_by_id(camera_sys, 0);
-        CameraComponent* light_source = (CameraComponent*)get_component_by_id(camera_sys, 1);
-        result = render_pipeline.draw_frame(*camera, imgui_texture, &heap_stack, *light_source);
+        //CameraComponent* light_source = (CameraComponent*)get_component_by_id(camera_sys, 1);
+        result = render_pipeline.draw_frame(*camera, &heap_stack);
 
         if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized){
             resized = false;
@@ -187,7 +192,7 @@ void OstenEngine::draw_frame(){
                 glfwWaitEvents();
             }
             restart_swap_chain(&render_pipeline, VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, &heap_stack);
-            result = render_pipeline.draw_frame(*camera, imgui_texture, &heap_stack, *light_source);
+            result = render_pipeline.draw_frame(*camera, &heap_stack);
         }
     }
 
