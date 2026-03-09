@@ -16,6 +16,8 @@
 #include "../additional_things/arena.h"
 #include "render_passes/render_passes.h"
 
+//K_LOADER_DEBUG=all LD_PRELOAD=/usr/lib/librenderdoc.so ./build/OstenEngine
+
 struct RenderData{
     VkSemaphore image_available_semaphores[MAX_FRAMES_IN_FLIGHT];
     VkSemaphore render_finished_semaphores[MAX_FRAMES_IN_FLIGHT];
@@ -219,7 +221,7 @@ static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass rend
     return VK_SUCCESS;
 }
 
-static VkResult setup_shadow_pipe(VkDevice virtual_device, ShadowPass* shadow_pass){
+static VkResult setup_shadow_pipe(VkDevice virtual_device, ShadowPass* shadow_pass, LightSources* lights_){
     //ShaderMemoryIndexing vertex_shader = load_shader("src/renderer/shaders/quad.vert.spv", heap_stack);
     FileData vertex_code = platform_load_entire_file("src/renderer/shaders/quad.vert.spv");
     VkPipelineShaderStageCreateInfo vertex_stage_info = {};
@@ -299,11 +301,11 @@ static VkResult setup_shadow_pipe(VkDevice virtual_device, ShadowPass* shadow_pa
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = 0;
     pipeline_info.pDynamicState = &dynamic_state;
-    pipeline_info.layout = shadow_pass->shadow_pipe_layout;
+    pipeline_info.layout = lights_->shadow_pipe_layout;
     pipeline_info.subpass = 0;
-    pipeline_info.renderPass = shadow_pass->render_pass;
+    pipeline_info.renderPass = lights_->render_pass;
 
-    VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &shadow_pass->shadow_pipeline);
+    VkResult result = vkCreateGraphicsPipelines(virtual_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &lights_->shadow_pipeline);
 
     vkDestroyShaderModule(virtual_device, vertex_stage_info.module, nullptr);
     if(result != VK_SUCCESS) return result;
@@ -388,23 +390,15 @@ static VkResult create_sync_objects(VkDevice virtual_device, RenderData& render_
     return VK_SUCCESS;
 }
 
-static void update_view_buffer(Transform transform, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
-    //Aspect Ratio =  swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height
-    //ComponentSystem* transform_system = get_component_system(TRANSFORM);
-    //Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
+static void update_view_buffer(Transform transform, ViewDescriptor* view_descriptor, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
 
-    //Camera is placeholder name
     vec3_t forward_vector =  v3_add(transform.position, v3_forward_vector(transform));
 
     mat4_t view_matrix = m4_look_at(transform.position, forward_vector, {0, 0, 1});
     mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
     mat4_t v_matrix = m4_mul(projection, view_matrix);
 
-    ViewMatrix uniform_buffer{
-        v_matrix
-    };
-
-    memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(ViewMatrix));
+    memcpy(view_descriptor->uniform_buffers_mapped[current_image], &v_matrix, sizeof(mat4_t));
 }
 
 static inline void update_view_buffer_orthographic(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
@@ -412,18 +406,11 @@ static inline void update_view_buffer_orthographic(uint32_t transform_id, ViewDe
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     Transform camera_transform = ((TransformComponent*)get_component_by_id(transform_system, transform_id))->transform;
 
-    //Camera is placeholder name
-    //vec3_t forward_vector =  v3_add(camera_transform.position, v3_forward_vector(camera_transform));
-
     mat4_t view_matrix = m4_look_at(camera_transform.position, {0, 0, 0}, {0, 0, 1});
     mat4_t projection = m4_orthographic_matrix(-10.0f, 10.0f, -10.0f, 10.0f, 0.8f, 2000);
     mat4_t v_matrix = m4_mul(projection, view_matrix);
 
-    ViewMatrix uniform_buffer{
-        v_matrix
-    };
-
-    memcpy(cam_descript.uniform_buffers_mapped[current_image], &uniform_buffer, sizeof(ViewMatrix));
+    memcpy(cam_descript.uniform_buffers_mapped[current_image], &v_matrix, sizeof(mat4_t));
 }
 
 static inline void update_uniform_buffer(const uint8_t current_frame, ModelData& to_render, HeapStack* heap_stack) {
@@ -483,7 +470,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     init_light_positions(&render_pipeline.device, &render_pipeline.lights);
 
-    result = create_descriptor_set(render_pipeline.device.virtual_device, &render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, &render_pipeline.camera_descript, render_pipeline.lights.view_descriptor);
+    result = create_descriptor_set(render_pipeline.device.virtual_device, &render_pipeline.render_descripts, render_pipeline.descriptor_pool, render_pipeline.descriptor_set_layout, &render_pipeline.camera_descript, &render_pipeline.lights);
     if(result != VK_SUCCESS)
         return result;
 
@@ -504,15 +491,20 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     pipeline_layout_info.setLayoutCount = shadow_layout_amount;
     pipeline_layout_info.pSetLayouts = shadow_layouts;
 
-    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.lights.shadow_pass[0].shadow_pipe_layout);
+    result = vkCreatePipelineLayout(render_pipeline.device.virtual_device, &pipeline_layout_info, nullptr, &render_pipeline.lights.shadow_pipe_layout);
     if(result != VK_SUCCESS){
         return result;
         // throw "Failed to create pipeline";
     }
+
+    create_offscreen_render_pass(&render_pipeline.lights.render_pass, &render_pipeline.device);
+
+    create_shadow_samplers(render_pipeline.device.virtual_device, &render_pipeline.lights.shadow_sampler, &render_pipeline.lights.debug_shadow_sampler);
+
     for(uint8_t i = 0; i < MAX_LIGHTS; i++){
-        create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.lights.shadow_pass[i]);
+        create_offscreen_framebuffer(&render_pipeline.device, {1024, 1024}, &render_pipeline.lights.shadow_passes[i], &render_pipeline.lights.render_pass);
     }
-    create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, render_pipeline.lights.shadow_pass[0].image_view, render_pipeline.lights.shadow_pass[0].sampler, &render_pipeline.lights, &texture);
+    create_new_fragment_set(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, &render_pipeline.lights, &texture);
 
  //    VkPushConstantRange vertex_constant;
 	// vertex_constant.offset = 0;
@@ -538,7 +530,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
         //throw "Failed to create pipeline";
     }
 
-    setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.lights.shadow_pass[0]);
+    setup_shadow_pipe(render_pipeline.device.virtual_device, &render_pipeline.lights.shadow_passes[0], &render_pipeline.lights);
 
     setup_render_pipeline(render_pipeline.device.virtual_device, render_pipeline.render_pass, render_pipeline.pipeline_layout, &render_pipeline.graphics_pipeline);
 
@@ -577,23 +569,10 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
 }
 
 
-static vec3_t test[8] = {};
-
-static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass* shadow_pass, const VkExtent2D viewport_extent, LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
+static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D viewport_extent, struct LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1]{};
     clear_values[0].depthStencil = {1.0f, 0};
-
-    VkRenderPassBeginInfo render_pass_info{};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_info.renderPass = shadow_pass->render_pass;
-    render_pass_info.framebuffer = shadow_pass->framebuffer;
-    render_pass_info.renderArea.offset = {0, 0};
-    render_pass_info.renderArea.extent = viewport_extent;
-    render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
-    render_pass_info.pClearValues = clear_values;
-
-    vkCmdBeginRenderPass(*command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -609,13 +588,25 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass
     scissor.extent = viewport_extent;
     vkCmdSetScissor(*command_buffer, 0, 1, &scissor);
 
-    vkCmdBindPipeline(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pass->shadow_pipeline);
+    vkCmdBindPipeline(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lights->shadow_pipeline);
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0){
         vkCmdEndRenderPass(*command_buffer);
         return;
     }
     constexpr VkDeviceSize offsets[] = {0};
     for(uint8_t light_index = 0; light_index < lights->light_amount; light_index++){
+
+        VkRenderPassBeginInfo render_pass_info{};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_info.renderPass = lights->render_pass;
+        render_pass_info.framebuffer = lights->shadow_passes[light_index].framebuffer;
+        render_pass_info.renderArea.offset = {0, 0};
+        render_pass_info.renderArea.extent = viewport_extent;
+        render_pass_info.clearValueCount = sizeof(clear_values) / sizeof(clear_values[0]);
+        render_pass_info.pClearValues = clear_values;
+
+        vkCmdBeginRenderPass(*command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
         for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
             RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
 
@@ -623,7 +614,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass
             VkDescriptorSet descriptors[] = { lights->lights_desc[light_index].descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
             uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
-            vkCmdBindDescriptorSets(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow_pass->shadow_pipe_layout, 0, descriptor_amount, descriptors, 0, nullptr);
+            vkCmdBindDescriptorSets(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lights->shadow_pipe_layout, 0, descriptor_amount, descriptors, 0, nullptr);
 
             Model model = loaded_models[render_data->model_index];
 
@@ -635,10 +626,8 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, struct ShadowPass
                 vkCmdDrawIndexed(*command_buffer, model.index_amount, render_data->instance_amount, 0, 0, 0);
             }
         }
+        vkCmdEndRenderPass(*command_buffer);
     }
-
-
-    vkCmdEndRenderPass(*command_buffer);
 }
 
 static Transform tasd[MAX_LIGHTS] = {};
@@ -656,19 +645,25 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
     for(int i = 0; i < MAX_LIGHTS; i++){
         ImGui::PushID(i);
         ImGui::DragFloat3("Camera Position", &tasd[i].position.x);
-        test[i] = tasd[i].position;
+        lights.light_positions[i].x = tasd[i].position.x;
+        lights.light_positions[i].y = tasd[i].position.y;
+        lights.light_positions[i].z = tasd[i].position.z;
+
+        ImGui::DragFloat3("Camera R", &tasd[i].rotation.x);
+        ImGui::DragFloat3("Camera s", &tasd[i].scale.x);
+
         ImGui::Spacing();
         ImGui::PopID();
     }
 
-    update_lights(&lights, test, 8);
+    update_lights(&lights, lights.light_positions, 8);
 
     for(int i = 0; i < MAX_LIGHTS; i++){
-        update_view_buffer(tasd[i], lights.view_descriptor[i], current_frame, 1, camera.field_of_view, 2000.f);
+        update_view_buffer(tasd[i], &lights.view_descriptor[i], current_frame, 1, camera.field_of_view, 200.f);
     }
 
     //update_view_buffer(light_source.transform_id, light_tes, current_frame, 1, light_source.field_of_view, 2000.f);
-    update_view_buffer(cam->transform, camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
+    update_view_buffer(cam->transform, &camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
     update_uniform_buffer(current_frame, model_render_data, heap_stack);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
@@ -686,7 +681,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
     if(CommandBuffer::record_command_buffer(command_buffer) != VK_SUCCESS)
         return result;
 
-    start_shadow_pass(&command_buffer, &lights.shadow_pass[0], {1024, 1024}, &lights, model_render_data, current_frame, heap_stack);
+    start_shadow_pass(&command_buffer, {1024, 1024}, &lights, model_render_data, current_frame, heap_stack);
 
     void* frame_buffer = get_at_index(heap_stack, swap_chain_images.swap_chain_frame_buffers);
 

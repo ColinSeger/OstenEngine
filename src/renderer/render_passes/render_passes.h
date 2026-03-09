@@ -114,19 +114,13 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
 }
 
 struct ShadowPass{
-    VkPipeline shadow_pipeline;
-    VkPipelineLayout shadow_pipe_layout;
     VkImage depth_image;
     VkDeviceMemory depth_image_memory;
     VkImageView image_view;
-    VkSampler sampler;
-    VkRenderPass render_pass;
     VkFramebuffer framebuffer;
-    VkSampler debug_sampler;
 };
 
-//Temporaraly placed here
-static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D size, ShadowPass* shadow_pass){
+static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D size, ShadowPass* shadow_pass, VkRenderPass* render_pass){
 
     Texture::create_image(
         device,
@@ -153,6 +147,21 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
     VkResult creation_status = vkCreateImageView(device->virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
     if(creation_status != VK_SUCCESS) return creation_status;
 
+    VkFramebufferCreateInfo frame_buffer_create_info{};
+    frame_buffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    frame_buffer_create_info.renderPass = *render_pass;
+    frame_buffer_create_info.attachmentCount = 1;
+    frame_buffer_create_info.pAttachments = &shadow_pass->image_view;
+    frame_buffer_create_info.width = size.width;
+    frame_buffer_create_info.height = size.height;
+    frame_buffer_create_info.layers = 1;
+    frame_buffer_create_info.flags = 0;
+
+    vkCreateFramebuffer(device->virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
+    return VK_SUCCESS;
+}
+
+static inline VkResult create_shadow_samplers(VkDevice virtual_device, VkSampler* shadow_sampler, VkSampler* debug_shadow_sampler){
     VkSamplerCreateInfo sampler_create_info{};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     sampler_create_info.compareEnable = VK_TRUE;
@@ -183,23 +192,7 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
     debug_sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 
-    creation_status = vkCreateSampler(device->virtual_device, &sampler_create_info, nullptr, &shadow_pass->sampler);
+    VkResult creation_status = vkCreateSampler(virtual_device, &sampler_create_info, nullptr, shadow_sampler);
     if(creation_status != VK_SUCCESS) return creation_status;
-    creation_status = vkCreateSampler(device->virtual_device, &debug_sampler, nullptr, &shadow_pass->debug_sampler);
-    if(creation_status != VK_SUCCESS) return creation_status;
-
-    create_offscreen_render_pass(&shadow_pass->render_pass, device);
-
-    VkFramebufferCreateInfo frame_buffer_create_info{};
-    frame_buffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    frame_buffer_create_info.renderPass = shadow_pass->render_pass;
-    frame_buffer_create_info.attachmentCount = 1;
-    frame_buffer_create_info.pAttachments = &shadow_pass->image_view;
-    frame_buffer_create_info.width = size.width;
-    frame_buffer_create_info.height = size.height;
-    frame_buffer_create_info.layers = 1;
-    frame_buffer_create_info.flags = 0;
-
-    vkCreateFramebuffer(device->virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
-    return VK_SUCCESS;
+    return creation_status = vkCreateSampler(virtual_device, &debug_sampler, nullptr, debug_shadow_sampler);
 }

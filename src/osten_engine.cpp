@@ -120,8 +120,8 @@ OstenEngine::OstenEngine(const int width, const int height, const char* applicat
     for(uint8_t i = 0; i < MAX_LIGHTS; i++){
         imgui_texture[i] = ImGui_ImplVulkan_AddTexture
         (
-            render_pipeline.lights.shadow_pass[i].debug_sampler,
-            render_pipeline.lights.shadow_pass[i].image_view,
+            render_pipeline.lights.debug_shadow_sampler,
+            render_pipeline.lights.shadow_passes[i].image_view,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
 

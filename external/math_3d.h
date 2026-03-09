@@ -134,6 +134,11 @@ struct vec2_uint_t{
     uint32_t x;
     uint32_t y;
 };
+
+typedef struct {
+    float x, y, z, w;
+} vec4_t;
+
 static inline float parse_float(const char* string_char, size_t& index_jump) {
     uint32_t int_part = 0;
     uint32_t frac_part = 0;

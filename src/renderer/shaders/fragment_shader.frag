@@ -6,7 +6,7 @@ layout(set = 2, binding = 0) uniform sampler2D textures[20];
 layout(set = 2, binding = 1) uniform sampler2D shadow_maps[MAX_LIGHTS];
 
 layout(set = 2, binding = 2) uniform LightParams {
-    vec3 light_dirs[MAX_LIGHTS];
+    vec4 light_positions[MAX_LIGHTS];
 } lights;
 
 layout(location = 0) in vec3 frag_position;
@@ -29,13 +29,13 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1){
     vec3 projected_cords = light_space_pos.xyz / light_space_pos.w;
 
 	if(projected_cords.z > 1.0 || projected_cords.z  < 0.0)
-		return 1.0;
+		return 0.0;
 
     vec2 shadow_map_coord = projected_cords.xy * 0.5 + 0.5;
 
 	if(shadow_map_coord.x < 0.0 || shadow_map_coord.x > 1.0 ||
 	   shadow_map_coord.y < 0.0 || shadow_map_coord.y > 1.0)
-		return 1.0;
+		return 0.0;
 
     float closest = texture(shadow_map1, shadow_map_coord.xy).x;
 
@@ -52,30 +52,30 @@ float compute_shadow_factor(vec4 light_space_pos, sampler2D shadow_map1){
 void main(){
     vec3 albedo = texture(textures[push_constants.texture_index], frag_tex_cord).rgb;
     vec3 normal = normalize(frag_normal);
-	float shadow = 0;
-	float specular = 0;
-	vec3 diffuse = vec3(0);
-	for(int i = 0; i < MAX_LIGHTS; i++){
-		vec3 light_dir = normalize(lights.light_dirs[i] - frag_position);
-		//vec3 light_dir = normalize(-lights.light_dirs[0]);
+	//float shadow = 0;
+	//float specular = 0;
+	//vec3 diffuse = vec3(0);
 
-		float diff = max(dot(normal, light_dir), 0.0);
+	vec3 lighting = AMBIENT * albedo;
 
-		diffuse = diff * vec3(1);
+    for(int i = 0; i < MAX_LIGHTS; i++)
+    {
+        vec3 light_dir = normalize(lights.light_positions[i].xyz - frag_position);
 
-		vec3 view_dir = normalize(push_constants.camera_position - frag_position);
+        float diff = max(dot(normal, light_dir), 0.0);
+        vec3 diffuse = diff * albedo;
 
-		vec3 halfway_dir = normalize(light_dir + view_dir);
+        vec3 view_dir = normalize(push_constants.camera_position - frag_position);
+        vec3 halfway_dir = normalize(light_dir + view_dir);
 
-		specular += pow(max(dot(normal, halfway_dir), 0), SHININESS);
+        float specular = SPECULAR_STRENGTH * pow(max(dot(normal, halfway_dir), 0.0), SHININESS);
 
-		shadow += compute_shadow_factor(frag_pos_light_space[i], shadow_maps[i]);
+        float shadow = compute_shadow_factor(frag_pos_light_space[i], shadow_maps[i]);
 
-		//vec3 lighting = (AMBIENT + (1 - shadow)) * (diffuse + specular) * albedo;
-	}
+        lighting += (shadow) * (diffuse + specular);
+    }
 
 
-    vec3 lighting = (AMBIENT * albedo) + ((1.0 - shadow) * (diffuse * albedo + specular));
 
     out_color = vec4(lighting, 1);
 	//out_color = vec4(vec3(diff), 1.0);
