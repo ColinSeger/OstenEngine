@@ -1,7 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+//#include <stdlib.h>
 
 #ifdef _WIN32
 #include "src/win32_app.cpp"

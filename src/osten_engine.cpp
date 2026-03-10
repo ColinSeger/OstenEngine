@@ -68,7 +68,10 @@ static Timer last_tick;
 OstenEngine::OstenEngine(const int width, const int height, const char* application_name){
     init_mem_arena(&heap_stack, 256*MB);
 
-    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+    #ifdef _WIN32
+    #else
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);//For debug
+    #endif
 
     if(!glfwInit()){
         puts("glfwInit failed");
@@ -203,6 +206,7 @@ void OstenEngine::draw_frame(){
 }
 
 void OstenEngine::cleanup(){
+    if(!render_pipeline.device.virtual_device)return;;
     VkSurfaceKHR surf = render_pipeline.my_surface;
 
     vkDeviceWaitIdle(render_pipeline.device.virtual_device);
