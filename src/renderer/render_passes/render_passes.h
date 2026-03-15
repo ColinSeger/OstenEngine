@@ -164,7 +164,7 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
 static inline VkResult create_shadow_samplers(VkDevice virtual_device, VkSampler* shadow_sampler, VkSampler* debug_shadow_sampler){
     VkSamplerCreateInfo sampler_create_info{};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_create_info.compareEnable = VK_TRUE;
+    sampler_create_info.compareEnable = VK_FALSE;
     sampler_create_info.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     sampler_create_info.magFilter = VK_FILTER_LINEAR;
     sampler_create_info.minFilter = VK_FILTER_LINEAR;

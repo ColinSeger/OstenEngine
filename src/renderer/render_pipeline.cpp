@@ -648,6 +648,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
         lights.light_positions[i].x = tasd[i].position.x;
         lights.light_positions[i].y = tasd[i].position.y;
         lights.light_positions[i].z = tasd[i].position.z;
+        lights.light_positions[i].w = 1;
 
         ImGui::DragFloat3("Camera R", &tasd[i].rotation.x);
         ImGui::DragFloat3("Camera s", &tasd[i].scale.x);
@@ -656,7 +657,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
         ImGui::PopID();
     }
 
-    update_lights(&lights, lights.light_positions, 8);
+    update_lights(&lights, lights.light_positions, lights.light_amount);
 
     for(int i = 0; i < MAX_LIGHTS; i++){
         update_view_buffer(tasd[i], &lights.view_descriptor[i], current_frame, 1, camera.field_of_view, 200.f);

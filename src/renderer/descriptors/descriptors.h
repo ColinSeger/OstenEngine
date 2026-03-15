@@ -413,42 +413,37 @@ static VkResult create_descriptor_set(VkDevice virtual_device, FrameDescriptor* 
 
 
     VkDescriptorBufferInfo light_info [MAX_LIGHTS]{};
-    for(int i = 0; i < MAX_LIGHTS; i++){
-        light_info[i].offset = 0;
-        light_info[i].range = sizeof(ViewMatrix);
-        for (uint8_t x = 0; x < MAX_FRAMES_IN_FLIGHT; x++){
-            light_info[i].buffer = light->view_descriptor[i].uniform_buffers[x];
+
+    for (uint8_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++) {
+
+        for(int i = 0; i < MAX_LIGHTS; i++){
+            light_info[i].offset = 0;
+            light_info[i].range = sizeof(ViewMatrix);
+            light_info[i].buffer = light->view_descriptor[i].uniform_buffers[frame];
         }
-    }
 
-
-    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo camera_info{};
         camera_info.offset = 0;
         camera_info.range = sizeof(ViewMatrix);
-        camera_info.buffer = camera->uniform_buffers[i];
+        camera_info.buffer = camera->uniform_buffers[frame];
 
-
-        constexpr uint32_t descriptor_size = 2;
-        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
+        VkWriteDescriptorSet descriptor_writes[2]{};
 
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = rendering_descriptor->descriptor_sets[i];
+        descriptor_writes[0].dstSet = rendering_descriptor->descriptor_sets[frame];
         descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_writes[0].descriptorCount = 1;
         descriptor_writes[0].pBufferInfo = &camera_info;
 
         descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = rendering_descriptor->descriptor_sets[i];
+        descriptor_writes[1].dstSet = rendering_descriptor->descriptor_sets[frame];
         descriptor_writes[1].dstBinding = 1;
-        descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptor_writes[1].descriptorCount = MAX_LIGHTS;
         descriptor_writes[1].pBufferInfo = light_info;
 
-        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
+        vkUpdateDescriptorSets(virtual_device, 2, descriptor_writes, 0, nullptr);
     }
     return VK_SUCCESS;
 }
@@ -538,11 +533,16 @@ static inline VkResult init_model_data(ModelData* model_data, Device* device, He
 }
 
 static inline VkResult init_light_positions(Device* device, LightSources* lights){
+    uint32_t size = sizeof(*lights->light_positions) * MAX_LIGHTS;
+
+    for(auto& light : lights->light_positions){
+        light = {0, 0, 0, 1};
+    }
 
     VkResult result = CommandBuffer::create_buffer(
         device,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        sizeof(vec3_t) * MAX_LIGHTS,
+        size,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         &lights->light_position_buffer,
         &lights->device_memory
@@ -550,25 +550,21 @@ static inline VkResult init_light_positions(Device* device, LightSources* lights
     if(result != VK_SUCCESS)
         return result;
 
-    result = vkMapMemory(device->virtual_device, lights->device_memory, 0, sizeof(vec4_t)*MAX_LIGHTS, 0, &lights->light_position_memory);
+    result = vkMapMemory(device->virtual_device, lights->device_memory, 0, size, 0, &lights->light_position_memory);
 
     if(result != VK_SUCCESS)
         return result;
 
-    for(auto& light : lights->light_positions){
-        light = {0, 0, 0, 0};
-    }
-
-    memcpy(lights->light_position_memory, lights->light_positions, sizeof(vec4_t)*MAX_LIGHTS);
+    memcpy(lights->light_position_memory, lights->light_positions, size);
 
     return VK_SUCCESS;
 }
 
 static inline void update_lights(LightSources* lights, vec4_t* pos, uint8_t pos_amount){
     for(uint8_t i = 0; i < pos_amount; i++){
-        vec3_t res = {pos[i].x, pos[i].y, pos[i].z};
-        *lights->light_positions = {res.x, res.y, res.z, 0};
+        //vec3_t res = {pos[i].x, pos[i].y, pos[i].z};
+        lights->light_positions[i] = pos[i];
     }
 
-    memcpy(lights->light_position_memory, lights->light_positions, sizeof(vec4_t)*MAX_LIGHTS);
+    memcpy(lights->light_position_memory, lights->light_positions, sizeof(*pos)*MAX_LIGHTS);
 }

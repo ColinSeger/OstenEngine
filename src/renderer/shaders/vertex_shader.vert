@@ -7,7 +7,7 @@ layout(set = 0, binding = 0) uniform CameraBuffer {
 } camera_buffer;
 
 layout(set = 0, binding = 1) uniform LightBuffer {
-    mat4 light_views[MAX_LIGHTS];
+    mat4 light_view_proj[MAX_LIGHTS];
 } light_buffer;
 
 layout(set = 1, binding = 0) readonly buffer ModelBuffer {
@@ -34,7 +34,7 @@ void main() {
     frag_tex_cord = in_tex_cord;
 
     for (int i = 0; i < MAX_LIGHTS; i++){
-        frag_pos_light_space[i] = light_buffer.light_views[i] * world_pos;
+        frag_pos_light_space[i] = light_buffer.light_view_proj[i] * world_pos;
     }
     frag_position = world_pos.xyz;
 }
