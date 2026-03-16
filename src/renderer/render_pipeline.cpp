@@ -390,7 +390,7 @@ static VkResult create_sync_objects(VkDevice virtual_device, RenderData& render_
     return VK_SUCCESS;
 }
 
-static void update_view_buffer(Transform transform, ViewDescriptor* view_descriptor, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
+static void update_view_buffer(Transform transform, ViewDescriptor* view_descriptor, uint8_t current_image, float aspect_ratio, float field_of_view, float range, uint8_t amount){
 
     vec3_t forward_vector =  v3_add(transform.position, v3_forward_vector(transform));
 
@@ -398,7 +398,21 @@ static void update_view_buffer(Transform transform, ViewDescriptor* view_descrip
     mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
     mat4_t v_matrix = m4_mul(projection, view_matrix);
 
-    memcpy(view_descriptor->uniform_buffers_mapped[current_image], &v_matrix, sizeof(mat4_t));
+    memcpy(view_descriptor->uniform_buffers_mapped[current_image], &v_matrix, sizeof(mat4_t) * amount);
+}
+
+static void update_view_buffer_light(Transform* transform, ViewDescriptor* view_descriptor, uint8_t current_image, float aspect_ratio, float field_of_view, float range){
+
+    mat4_t v_matrix[MAX_LIGHTS];
+    for(int light = 0; light < MAX_LIGHTS; light++){
+        vec3_t forward_vector =  v3_add(transform[light].position, v3_forward_vector(transform[light]));
+
+        mat4_t view_matrix = m4_look_at(transform[light].position, forward_vector, {0, 0, 1});
+        mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
+        v_matrix[light] = m4_mul(projection, view_matrix);
+    }
+
+    memcpy(view_descriptor->uniform_buffers_mapped[current_image], v_matrix, sizeof(mat4_t) * MAX_LIGHTS);
 }
 
 static inline void update_view_buffer_orthographic(uint32_t transform_id, ViewDescriptor cam_descript, const uint8_t current_image, const float aspect_ratio, float field_of_view, float range){
@@ -453,11 +467,9 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     result = init_model_data(&render_pipeline.model_render_data, &render_pipeline.device, heap_stack);
 
-    create_view_uniform_buffer(&render_pipeline.camera_descript, &render_pipeline.device);
+    create_view_uniform_buffer(&render_pipeline.camera_descript, &render_pipeline.device, 1);
     //create_view_uniform_buffer(&render_pipeline.light_test, &render_pipeline.device);
-    for(uint8_t i = 0; i < MAX_LIGHTS; i++){
-        create_view_uniform_buffer(&render_pipeline.lights.view_descriptor[i], &render_pipeline.device);
-    }
+    create_view_uniform_buffer(&render_pipeline.lights.view_descriptor, &render_pipeline.device, render_pipeline.lights.light_amount);
 
     result = create_descriptor_pool(&render_pipeline.descriptor_pool, render_pipeline.device.virtual_device, 100);
 
@@ -611,7 +623,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D 
             RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
 
             if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
-            VkDescriptorSet descriptors[] = { lights->lights_desc[light_index].descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
+            VkDescriptorSet descriptors[] = { lights->lights_desc.descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
             uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
             vkCmdBindDescriptorSets(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lights->shadow_pipe_layout, 0, descriptor_amount, descriptors, 0, nullptr);
@@ -657,14 +669,12 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
         ImGui::PopID();
     }
 
-    update_lights(&lights, lights.light_positions, lights.light_amount);
+    //update_lights(&lights, lights.light_positions, lights.light_amount);
 
-    for(int i = 0; i < MAX_LIGHTS; i++){
-        update_view_buffer(tasd[i], &lights.view_descriptor[i], current_frame, 1, camera.field_of_view, 200.f);
-    }
+    update_view_buffer_light(tasd, &lights.view_descriptor, current_frame, 1, camera.field_of_view, 200.f);
 
     //update_view_buffer(light_source.transform_id, light_tes, current_frame, 1, light_source.field_of_view, 2000.f);
-    update_view_buffer(cam->transform, &camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f);
+    update_view_buffer(cam->transform, &camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f, 1);
     update_uniform_buffer(current_frame, model_render_data, heap_stack);
 
     vkWaitForFences(device.virtual_device, 1, &render_data.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);

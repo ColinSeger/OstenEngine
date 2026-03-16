@@ -60,7 +60,7 @@ void main(){
         vec3 light_dir = normalize(lights.light_positions[i].xyz - frag_position);
 
         float diff = max(dot(normal, light_dir), 0.0);
-        vec3 diffuse = diff * vec3(1,0,0); //* albedo;
+        vec3 diffuse = diff * albedo;
 
         vec3 view_dir = normalize(push_constants.camera_position - frag_position);
         vec3 halfway_dir = normalize(light_dir + view_dir);
@@ -69,7 +69,7 @@ void main(){
 
         float shadow = compute_shadow_factor(frag_pos_light_space[i], shadow_maps[i]);
 
-        lighting += (shadow); (diffuse + specular);
+        lighting += (shadow) * (diffuse + specular);
     }
 
 
