@@ -404,11 +404,11 @@ static void update_view_buffer(Transform transform, ViewDescriptor* view_descrip
 static void update_view_buffer_light(Transform* transform, ViewDescriptor* view_descriptor, uint8_t current_image, float aspect_ratio, float field_of_view, float range){
 
     mat4_t v_matrix[MAX_LIGHTS];
+    mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
     for(int light = 0; light < MAX_LIGHTS; light++){
         vec3_t forward_vector =  v3_add(transform[light].position, v3_forward_vector(transform[light]));
 
         mat4_t view_matrix = m4_look_at(transform[light].position, forward_vector, {0, 0, 1});
-        mat4_t projection = m4_perspective_matrix(field_of_view, aspect_ratio, 0.8f, range);
         v_matrix[light] = m4_mul(projection, view_matrix);
     }
 
@@ -447,7 +447,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     VkResult result = VK_SUCCESS;
     render_pipeline.my_surface = surface;
     result = create_device(&render_pipeline.device, instance, surface, heap_stack);
-    render_pipeline.lights.light_amount = 8;
+    render_pipeline.lights.light_amount = 0;
 
     if(result != VK_SUCCESS){
         //"Descriptorpool failed to create"
@@ -469,7 +469,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
     create_view_uniform_buffer(&render_pipeline.camera_descript, &render_pipeline.device, 1);
     //create_view_uniform_buffer(&render_pipeline.light_test, &render_pipeline.device);
-    create_view_uniform_buffer(&render_pipeline.lights.view_descriptor, &render_pipeline.device, render_pipeline.lights.light_amount);
+    create_view_uniform_buffer(&render_pipeline.lights.view_descriptor, &render_pipeline.device, MAX_LIGHTS);
 
     result = create_descriptor_pool(&render_pipeline.descriptor_pool, render_pipeline.device.virtual_device, 100);
 
@@ -550,7 +550,9 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
     return VK_SUCCESS;
 }
 
-static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos){
+static vec3_t shader_test = {0.05f, 0.5f, 64.f};
+
+static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos, float lights_amount){
     if(loaded_models.size() <= 0 || model_data.renderable_amount <= 0) return;
 
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
@@ -569,7 +571,9 @@ static void swap_draw_frame(VkCommandBuffer& command_buffer, FrameDescriptor* de
         //vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &test);
 
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &render_data->texture_index);
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof(vec3_t), &shader_test);
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 16, sizeof(vec3_t), &cam_pos);
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 28, sizeof(float), &lights_amount);
 
         constexpr VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &model.vertex_buffer, offsets);
@@ -606,7 +610,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D 
         return;
     }
     constexpr VkDeviceSize offsets[] = {0};
-    for(uint8_t light_index = 0; light_index < lights->light_amount; light_index++){
+    for(uint8_t light_index = 0; light_index < (uint8_t)lights->light_amount; light_index++){
 
         VkRenderPassBeginInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -623,7 +627,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D 
             RenderAble* render_data = get_renderable(&model_data, render_index, heap_stack);
 
             if(render_data == nullptr  || render_data->instance_amount <= 0) continue;
-            VkDescriptorSet descriptors[] = { lights->lights_desc.descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
+            VkDescriptorSet descriptors[] = { lights->lights_desc[light_index].descriptor_sets[frame], render_data->model_descriptor_sets[frame]};
             uint32_t descriptor_amount = sizeof(descriptors) / sizeof(descriptors[0]);
 
             vkCmdBindDescriptorSets(*command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lights->shadow_pipe_layout, 0, descriptor_amount, descriptors, 0, nullptr);
@@ -654,16 +658,20 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
     //TransformComponent* t = (TransformComponent*)get_component_by_id(trans_sys, light_source.transform_id);
     TransformComponent* cam = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
 
-    for(int i = 0; i < MAX_LIGHTS; i++){
+    ImGui::DragFloat3("Shader data (ambient, specular, shininess)", &shader_test.x, 0.01f);
+
+    ImGui::SliderFloat("Light Amount", &lights.light_amount, 0, 8);
+
+    for(int i = 0; i < lights.light_amount; i++){
         ImGui::PushID(i);
-        ImGui::DragFloat3("Camera Position", &tasd[i].position.x);
+        ImGui::DragFloat3("Light Position", &tasd[i].position.x);
         lights.light_positions[i].x = tasd[i].position.x;
         lights.light_positions[i].y = tasd[i].position.y;
         lights.light_positions[i].z = tasd[i].position.z;
         lights.light_positions[i].w = 1;
 
-        ImGui::DragFloat3("Camera R", &tasd[i].rotation.x);
-        ImGui::DragFloat3("Camera s", &tasd[i].scale.x);
+        ImGui::DragFloat3("Light R", &tasd[i].rotation.x, 0.001f);
+        ImGui::DragFloat3("Light S", &tasd[i].scale.x, 0.001f);
 
         ImGui::Spacing();
         ImGui::PopID();
@@ -671,7 +679,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
 
     //update_lights(&lights, lights.light_positions, lights.light_amount);
 
-    update_view_buffer_light(tasd, &lights.view_descriptor, current_frame, 1, camera.field_of_view, 200.f);
+    update_view_buffer_light(&tasd[0], &lights.view_descriptor, current_frame, 1, camera.field_of_view, 200.f);
 
     //update_view_buffer(light_source.transform_id, light_tes, current_frame, 1, light_source.field_of_view, 2000.f);
     update_view_buffer(cam->transform, &camera_descript, current_frame, swap_chain.screen_extent.width / (float) swap_chain.screen_extent.height, camera.field_of_view, 2000.f, 1);
@@ -702,7 +710,7 @@ int32_t RenderPipeline::draw_frame(CameraComponent& camera, HeapStack* heap_stac
 
     //TransformComponent* cam2 = (TransformComponent*)get_component_by_id(trans_sys, camera.transform_id);
 
-    swap_draw_frame(command_buffer, &render_descripts, &texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack, cam->transform.position);
+    swap_draw_frame(command_buffer, &render_descripts, &texture_descriptor, model_render_data, pipeline_layout, current_frame, heap_stack, cam->transform.position, lights.light_amount);
 
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer, nullptr);

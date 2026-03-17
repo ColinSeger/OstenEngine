@@ -8,3 +8,6 @@ assets/debug_assets/debug_texture.jpg
 #Render_Instances //Corresponds to model_index/texture_index
 0/1/4000
 1/2/4000
+
+#LODS
+0

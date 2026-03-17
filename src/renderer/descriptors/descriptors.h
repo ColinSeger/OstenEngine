@@ -65,9 +65,9 @@ struct LightSources{
     void* light_position_memory;
     ShadowPass shadow_passes[MAX_LIGHTS];
     ViewDescriptor view_descriptor;
-    FrameDescriptor lights_desc;
+    FrameDescriptor lights_desc[MAX_LIGHTS];
     vec4_t light_positions[MAX_LIGHTS];
-    uint8_t light_amount;
+    float light_amount;
 };
 
 static VkDescriptorImageInfo image_descriptors_info[texture_capacity] = {};
@@ -236,38 +236,34 @@ static VkResult create_shadow_sets(VkDevice virtual_device, LightSources* lights
     allocInfo.descriptorPool = descriptor_pool;
     allocInfo.descriptorSetCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
     allocInfo.pSetLayouts = layouts;
+    for(int l = 0; l < MAX_LIGHTS; l++){
+        VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, lights->lights_desc[l].descriptor_sets);
 
-    VkResult allocation_status = vkAllocateDescriptorSets(virtual_device, &allocInfo, lights->lights_desc.descriptor_sets);
+        if(allocation_status != VK_SUCCESS)
+            return allocation_status;
 
-    if(allocation_status != VK_SUCCESS)
-        return allocation_status;
+        VkDescriptorBufferInfo light_info [1]{};
 
-    VkDescriptorBufferInfo light_info [MAX_LIGHTS]{};
-
-    for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-        for(int light = 0; light < MAX_LIGHTS; light++){
-
+        for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo light_info2{};
-            light_info2.offset = 0;
+            light_info2.offset = sizeof(ViewMatrix) * l;
             light_info2.range = sizeof(ViewMatrix);
             light_info2.buffer = lights->view_descriptor.uniform_buffers[i];
 
-            light_info[light] = light_info2;
+            light_info[0] = light_info2;
+            constexpr uint32_t descriptor_size = 1;
+            VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
 
+            descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_writes[0].dstSet = lights->lights_desc[l].descriptor_sets[i];
+            descriptor_writes[0].dstBinding = 0;
+            descriptor_writes[0].dstArrayElement = 0;
+            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_writes[0].descriptorCount = 1;
+            descriptor_writes[0].pBufferInfo = light_info;
+
+            vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
         }
-        constexpr uint32_t descriptor_size = 1;
-        VkWriteDescriptorSet descriptor_writes[descriptor_size]{};
-
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = lights->lights_desc.descriptor_sets[i];
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = light_info;
-
-        vkUpdateDescriptorSets(virtual_device, descriptor_size, descriptor_writes, 0, nullptr);
     }
     return VK_SUCCESS;
 }
