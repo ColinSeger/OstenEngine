@@ -1,1 +1,0 @@
-Sets up the instance for rendering and window

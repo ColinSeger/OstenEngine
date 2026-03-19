@@ -63,7 +63,7 @@ static inline VkResult create_instance(VkInstance* instance, const char* name, W
     create_info.ppEnabledExtensionNames = window_extensions.window_extensions;
 
     if(validation_amount > 0){
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_amount);
+        create_info.enabledLayerCount = (uint32_t)validation_amount;
         create_info.ppEnabledLayerNames = validation_layers;
     }else{
         create_info.enabledLayerCount = 0;

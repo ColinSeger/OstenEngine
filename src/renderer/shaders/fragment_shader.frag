@@ -59,7 +59,7 @@ void main(){
 
 	vec3 lighting = albedo * push_constants.ambient;
 
-    for(int i = 0; i < int(push_constants.light_amount); i++)//push_constants.light_amount
+    for(int i = 0; i < int(push_constants.light_amount); i++)
     {
         vec3 light_dir = normalize(lights.light_positions[i].xyz - frag_position);
 
