@@ -22,3 +22,8 @@ OstenEngine
 Instance is relatively simple since all it does is pass some info into vulkan on what version
 and optional info like name and version of the application. It also makes sure that we enable validation layers
 for easier debugging.
+
+
+### Render pipeline
+This is the container for basically anything render related it sets up most other things of the listed one level deeper in the 
+hierarchy,
