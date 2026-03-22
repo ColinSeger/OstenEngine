@@ -26,4 +26,12 @@ for easier debugging.
 
 ### Render pipeline
 This is the container for basically anything render related it sets up most other things of the listed one level deeper in the 
-hierarchy,
+hierarchy, it also manages the actual render-pass.
+
+
+#### Device
+The device is the representation of the gpu and therefore is used for gpu communication and checking gpu support
+
+
+#### SwapChain
+The swap-chain is the thing that actually presents the images to the screen
