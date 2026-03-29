@@ -12,19 +12,18 @@
 constexpr uint8_t MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint8_t MAX_LIGHTS = 8;
 
-struct RenderDescriptors{
-    uint32_t object_amount;
-    VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
-    void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
-};
-
+/**
+    The representation of any view matrix, (Lights, Cameras)
+*/
 struct ViewDescriptor{
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
     void* uniform_buffers_mapped[MAX_FRAMES_IN_FLIGHT];
 };
 
+/**
+    The renderable is the model that is being instanced
+*/
 struct RenderAble{
     VkDescriptorSet model_descriptor_sets[MAX_FRAMES_IN_FLIGHT];
     size_t transform_index;
@@ -34,6 +33,9 @@ struct RenderAble{
     uint16_t model_index;
 };
 
+/**
+    The representation of model instances, meaning it stores a bunch of buffered transforms.
+*/
 struct ModelData{
     VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory uniform_buffers_memory[MAX_FRAMES_IN_FLIGHT];
@@ -41,19 +43,30 @@ struct ModelData{
     size_t renderable_memory_index;
     uint32_t object_capacity;
     uint16_t renderable_amount;
-    // uint16_t renderable_capacity;
 };
-
 
 struct FrameDescriptor{
     VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
 };
+
+/**
+    The actual transform of any view matrix that is passed to the gpu could just be a mat4_t
+*/
 struct ViewMatrix{
     mat4_t view_projection;
 };
+
+/**
+    The actual transform of any model matrix that is passed to the gpu, could be the same as ViewMatrix or could just be a mat4_t
+*/
 struct ObjectUBO{
     mat4_t model;
 };
+
+
+/**
+    Badly thrown together light source struct for shadow-mapping
+*/
 struct LightSources{
     VkSampler shadow_sampler;
     VkSampler debug_shadow_sampler;

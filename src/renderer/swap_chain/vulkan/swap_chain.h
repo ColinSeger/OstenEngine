@@ -6,20 +6,27 @@
 #include "../../device/vulkan/device.h"
 #include "../../texture/vulkan/texture.h"
 
-typedef struct{
-    VkBuffer& vertex_buffer;
-    VkBuffer& index_buffer;
-} RenderBuffer;
+/**
+    The swap-chain is what is used to display images to the screen.
 
-typedef struct{
+    The struct for the swap-chain is quite simple as it only needs to keep track of it's size format and vulkan's representation of a swap-chain
+*/
+struct SwapChain{
     VkExtent2D screen_extent;
 
     VkSwapchainKHR swap_chain;
 
     VkFormat swap_chain_image_format;
-} SwapChain;
+};
 
-typedef struct{
+/**
+    The swap-chain-images is what stores the swap-chan images memory.
+
+    size_t might seem confusing but is at the moment just a representation of where in a arena they are located and is used to access the arena memory.
+
+    The VK attributes are what is used to communicate the data with the gpu
+*/
+struct SwapChainImages{
     VkImage depth_image;
 
     VkDeviceMemory depth_image_memory;
@@ -33,8 +40,9 @@ typedef struct{
     size_t swap_chain_frame_buffers;
 
     uint8_t image_amount;
-} SwapChainImages;
+};
 
+/// @brief Clamps a uint32 value
 static constexpr uint32_t simple_clamp(const uint32_t value, const  uint32_t min,const  uint32_t max){
     if(value > max){
         return max;
@@ -53,11 +61,10 @@ static inline VkExtent2D select_swap_chain_extent(const VkSurfaceCapabilitiesKHR
     window.width = simple_clamp(window.width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
     window.height = simple_clamp(window.height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
 
-     return window;
+    return window;
 }
 
-static inline VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory* depth_image_memory, VkImage* depth_image)
-{
+static inline VkImageView create_depth_resources(Device* device, VkExtent2D image_size, VkDeviceMemory* depth_image_memory, VkImage* depth_image){
     VkFormat depth_formating = Texture::find_depth_formats(device->physical_device);
 
     Texture::create_image(device, image_size, depth_formating, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
@@ -258,8 +265,8 @@ static inline void bind_pipeline(VkCommandBuffer command_buffer, VkPipeline pipe
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(extent.width);
-    viewport.height = static_cast<float>(extent.height);
+    viewport.width = (float)extent.width;
+    viewport.height = (float)extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -268,78 +275,4 @@ static inline void bind_pipeline(VkCommandBuffer command_buffer, VkPipeline pipe
     scissor.offset = {0, 0};
     scissor.extent = extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-}
-
-
-struct OffScreenImage{
-    VkImage depth_image;
-
-    VkDeviceMemory depth_image_memory;
-
-    VkImageView depth_image_view;
-
-    VkImage swap_chain_images;
-    VkDeviceMemory image_memory;
-
-    VkImageView swap_chain_image_view;
-
-    size_t mem_index_frame_buffer;
-};
-
-static inline OffScreenImage create_offscreen_image(Device* device, VkExtent2D extent, VkRenderPass render_pass, VkImageView depth_image, HeapStack* heap_stack){
-    OffScreenImage offscreen_image;
-    offscreen_image.mem_index_frame_buffer = arena_alloc_memory(heap_stack, sizeof(VkFramebuffer));
-
-    Texture::create_image(
-        device,
-        extent,
-        VK_FORMAT_B8G8R8A8_SRGB ,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        &offscreen_image.swap_chain_images,
-        &offscreen_image.image_memory
-    );
-
-    VkImageViewCreateInfo create_info{};
-    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    create_info.image = offscreen_image.swap_chain_images;
-
-    create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    create_info.format = VK_FORMAT_B8G8R8A8_SRGB ;
-
-    create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    create_info.subresourceRange.baseMipLevel = 0;
-    create_info.subresourceRange.levelCount = 1;
-    create_info.subresourceRange.baseArrayLayer = 0;
-    create_info.subresourceRange.layerCount = 1;
-
-    VkResult creation_status = vkCreateImageView(device->virtual_device, &create_info, nullptr, &offscreen_image.swap_chain_image_view);
-
-    if(creation_status != VK_SUCCESS) return {};
-
-    VkImageView attachments[2] = {
-        offscreen_image.swap_chain_image_view,
-        depth_image
-    };
-
-    VkFramebufferCreateInfo framebuffer_info{};
-    framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebuffer_info.renderPass = render_pass;
-    framebuffer_info.attachmentCount = sizeof(attachments) / sizeof(VkImageView);
-    framebuffer_info.pAttachments = attachments;
-    framebuffer_info.width = extent.width;
-    framebuffer_info.height = extent.height;
-    framebuffer_info.layers = 1;
-
-    creation_status = vkCreateFramebuffer(device->virtual_device, &framebuffer_info, nullptr, (VkFramebuffer*)(get_at_index(heap_stack, offscreen_image.mem_index_frame_buffer)));
-
-    if(creation_status != VK_SUCCESS) return{};
-
-    return offscreen_image;
 }

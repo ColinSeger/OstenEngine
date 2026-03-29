@@ -18,6 +18,8 @@ OstenEngine
 - - Texture
 - - ModelLoader
 
+![Intended Layout](../Documentation/IntendedEngineLayout.svg)
+
 ### Instance
 Instance is relatively simple since all it does is pass some info into vulkan on what version
 and optional info like name and version of the application. It also makes sure that we enable validation layers
