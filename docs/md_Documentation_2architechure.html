@@ -92,20 +92,11 @@ $(function(){initNavTree('md_Documentation_2architechure.html','',''); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><a class="anchor" id="autotoc_md0"></a></p>
-<p>Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping the development within a resonable time.</p>
-<p>To build this project you need to be able to run the vkcube command, info on that can be found at <a href="https://vulkan.lunarg.com/">https://vulkan.lunarg.com/</a></p>
+<p>Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping the development within a reasonable time.</p>
+<p>To build this project you need to be able to run the "vkcube" command, info on that can be found at <a href="https://vulkan.lunarg.com/">https://vulkan.lunarg.com/</a></p>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
 Basic Structure</h1>
-<p><a class="el" href="structOstenEngine.html">OstenEngine</a></p><ul>
-<li>Instance</li>
-<li><a class="el" href="structRenderPipeline.html">RenderPipeline</a></li>
-<li>- <a class="el" href="structDevice.html">Device</a></li>
-<li>- <a class="el" href="structSwapChain.html">SwapChain</a></li>
-<li>- Descriptors</li>
-<li>- Shaders</li>
-<li>- Texture</li>
-<li>- ModelLoader</li>
-</ul>
+<p><a class="el" href="structOstenEngine.html">OstenEngine</a> └ Instance └ <a class="el" href="structRenderPipeline.html">RenderPipeline</a> └─ <a class="el" href="structDevice.html">Device</a> └─ <a class="el" href="structSwapChain.html">SwapChain</a> └─ Descriptors └─ Shaders └─ Texture └─ ModelLoader └─ RenderPasses</p>
 <p><img src="../Documentation/IntendedEngineLayout.svg" alt="Intended Layout" style="pointer-events: none;" class="inline"/></p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
 Instance</h2>
