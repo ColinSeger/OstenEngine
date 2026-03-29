@@ -25,15 +25,6 @@
 var NAVTREE =
 [
   [ "OstenEngine", "index.html", [
-    [ "OstenEngine", "md_Documentation_2architechure.html", [
-      [ "Basic Structure", "md_Documentation_2architechure.html#autotoc_md1", [
-        [ "Instance", "md_Documentation_2architechure.html#autotoc_md2", null ],
-        [ "Render pipeline", "md_Documentation_2architechure.html#autotoc_md3", [
-          [ "Device", "md_Documentation_2architechure.html#autotoc_md4", null ],
-          [ "SwapChain", "md_Documentation_2architechure.html#autotoc_md5", null ]
-        ] ]
-      ] ]
-    ] ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ]

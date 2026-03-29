@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['gamedata_0',['GameData',['../structGameData.html',1,'']]]
+  ['healthcomponent_0',['HealthComponent',['../structHealthComponent.html',1,'']]],
+  ['heapstack_1',['HeapStack',['../structHeapStack.html',1,'']]]
 ];

@@ -11,15 +11,22 @@ To build this project you need to be able to run the "vkcube" command, info on t
 OstenEngine
 └ Instance
 └ RenderPipeline
-└─ Device
-└─ SwapChain
-└─ Descriptors
-└─ Shaders
-└─ Texture
-└─ ModelLoader
-└─ RenderPasses
 
-![Intended Layout](../Documentation/IntendedEngineLayout.svg)
+ └─ Device
+ 
+ └─ SwapChain
+
+ └─ Descriptors
+ 
+ └─ Shaders
+ 
+ └─ Texture
+ 
+ └─ ModelLoader
+ 
+ └─ RenderPasses
+
+![Intended Layout](/Documentation/IntendedEngineLayout.svg)
 
 ### Instance
 Instance is relatively simple since all it does is pass some info into vulkan on what version
