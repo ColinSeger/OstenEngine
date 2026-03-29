@@ -14,6 +14,9 @@
 #include "../file_explorer/file_explorer.hpp"
 #include "vulkan/vulkan_core.h"
 
+/**
+    This is data given to the current UI system
+*/
 struct UIData{
     int* target_index;
     RenderPipeline* render_pipe;

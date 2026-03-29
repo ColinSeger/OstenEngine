@@ -1,22 +1,23 @@
 # OstenEngine
 
 Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping 
-the development within a resonable time.
+the development within a reasonable time.
 
-To build this project you need to be able to run the vkcube command, info on that can be found at https://vulkan.lunarg.com/ 
+To build this project you need to be able to run the "vkcube" command, info on that can be found at https://vulkan.lunarg.com/ 
 
 
 ## Basic Structure
 
-OstenEngine
-- Instance
-- RenderPipeline
-- - Device
-- - SwapChain
-- - Descriptors
-- - Shaders
-- - Texture
-- - ModelLoader
+OstenEngine \n
+└ Instance \n
+└ RenderPipeline \n
+  └─ Device \n
+  └─ SwapChain \n
+  └─ Descriptors \n
+  └─ Shaders \n
+  └─ Texture \n
+  └─ ModelLoader \n 
+  └─ RenderPasses \n
 
 ![Intended Layout](../Documentation/IntendedEngineLayout.svg)
 

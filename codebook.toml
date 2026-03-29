@@ -4,5 +4,6 @@ words = [
     "rasterizer",
     "shader",
     "ubo",
+    "vkcube",
     "vulkan's",
 ]

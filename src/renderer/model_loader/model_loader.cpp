@@ -10,6 +10,9 @@
 #include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
+/**
+    The representation models used by this engine.
+*/
 struct Model{
     uint32_t index_amount;
     VkBuffer vertex_buffer;

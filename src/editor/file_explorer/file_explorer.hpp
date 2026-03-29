@@ -7,6 +7,9 @@
 #include "../../renderer/render_pipeline.cpp"
 #include "../../engine/message_system/message.h"
 
+/**
+    This is a bad file explorer system that works fine for my use case but would like to rework it if I find the time
+*/
 struct FileExplorer{
     std::vector<std::string> folders;
     std::vector<std::string> files;

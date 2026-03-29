@@ -8,12 +8,6 @@
 #include "../device/vulkan/device.h"
 #include "../../debugger/debugger.h"
 
-typedef struct{
-    uint32_t vertex_index;
-    uint32_t texture_index;
-    uint32_t normal_index;
-} Indices;
-
 static inline vec3_t parse_vertex(const std::string& line, const uint16_t start_index){
     vec3_t result {};
     size_t cord_index = start_index;

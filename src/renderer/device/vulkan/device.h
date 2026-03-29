@@ -9,18 +9,27 @@
 #include "../../validation.h"
 #include "../../../additional_things/arena.h"
 
+/**
+    This is the representation of the vertexes that is passed to the gpu.
+*/
 struct Vertex {
     vec3_t position{};
     vec3_t normals{};
     vec2_t texture_cord{};
 };
 
+/**
+    Self explanatory
+*/
 struct VertexArray{
     size_t amount;
     Vertex* values;
 };
 
-struct  Uint32Array{
+/**
+    Self explanatory
+*/
+struct Uint32Array{
     size_t amount;
     uint32_t* values;
 };
@@ -46,6 +55,9 @@ struct SwapChainSupportDetails{
     uint8_t present_amount;
 };
 
+/**
+    Representation of the graphics card
+*/
 struct Device{
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice virtual_device = VK_NULL_HANDLE;

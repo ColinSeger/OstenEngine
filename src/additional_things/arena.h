@@ -3,6 +3,9 @@
 #include <stdbool.h>
 #include "../platform.h"
 
+/**
+    This is a memory arena but i for some reason named it heap-stack which is a weird name
+*/
 struct HeapStack{
     unsigned long long capacity;
     unsigned long long index;

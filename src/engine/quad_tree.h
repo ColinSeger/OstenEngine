@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 
+/**
+    NOT IMPLEMENTED
+*/
 struct QuadTree{
     union{
         uint16_t quad_index[4];
