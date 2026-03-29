@@ -1,0 +1,29 @@
+<map id="OstenEngine" name="OstenEngine">
+<area shape="rect" id="Node000001" title=" " alt="" coords="898,276,1002,303"/>
+<area shape="rect" id="Node000002" href="$structRenderPipeline.html" title=" " alt="" coords="622,220,741,247"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="756,239,815,248,875,260,915,275,910,275,874,265,814,253,757,244"/>
+<area shape="rect" id="Node000003" href="$structSwapChainImages.html" title=" " alt="" coords="294,24,435,51"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="449,28,488,29,527,35,565,47,600,66,618,82,634,101,658,144,673,186,680,220,675,218,667,188,653,146,629,104,614,86,596,70,563,52,526,41,487,35,451,33"/>
+<area shape="rect" id="Node000004" href="$structDevice.html" title=" " alt="" coords="331,80,398,107"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="412,93,516,101,565,109,599,121,627,142,649,169,677,220,672,218,644,172,623,146,597,125,564,114,516,106,414,98"/>
+<area shape="rect" id="Node000005" href="$structRenderData.html" title=" " alt="" coords="315,133,414,161"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="428,146,511,155,556,164,599,178,635,196,666,219,661,219,632,201,597,183,554,170,510,160,429,151"/>
+<area shape="rect" id="Node000006" href="$structSwapChain.html" title=" " alt="" coords="318,185,411,213"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="426,203,624,226,619,228,427,208"/>
+<area shape="rect" id="Node000007" href="$structViewDescriptor.html" title=" " alt="" coords="10,270,130,298"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="145,275,622,236,621,241,146,281"/>
+<area shape="rect" id="Node000008" href="$structLightSources.html" title=" " alt="" coords="312,329,416,357"/>
+<area shape="poly" id="edge9_Node000008_Node000007" title=" " alt="" coords="143,300,159,303,314,332,310,336,158,308,145,304"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="431,344,472,342,515,336,557,323,596,303,605,294,608,285,612,274,620,262,643,249,648,246,624,266,617,276,613,287,609,297,600,307,559,328,516,341,472,347,432,349"/>
+<area shape="rect" id="Node000009" href="$structShadowPass.html" title=" " alt="" coords="19,349,121,377"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="136,363,201,363,269,359,314,354,309,356,270,364,201,368,138,368"/>
+<area shape="rect" id="Node000010" href="$structFrameDescriptor.html" title=" " alt="" coords="5,426,135,454"/>
+<area shape="poly" id="edge11_Node000002_Node000010" title=" " alt="" coords="150,440,284,435,360,427,435,413,525,396,560,381,596,349,607,328,608,308,609,286,620,263,640,249,644,247,624,266,614,287,613,308,612,330,600,353,563,385,526,401,435,418,361,432,284,440,150,445"/>
+<area shape="poly" id="edge10_Node000008_Node000010" title=" " alt="" coords="149,426,209,412,269,393,308,375,340,358,344,356,310,380,271,398,210,417,151,431"/>
+<area shape="rect" id="Node000011" href="$structModelData.html" title=" " alt="" coords="318,510,410,538"/>
+<area shape="poly" id="edge12_Node000002_Node000011" title=" " alt="" coords="426,536,469,541,515,540,559,529,579,519,596,505,606,486,611,459,611,388,608,316,611,285,620,263,638,249,643,246,624,266,616,287,614,316,616,388,616,459,611,488,600,508,581,523,561,534,515,545,469,546,426,541"/>
+<area shape="rect" id="Node000012" href="$structFileExplorer.html" title=" " alt="" coords="633,276,730,303"/>
+<area shape="poly" id="edge13_Node000001_Node000012" title=" " alt="" coords="745,287,901,289,895,290,746,292"/>
+<area shape="rect" id="Node000013" href="$structHeapStack.html" title=" " alt="" coords="636,332,727,359"/>
+<area shape="poly" id="edge14_Node000001_Node000013" title=" " alt="" coords="742,339,806,331,874,317,916,305,921,303,875,322,807,336,743,344"/>
+</map>

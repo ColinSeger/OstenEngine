@@ -1,0 +1,23 @@
+<map id="RenderPipeline" name="RenderPipeline">
+<area shape="rect" id="Node000001" title=" " alt="" coords="622,220,741,247"/>
+<area shape="rect" id="Node000002" href="$structSwapChainImages.html" title=" " alt="" coords="294,24,435,51"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="449,28,488,29,527,35,565,47,600,66,618,82,634,101,658,144,673,186,680,220,675,218,667,188,653,146,629,104,614,86,596,70,563,52,526,41,487,35,451,33"/>
+<area shape="rect" id="Node000003" href="$structDevice.html" title=" " alt="" coords="331,80,398,107"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="412,93,516,101,565,109,599,121,627,142,649,169,677,220,672,218,644,172,623,146,597,125,564,114,516,106,414,98"/>
+<area shape="rect" id="Node000004" href="$structRenderData.html" title=" " alt="" coords="315,133,414,161"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="428,146,511,155,556,164,599,178,635,196,666,219,661,219,632,201,597,183,554,170,510,160,429,151"/>
+<area shape="rect" id="Node000005" href="$structSwapChain.html" title=" " alt="" coords="318,185,411,213"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="426,203,624,226,619,228,427,208"/>
+<area shape="rect" id="Node000006" href="$structViewDescriptor.html" title=" " alt="" coords="10,270,130,298"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="145,275,622,236,621,241,146,281"/>
+<area shape="rect" id="Node000007" href="$structLightSources.html" title=" " alt="" coords="312,329,416,357"/>
+<area shape="poly" id="edge8_Node000007_Node000006" title=" " alt="" coords="143,300,159,303,314,332,310,336,158,308,145,304"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="431,339,513,329,556,318,597,303,637,276,666,249,671,246,640,280,599,308,557,323,514,334,433,344"/>
+<area shape="rect" id="Node000008" href="$structShadowPass.html" title=" " alt="" coords="19,349,121,377"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="136,363,201,363,269,359,314,354,309,356,270,364,201,368,138,368"/>
+<area shape="rect" id="Node000009" href="$structFrameDescriptor.html" title=" " alt="" coords="5,426,135,454"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="150,440,284,436,360,428,434,413,521,388,556,371,596,342,621,319,642,293,671,250,675,246,646,296,625,323,600,346,559,376,523,393,436,418,361,433,285,442,151,446"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="149,426,209,412,269,393,308,375,340,358,344,356,310,380,271,398,210,417,151,431"/>
+<area shape="rect" id="Node000010" href="$structModelData.html" title=" " alt="" coords="318,510,410,538"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="425,534,467,538,513,536,557,526,596,504,623,477,644,443,658,407,668,369,678,298,679,250,683,246,683,299,674,370,664,409,648,446,627,480,600,509,559,531,513,542,467,543,425,539"/>
+</map>
