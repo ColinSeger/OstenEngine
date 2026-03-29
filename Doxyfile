@@ -1130,7 +1130,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which Doxygen is
 # run.
 
-EXCLUDE                = external/ html/ build/ assets/ README.md
+EXCLUDE                = external/ build/ assets/ README.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1406,7 +1406,7 @@ ALPHABETICAL_INDEX     = YES
 # after removing the prefix.
 # This tag requires that the tag ALPHABETICAL_INDEX is set to YES.
 
-IGNORE_PREFIX          =
+IGNORE_PREFIX          = .html
 
 #---------------------------------------------------------------------------
 # Configuration options related to the HTML output

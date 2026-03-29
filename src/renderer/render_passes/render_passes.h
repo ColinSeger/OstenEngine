@@ -5,6 +5,16 @@
 #include "../texture/vulkan/texture.h"
 #include "vulkan/vulkan_core.h"
 
+/**
+    Data needed for the shadow-pass
+*/
+struct ShadowPass{
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView image_view;
+    VkFramebuffer framebuffer;
+};
+
 static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device* device){
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -112,13 +122,6 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
 
     return vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, render_pass);
 }
-
-struct ShadowPass{
-    VkImage depth_image;
-    VkDeviceMemory depth_image_memory;
-    VkImageView image_view;
-    VkFramebuffer framebuffer;
-};
 
 static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D size, ShadowPass* shadow_pass, VkRenderPass* render_pass){
 

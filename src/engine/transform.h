@@ -1,18 +1,13 @@
 #pragma once
 #include "../../external/math_3d.h"
 
+/**
+    Self explanatory (It is the transforms of all entities that have transforms)
+*/
 struct Transform{
     vec3_t position = {0.0f, 0.0f, 0.0f};
     vec3_t rotation = {0.0f, 0.0f, 0.0f};
     vec3_t scale = {1.0f, 1.0f, 1.0f};
-};
-
-struct Camera {
-    vec3_t position;
-    float pitch;
-    float yaw;
-
-    static constexpr vec3_t UP {0, 1, 0};
 };
 
 static inline mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably

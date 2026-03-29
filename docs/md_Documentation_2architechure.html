@@ -96,8 +96,17 @@ $(function(){initNavTree('md_Documentation_2architechure.html','',''); });
 <p>To build this project you need to be able to run the "vkcube" command, info on that can be found at <a href="https://vulkan.lunarg.com/">https://vulkan.lunarg.com/</a></p>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
 Basic Structure</h1>
-<p><a class="el" href="structOstenEngine.html">OstenEngine</a> └ Instance └ <a class="el" href="structRenderPipeline.html">RenderPipeline</a> └─ <a class="el" href="structDevice.html">Device</a> └─ <a class="el" href="structSwapChain.html">SwapChain</a> └─ Descriptors └─ Shaders └─ Texture └─ ModelLoader └─ RenderPasses</p>
-<p><img src="../Documentation/IntendedEngineLayout.svg" alt="Intended Layout" style="pointer-events: none;" class="inline"/></p>
+<p><a class="el" href="structOstenEngine.html">OstenEngine</a> <br  />
+└ Instance <br  />
+└ <a class="el" href="structRenderPipeline.html">RenderPipeline</a> <br  />
+ └─ <a class="el" href="structDevice.html">Device</a> <br  />
+ └─ <a class="el" href="structSwapChain.html">SwapChain</a> <br  />
+ └─ Descriptors <br  />
+ └─ Shaders <br  />
+ └─ Texture <br  />
+ └─ ModelLoader <br  />
+ └─ RenderPasses <br  />
+ <img src="../Documentation/IntendedEngineLayout.svg" alt="Intended Layout" style="pointer-events: none;" class="inline"/></p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
 Instance</h2>
 <p>Instance is relatively simple since all it does is pass some info into vulkan on what version and optional info like name and version of the application. It also makes sure that we enable validation layers for easier debugging.</p>

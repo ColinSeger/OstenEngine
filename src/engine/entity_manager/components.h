@@ -12,21 +12,26 @@ constexpr uint8_t COLLIDER = 3;
 constexpr uint8_t HEALTH = 4;
 constexpr uint8_t MELEE = 5;
 
+/**
+    Base version of a Component that is used as the cast when checking what the component it is.
+*/
 struct Component{
     const uint16_t id;
     uint16_t entity_id = 0;
 };
 
+/**
+    Bad representation of the transform component as it could be formated in a better way
+*/
 struct TransformComponent{
     const uint16_t id = 1;
     uint16_t entity_id = 0;
-    Transform transform {};//Could be better
-//    TransformComponent& operator=(TransformComponent& transform){
-//        this->transform = transform.transform;
-//        return *this;
-//    }
+    Transform transform {};
 };
 
+/**
+    This is the component representation of the renderable and it contains the index of the render instance and transform index
+*/
 struct RenderComponent{
     const uint16_t id = 2;
     uint16_t entity_id = 0;
@@ -34,19 +39,19 @@ struct RenderComponent{
     uint32_t instance_id = 0;
 };
 
+/**
+    This is the component representation of the Camera
+*/
 struct CameraComponent{
     const uint16_t id = 3;
     uint16_t entity_id = 0;
     uint16_t transform_id = UINT16_MAX;
     float field_of_view = 45.f;
-
-//    CameraComponent& operator=(CameraComponent camera){
-//        this->transform_id = camera.transform_id;
-//        this->field_of_view = camera.field_of_view;
-//        return *this;
-//    }
 };
 
+/**
+    This is the component representation of the collider and all it does is have a range and a statically allocated array with a max capacity of 42
+*/
 struct SimpleColliderComp{
     const uint16_t id = 4;
     uint16_t entity_id = 0;
@@ -54,9 +59,11 @@ struct SimpleColliderComp{
     uint16_t collision_amount = 0;
     float collision_range = 0;
     uint16_t nearby_colliders[42];//Bad and can cause issues but to little time to fix
-    //uint16_t* nearby_colliders;
 };
 
+/**
+    This is the component representation of the health of a entity(it is bad)
+*/
 struct HealthComponent{
     const uint16_t id = 5;
     uint16_t entity_id = 0;
@@ -65,6 +72,9 @@ struct HealthComponent{
     uint16_t team_id;
 };
 
+/**
+    This is the component representation of the Melee attack
+*/
 struct MeleeComponent{
     const uint16_t id = 6;
     uint16_t entity_id = 0;
@@ -73,6 +83,9 @@ struct MeleeComponent{
     float attack_cooldown;
 };
 
+/**
+    This is System that basically works as a array that is used by the systems that need to access systems
+*/
 struct ComponentSystem{
     HeapStack* memory_arena;
     size_t components;

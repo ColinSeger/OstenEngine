@@ -17,9 +17,12 @@
 constexpr size_t KB = 1024;
 constexpr size_t MB = KB * 1024;
 constexpr size_t GB = MB * 1024;
+/**
+    This is the actual engine and is what you would access to modify any data of the engine.
 
-struct OstenEngine
-{
+    It contains the render-pipeline and some other data that is there only due to time constraints
+*/
+struct OstenEngine{
     struct RenderPipeline render_pipeline;
 
     GLFWwindow* main_window = nullptr;

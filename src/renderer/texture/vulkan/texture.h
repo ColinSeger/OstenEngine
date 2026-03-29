@@ -9,8 +9,10 @@
 #include "../../device/vulkan/device.h"
 #include "../../../../external/image_loader/stb_image.h"
 
-struct TextureImage
-{
+/**
+    This is the representation of the textures used by the engine.
+*/
+struct TextureImage{
     VkImage texture_image;
     VkImageView image_view;
     VkSampler texture_sampler;
@@ -18,14 +20,11 @@ struct TextureImage
     uint8_t mip_levels;
 };
 
-struct TextureArray{
-    size_t arena_index;
-    uint16_t amount;
-    uint16_t capacity;
-};
-
 constexpr uint32_t texture_capacity = 20;
 
+/**
+    The storage of the textures used by the engine
+*/
 struct TextureStorage{
     TextureImage texture;
     uint32_t index = 0;
@@ -36,11 +35,10 @@ struct TextureStorage{
 static TextureStorage texture_storage[texture_capacity] = {};
 static uint32_t texture_amount = 0;
 
-// std::unordered_map<std::string, uint32_t> loaded_textures_index;
-// std::vector<TextureImage> loaded_textures;
-
-namespace Texture
-{
+namespace Texture{
+    /**
+        A texture format array used for checking if the formats are supported
+    */
     struct Formats{
         VkFormat* formats;
         uint32_t format_amount;

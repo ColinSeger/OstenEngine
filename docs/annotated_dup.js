@@ -7,7 +7,6 @@ var annotated_dup =
       [ "Formats", "structTexture_1_1Formats.html", null ]
     ] ],
     [ "ArmyUnit", "structArmyUnit.html", null ],
-    [ "Camera", "structCamera.html", null ],
     [ "CameraComponent", "structCameraComponent.html", null ],
     [ "Component", "structComponent.html", null ],
     [ "ComponentID", "structComponentID.html", null ],
@@ -20,7 +19,6 @@ var annotated_dup =
     [ "GameData", "structGameData.html", null ],
     [ "HealthComponent", "structHealthComponent.html", null ],
     [ "HeapStack", "structHeapStack.html", null ],
-    [ "Indices", "structIndices.html", null ],
     [ "InstanceData", "structInstanceData.html", null ],
     [ "LightSources", "structLightSources.html", null ],
     [ "Line", "structLine.html", null ],
@@ -46,7 +44,6 @@ var annotated_dup =
     [ "System", "structSystem.html", null ],
     [ "TempComp", "structTempComp.html", null ],
     [ "Terrain", "structTerrain.html", null ],
-    [ "TextureArray", "structTextureArray.html", null ],
     [ "TextureImage", "structTextureImage.html", null ],
     [ "TextureStorage", "structTextureStorage.html", null ],
     [ "Timer", "structTimer.html", null ],

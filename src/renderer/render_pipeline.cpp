@@ -25,6 +25,11 @@ struct RenderData{
     //uint32_t descriptor_usage = 0;
 };
 
+/**
+    This is the render-pipeline which is thing that manages all rendering of this engine there is a lot of issues with it that I want to fix but have not found the time for yet.
+
+
+*/
 struct RenderPipeline{
     SwapChainImages swap_chain_images = {};
 

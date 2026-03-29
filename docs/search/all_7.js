@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['indices_0',['Indices',['../structIndices.html',1,'']]],
-  ['instancedata_1',['InstanceData',['../structInstanceData.html',1,'']]]
+  ['healthcomponent_0',['HealthComponent',['../structHealthComponent.html',1,'']]],
+  ['heapstack_1',['HeapStack',['../structHeapStack.html',1,'']]]
 ];
