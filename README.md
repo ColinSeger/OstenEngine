@@ -44,7 +44,7 @@ Folder paths that need to exist in running directory:
 src/renderer/shaders/* 
 assets/debug_assets/*
 
-### Engine Execution Summary
+## Using OstenEngine (Not Recomended)
 
 ![Brief Layout](Documentation/BriefSummary.webp)
 
@@ -52,6 +52,7 @@ The data loaded by the engine is inside a text file in "game/game_data.txt"
 
 That text file could contain something like this.
 ´
+
     !1
     #Model_Paths
     assets/debug_assets/Cube.obj
@@ -62,6 +63,7 @@ That text file could contain something like this.
     #Render_Instances //Corresponds to model_index/texture_index
     0/1/4000
     1/2/4000
+    
 ´
 
 The parser looks at ! to find parsing version 1 is the first and only one that exists so far.
@@ -72,6 +74,7 @@ render instances using the first number as a model index the second as a texture
 
 Quick Start Game Code
 ´
+
     struct GameData{
       //Put whatever data you want to store in the game
       bool* paused_state;
