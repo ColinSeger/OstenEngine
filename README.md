@@ -1,9 +1,9 @@
 # OstenEngine
 
-Is a work in progress game "engine" made in C++ and Vulkan, tried to use minimal dependencies for this project while still keeping 
-the development within a resonable time.
-
-To build this project you need to be able to run the vkcube command, info on that can be found at https://vulkan.lunarg.com/ 
+OstenEngine Is a hobby work in progress Vulkan game engine written in C/C++ with the goal of learning as much as possible during the process of making it.
+A secondary goal during this project was to use minimal amount of dependencies, I would say I kind of have to many and that might be reduced as I continue working on it.
+The current dependencies are GLFW, ImGui, stb_image.h, math_3d.h and of course Vulkan I have some rough ideas that I want to move away from GLFW and ImGui to either make my own version or find a 
+single header version to simplify compilation of the project.
 
 
 ## How To Build
@@ -34,12 +34,11 @@ Next step is to make sure you have Vulkan installed on your system and to do tha
 
 And if you get a spinning cube rendering you have Vulkan installed otherwise you will need to install it and to do that follow the instructions on [LunarG Website](https://vulkan.lunarg.com/).
 
-Final step before compiling is to make sure you have a compiler installed the ones that I have tested to work is Clang G++ and MSVC.
+Final step before compiling is to make sure you have a compiler installed the ones that I have tested to work is Clang, G++ and MSVC.
 If you don't have one of these installed I would recommend Clang or MSVC on Windows since G++ is tougher for beginners to setup.
 Installing Visual Studio will include both clang and MSVC and you can find Visual Studio on [Microsoft Website](https://visualstudio.microsoft.com/).
 
 To see if you already have one of those 2 installed you can open the terminal and write
-´
 
     clang --version
     
@@ -47,17 +46,14 @@ To see if you already have one of those 2 installed you can open the terminal an
     
     msvc --version
 
-´
 
 If it gives you a version number on either of them then you should be fine to actually compile the project.
 
 Then to compile the project you should just need to run this command in the terminal when located inside the Engine folder.
 
-´
 
     cmake --build .
 
-´
 
 ### Linux
 
