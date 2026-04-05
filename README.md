@@ -14,23 +14,19 @@ single header version to simplify compilation of the project.
 
 You will have to have Cmake installed on your windows system to be able to compile OstenEngine to see if you have it installed you can open your terminal
 and write 
-´
 
     cmake --version
     
     //If you get something like this you have Cmake
     cmake version 4.3.1
 
-´
 to see if you have Cmake installed. If you find that you do not have Cmake you can follow the instructions on the [Cmake Website](https://cmake.org/).
 
 Next step is to make sure you have Vulkan installed on your system and to do that you can try running this command 
 
-´
 
     vkcube
 
-´
 
 And if you get a spinning cube rendering you have Vulkan installed otherwise you will need to install it and to do that follow the instructions on [LunarG Website](https://vulkan.lunarg.com/).
 
@@ -51,9 +47,7 @@ If it gives you a version number on either of them then you should be fine to ac
 
 Then to compile the project you should just need to run this command in the terminal when located inside the Engine folder.
 
-
     cmake --build .
-
 
 ### Linux
 
@@ -68,7 +62,11 @@ When both of them are libraries you should just need to run (linux_builder.sh) a
 
 Though if you are not using g++ you would need to change to your desired builder in (linux_builder.sh)
 
-### Additional Step
+Compile Command:
+
+    g++ -o OstenEngine main.cpp -O0 -Wall -Iexternal/vk_include/  -Iexternal/glfw/include/ -Lexternal/built_glfw/ -Lexternal/ -lglfw3  -limgui  -lX11 -lvulkan -g
+
+### Additional Info
 
 The engine at the moment does not support figuring out file paths automatically and instead you will need to either run it in the engine folder or move required items to the same folder as the executable
 
@@ -84,7 +82,6 @@ assets/debug_assets/*
 The data loaded by the engine is inside a text file in "game/game_data.txt"
 
 That text file could contain something like this:
-´
 
     !1
     #Model_Paths
@@ -97,7 +94,6 @@ That text file could contain something like this:
     0/1/4000
     1/2/4000
     
-´
 
 The parser looks at ! to find parsing version 1 is the first and only one that exists so far.
 
@@ -106,7 +102,6 @@ The first # is model paths the asset loader will look in the 2nd # tells the ass
 render instances using the first number as a model index the second as a texture index and third is the capacity of this renderable model.
 
 Quick Start Game Code:
-´
 
     //Change this line in your platformlayer to your C or Cpp file containing what you want to run
     #include "game/total_cheese.hpp"
@@ -144,7 +139,6 @@ Quick Start Game Code:
       data->game_code = menu_state;
     }
 
-´
 
 
 Right now the OstenEngine API is very and I mean very bare-bones but some actions included are creating entities creating model instances with a material and loading of textures/models
@@ -152,10 +146,7 @@ Right now the OstenEngine API is very and I mean very bare-bones but some action
 The image formats supported by load texture is png and jpeg at the moment
 
 Example Usage:
-´
 
     char* message = "cube.bin";
     uint8_t message_size = sizeof(message);
     add_message_f(MessageType::LoadModel, message_size, message);
-
-´
