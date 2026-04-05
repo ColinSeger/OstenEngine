@@ -70,7 +70,7 @@ Then the parser will look at # to load data the text after the # does not mean a
 The first # is model paths the asset loader will look in the 2nd # tells the asset loader to load those textures then the final # means that the render pipeline should prepare 
 render instances using the first number as a model index the second as a texture index and third is the capacity of this renderable model.
 
-Quick Start Game Code
+Quick Start Game Code:
 ´
 
     //Change this line in your platformlayer to your C or Cpp file containing what you want to run
@@ -116,8 +116,9 @@ Right now the OstenEngine API is very and I mean very bare-bones but some action
 
 The image formats supported by load texture is png and jpeg at the moment
 
-Example Usage
+Example Usage:
 ´
+
     char* message = "cube.bin";
     uint8_t message_size = sizeof(message);
     add_message_f(MessageType::LoadModel, message_size, message);
