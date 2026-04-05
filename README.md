@@ -25,7 +25,7 @@ it could also be that you need to install GLFW on you system.
 ### Linux
 
 -Requirements
-- Cmake compatible C++ compiler
+- GCC or Clang compiler
 - Vulkan
 
 Slightly more advanced than windows but still quite simple, all you should need is vulkan developer packages installed on your system and a
@@ -72,6 +72,10 @@ render instances using the first number as a model index the second as a texture
 
 Quick Start Game Code
 ´
+
+    //Change this line in your platformlayer to your C or Cpp file containing what you want to run
+    #include "game/total_cheese.hpp"
+
     struct GameData{
       //Put whatever data you want to store in the game
       bool* paused_state;
@@ -104,5 +108,18 @@ Quick Start Game Code
     
       data->game_code = menu_state;
     }
+
+´
+
+
+Right now the OstenEngine API is very and I mean very bare-bones but some actions included are creating entities creating model instances with a material and loading of textures/models
+
+The image formats supported by load texture is png and jpeg at the moment
+
+Example Usage
+´
+    char* message = "cube.bin";
+    uint8_t message_size = sizeof(message);
+    add_message_f(MessageType::LoadModel, message_size, message);
 
 ´
