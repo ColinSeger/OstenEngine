@@ -6,21 +6,58 @@ the development within a resonable time.
 To build this project you need to be able to run the vkcube command, info on that can be found at https://vulkan.lunarg.com/ 
 
 
-## Build
+## How To Build
 
 ### Windows
 
 #### Prerequisites
 
-You will need Cmake to be able to build the build files You can find out more on that here https://cmake.org/.
+You will have to have Cmake installed on your windows system to be able to compile OstenEngine to see if you have it installed you can open your terminal
+and write 
+´
 
-Vulkan is required for this project to run, you can check if you have Vulkan dev tools installed by running the console command 
-"vkcube" and if a cube saying lunarg shows up you have Vulkan tools already, otherwhise go to https://vulkan.lunarg.com/ and install the Vulkan tools.
+    cmake --version
+    
+    //If you get something like this you have Cmake
+    cmake version 4.3.1
 
-The compiler I used for testing on Windows was their MSVC compiler but I belive it should be able to compile using other compilers that can be used with Cmake.
+´
+to see if you have Cmake installed. If you find that you do not have Cmake you can follow the instructions on the [Cmake Website](https://cmake.org/).
 
-On windows it should just be to run cmake --build command in the Engine folder if that does not work you might not have a compiler installed,
-it could also be that you need to install GLFW on you system.
+Next step is to make sure you have Vulkan installed on your system and to do that you can try running this command 
+
+´
+
+    vkcube
+
+´
+
+And if you get a spinning cube rendering you have Vulkan installed otherwise you will need to install it and to do that follow the instructions on [LunarG Website](https://vulkan.lunarg.com/).
+
+Final step before compiling is to make sure you have a compiler installed the ones that I have tested to work is Clang G++ and MSVC.
+If you don't have one of these installed I would recommend Clang or MSVC on Windows since G++ is tougher for beginners to setup.
+Installing Visual Studio will include both clang and MSVC and you can find Visual Studio on [Microsoft Website](https://visualstudio.microsoft.com/).
+
+To see if you already have one of those 2 installed you can open the terminal and write
+´
+
+    clang --version
+    
+    //OR
+    
+    msvc --version
+
+´
+
+If it gives you a version number on either of them then you should be fine to actually compile the project.
+
+Then to compile the project you should just need to run this command in the terminal when located inside the Engine folder.
+
+´
+
+    cmake --build .
+
+´
 
 ### Linux
 
@@ -50,8 +87,9 @@ assets/debug_assets/*
 
 The data loaded by the engine is inside a text file in "game/game_data.txt"
 
-That text file could contain something like this.
+That text file could contain something like this:
 ´
+
     !1
     #Model_Paths
     assets/debug_assets/Cube.obj
@@ -62,6 +100,7 @@ That text file could contain something like this.
     #Render_Instances //Corresponds to model_index/texture_index
     0/1/4000
     1/2/4000
+    
 ´
 
 The parser looks at ! to find parsing version 1 is the first and only one that exists so far.
