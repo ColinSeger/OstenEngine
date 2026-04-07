@@ -58,30 +58,38 @@ So compiling this project should be relatively simple as far as I am aware there
 Installing a C++ compiler on your system depends on your system, here are some of the more popular distros:
 
 Debian Based
+
     sudo apt install g++
     
 Fedora Based
+
     sudo dnf install gcc-c++
     
 Arch Based
+
     sudo pacman -S gcc
     
 Then next you will need to install the vulkan developer kit for your distro, popular examples:
 
 Debian Based
+
     sudo apt install libvulkan-dev
     
 Fedora Based
+
     sudo dnf install vulkan-loader-devel
     
 Arch Based
+
     sudo pacman -S vulkan-devel
     
 And with that I believe that that is all the dependence to compile this project I have not tested on all those platforms so might add more steps when I get around to trying it on them.
 Then finally we can build this project, and you should be able to run one of these following commands:
 
+    //Helper Script
     bash linux_builder.sh
 
+    //Manual G++
     g++ -o OstenEngine main.cpp -O0 -Wall -Iexternal/vk_include/  -Iexternal/glfw/include/ -Lexternal/built_glfw/ -Lexternal/ -lglfw3  -limgui  -lX11 -lvulkan -g
     
     //Or with clang
@@ -95,6 +103,7 @@ They can be found in the external folder and there is a helper .sh script in the
 The engine at the moment does not support figuring out file paths automatically and instead you will need to either run it in the engine folder or move required items to the same folder as the executable
 
 OstenEngine requires that the shaders are placed in this filepath in relation to where the engine is running.
+
     src/renderer/shaders/
 
 ### Engine Execution Summary
@@ -123,7 +132,7 @@ Then the parser will look at # to load data the text after the # does not mean a
 The first # is model paths the asset loader will look in the 2nd # tells the asset loader to load those textures then the final # means that the render pipeline should prepare 
 render instances using the first number as a model index the second as a texture index and third is the capacity of this renderable model.
 
-Quick Start Game Code:
+#### Quick Start Game Code:
 
     //Change this line in your platformlayer to your C or Cpp file containing what you want to run
     #include "game/total_cheese.hpp"
