@@ -51,29 +51,51 @@ Then to compile the project you should just need to run this command in the term
 
 ### Linux
 
--Requirements
-- GCC or Clang compiler
-- Vulkan
+#### Prerequisites
 
-Slightly more advanced than windows but still quite simple, all you should need is vulkan developer packages installed on your system and a
-C++ compiler. First you will need to compile GLFW into a library and the same for ImGui, for ImGui there is a helper script in the external folder (imgui_build.sh).
+So compiling this project should be relatively simple as far as I am aware there is only  2 dependencies that you will need to be able to compile this project, the compiler and vulkan.
 
-When both of them are libraries you should just need to run (linux_builder.sh) and it should work.
+Installing a C++ compiler on your system depends on your system, here are some of the more popular distros:
 
-Though if you are not using g++ you would need to change to your desired builder in (linux_builder.sh)
+Debian Based
+    sudo apt install g++
+    
+Fedora Based
+    sudo dnf install gcc-c++
+    
+Arch Based
+    sudo pacman -S gcc
+    
+Then next you will need to install the vulkan developer kit for your distro, popular examples:
 
-Compile Command:
+Debian Based
+    sudo apt install libvulkan-dev
+    
+Fedora Based
+    sudo dnf install vulkan-loader-devel
+    
+Arch Based
+    sudo pacman -S vulkan-devel
+    
+And with that I believe that that is all the dependence to compile this project I have not tested on all those platforms so might add more steps when I get around to trying it on them.
+Then finally we can build this project, and you should be able to run one of these following commands:
+
+    bash linux_builder.sh
 
     g++ -o OstenEngine main.cpp -O0 -Wall -Iexternal/vk_include/  -Iexternal/glfw/include/ -Lexternal/built_glfw/ -Lexternal/ -lglfw3  -limgui  -lX11 -lvulkan -g
+    
+    //Or with clang
+    clang++ -o OstenEngine main.cpp -O0 -Wall -Iexternal/vk_include/  -Iexternal/glfw/include/ -Lexternal/built_glfw/ -Lexternal/ -lglfw3  -limgui  -lX11 -lvulkan -g
+
+If you have issues with a compile error like GLFW or ImGui missing you might need to recompile them for your system.
+They can be found in the external folder and there is a helper .sh script in there that should compile them into a lib.a that the project uses.
 
 ### Additional Info
 
 The engine at the moment does not support figuring out file paths automatically and instead you will need to either run it in the engine folder or move required items to the same folder as the executable
 
-* Means that files in this folder are needed
-Folder paths that need to exist in running directory:
-src/renderer/shaders/* 
-assets/debug_assets/*
+OstenEngine requires that the shaders are placed in this filepath in relation to where the engine is running.
+    src/renderer/shaders/
 
 ### Engine Execution Summary
 
