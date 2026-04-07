@@ -1,8 +1,8 @@
 # OstenEngine
 
 OstenEngine Is a hobby work in progress Vulkan game engine written in C/C++ with the goal of learning as much as possible during the process of making it.
-A secondary goal during this project was to use minimal amount of dependencies, I would say I kind of have to many and that might be reduced as I continue working on it.
-The current dependencies are GLFW, ImGui, stb_image.h, math_3d.h and of course Vulkan I have some rough ideas that I want to move away from GLFW and ImGui to either make my own version or find a 
+A secondary goal during this project was to use minimal amount of dependencies, I would say I kind of have too many and that might be reduced as I continue working on it.
+The current dependencies are GLFW, ImGui, stb_image.h, math_3d.h and of course Vulkan. I have some rough ideas that I want to move away from GLFW and ImGui to either make my own version or find a 
 single header version to simplify compilation of the project.
 
 
@@ -12,18 +12,17 @@ single header version to simplify compilation of the project.
 
 #### Prerequisites
 
-You will have to have Cmake installed on your windows system to be able to compile OstenEngine to see if you have it installed you can open your terminal
-and write 
+You will have to have Cmake installed on your windows system to be able to compile OstenEngine. 
+To see if you have it installed you can open your terminal and write the following command to see if you have Cmake installed. 
 
     cmake --version
     
-    //If you get something like this you have Cmake
+    //As a example if you get something like this you have Cmake
     cmake version 4.3.1
 
-to see if you have Cmake installed. If you find that you do not have Cmake you can follow the instructions on the [Cmake Website](https://cmake.org/).
+If you find that you do not have Cmake you can follow the instructions on the [Cmake Website](https://cmake.org/).
 
 Next step is to make sure you have Vulkan installed on your system and to do that you can try running this command 
-
 
     vkcube
 
@@ -43,9 +42,9 @@ To see if you already have one of those 2 installed you can open the terminal an
     msvc --version
 
 
-If it gives you a version number on either of them then you should be fine to actually compile the project.
+If it gives you a version number on either of them then you should be ready to compile the project.
 
-Then to compile the project you should just need to run this command in the terminal when located inside the Engine folder.
+To compile the project you just need to run this command in the terminal while located inside the Engine folder.
 
     cmake --build .
 
@@ -83,7 +82,7 @@ Arch Based
 
     sudo pacman -S vulkan-devel
     
-And with that I believe that that is all the dependence to compile this project I have not tested on all those platforms so might add more steps when I get around to trying it on them.
+I believe that is all the dependencies needed to compile this project I have not tested on all those platforms so might add more steps when I get around to trying it on them.
 Then finally we can build this project, and you should be able to run one of these following commands:
 
     //Helper Script
@@ -96,7 +95,7 @@ Then finally we can build this project, and you should be able to run one of the
     clang++ -o OstenEngine main.cpp -O0 -Wall -Iexternal/vk_include/  -Iexternal/glfw/include/ -Lexternal/built_glfw/ -Lexternal/ -lglfw3  -limgui  -lX11 -lvulkan -g
 
 If you have issues with a compile error like GLFW or ImGui missing you might need to recompile them for your system.
-They can be found in the external folder and there is a helper .sh script in there that should compile them into a lib.a that the project uses.
+They can be found in the external folder and there is a helper .sh script in there that should compile them into a "lib.a" that the project uses.
 
 ### Additional Info
 
@@ -118,7 +117,7 @@ That text file could contain something like this:
     #Model_Paths
     assets/debug_assets/Cube.obj
     assets/debug_assets/viking.bin
-    #Texture_Paths
+    #Texture_Paths//Always Loads pink texture first so index starts from 1    
     assets/debug_assets/debug_texture.png
     assets/debug_assets/funny_texture.jpg
     #Render_Instances //Corresponds to model_index/texture_index
@@ -129,8 +128,8 @@ That text file could contain something like this:
 The parser looks at ! to find parsing version 1 is the first and only one that exists so far.
 
 Then the parser will look at # to load data the text after the # does not mean anything it is just to make it easier to understand for humans.
-The first # is model paths the asset loader will look in the 2nd # tells the asset loader to load those textures then the final # means that the render pipeline should prepare 
-render instances using the first number as a model index the second as a texture index and third is the capacity of this renderable model.
+The first # tells the asset loader where the models are located, the 2nd # tells the asset loader where those textures are located then the final # means that the render pipeline should prepare 
+render instances using the first number as a model index the second as a texture index and third is the capacity of this renderable model.(Model/Texture/Capacity)
 
 #### Quick Start Game Code:
 
@@ -172,7 +171,7 @@ render instances using the first number as a model index the second as a texture
 
 
 
-Right now the OstenEngine API is very and I mean very bare-bones but some actions included are creating entities creating model instances with a material and loading of textures/models
+Right now the OstenEngine API is very and I mean very bare-bones but some actions include: creating entities, creating model instances with a material and loading of textures/models
 
 The image formats supported by load texture is png and jpeg at the moment
 
