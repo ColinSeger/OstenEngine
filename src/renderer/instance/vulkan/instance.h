@@ -6,10 +6,10 @@
 #include "../../validation.h"
 #include "vulkan/vulkan_core.h"
 
-struct WindowExtensions{
+typedef struct WindowExtensions{
     const char** window_extensions;
     uint32_t extensions_amount;
-};
+} WindowExtensions;
 
 static inline bool check_validation_layer_support(uint32_t layer_count){
     assert(layer_count < 255);
@@ -36,13 +36,13 @@ static inline VkResult create_instance(VkInstance* instance, const char* name, W
     if(window_extensions.window_extensions == 0) return VK_ERROR_EXTENSION_NOT_PRESENT;
     if(validation_amount > 0){
         uint32_t layer_count;
-        vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+        vkEnumerateInstanceLayerProperties(&layer_count, 0);
         if(!check_validation_layer_support(layer_count)){
             return VK_ERROR_VALIDATION_FAILED;//Validation layers requested but could not be found
         }
     }
 
-    VkApplicationInfo app_info{};
+    VkApplicationInfo app_info = {};
 
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
@@ -52,12 +52,18 @@ static inline VkResult create_instance(VkInstance* instance, const char* name, W
     app_info.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
     app_info.engineVersion = VK_MAKE_VERSION(0, 0, 1);
     app_info.apiVersion = VK_API_VERSION_1_4;
-    app_info.pNext = nullptr;
+    app_info.pNext = 0;
 
-    VkInstanceCreateInfo create_info{};
+    // VkInstanceCreateFlags flags = {};
+
+
+
+    // VkFlags test = VkInstanceCreateFlags();
+
+    VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    create_info.flags = VkInstanceCreateFlags(0);
+    create_info.flags = 0;
 
     create_info.enabledExtensionCount = window_extensions.extensions_amount;
     create_info.ppEnabledExtensionNames = window_extensions.window_extensions;
@@ -69,5 +75,5 @@ static inline VkResult create_instance(VkInstance* instance, const char* name, W
         create_info.enabledLayerCount = 0;
     }
 
-    return vkCreateInstance(&create_info, nullptr, instance);
+    return vkCreateInstance(&create_info, 0, instance);
 }

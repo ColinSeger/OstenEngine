@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 #include "device/vulkan/device.h"
-#include "render_pipeline.cpp"
-#include "model_loader/model_loader.cpp"
+#include "render_pipeline.h"
+//#include "model_loader/model_loader.cpp"
 
 struct Terrain{//Bad
     VertexArray vertexes;

@@ -1,13 +1,13 @@
 #pragma once
 #include <string.h>
-#include <vector>
+//#include <vector>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "../../renderer/render_pipeline.cpp"
-#include "../../renderer/model_loader/model_loader.cpp"
-#include "../entity_manager/entity_manager.cpp"
+#include "../../renderer/render_pipeline.h"
+//#include "../../renderer/model_loader/model_loader.cpp"
+//#include "../entity_manager/entity_manager.cpp"
 
-enum class MessageType : uint8_t
+typedef enum MessageType
 {
     None,
     LoadModel,
@@ -15,26 +15,27 @@ enum class MessageType : uint8_t
     LoadTexture,
     SerializeOBJ,
     CreateRenderable,
-    TestEntity
-};
+    TestEntity,
+    MessageTypeSize
+} MessageType;
 
-enum class SupportedFiles : uint8_t
+typedef enum SupportedFiles
 {
     bin,
     obj,
     png,
     jpg
-};
+} SupportedFiles;
 
-struct InstanceData{
+typedef struct InstanceData{
     int32_t capacity;
     uint16_t model_index;
     uint16_t texture_index;
-};
+} InstanceData;
 
 static void create_entity(const char* name){
-    Entity entity{};
-    add_entity(entity, name);
+    //Entity entity{};
+    //add_entity(entity, name);
 }
 
 static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
@@ -57,50 +58,51 @@ static void create_renderable(struct RenderPipeline* render_pipeline, InstanceDa
     render_pipeline->model_render_data.renderable_amount++;
 }
 
-static void load_asset(const char* file_name, struct RenderPipeline& render_pipeline, HeapStack* memory_arena){
+static void load_asset(const char* file_name, struct RenderPipeline* render_pipeline, HeapStack* memory_arena){
     if(file_name[0] == '\0') return;
-    std::string filename = file_name;
-    char extention[3];
-    extention[0] = filename[filename.length() -3];
-    extention[1] = filename[filename.length() -2];
-    extention[2] = filename[filename.length() -1];
+    // std::string filename = file_name;
+    // char extention[3];
+    // extention[0] = filename[filename.length() -3];
+    // extention[1] = filename[filename.length() -2];
+    // extention[2] = filename[filename.length() -1];
 
-    if(extention[0] == 'o' || extention[0] == 'O'){
-        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ, memory_arena);
-    }else if(extention[0] == 'b' || extention[0] == 'B'){
-        ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
-    }else if(extention[0] == 'p' || extention[0] == 'P' || extention[0] == 'j'){
-        uint32_t texture_index = Texture::load_texture(&render_pipeline.device, (char*)file_name, render_pipeline.command_pool).index;
-        create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, &render_pipeline.lights, texture_index);
-    }
+    // if(extention[0] == 'o' || extention[0] == 'O'){
+    //     //ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::OBJ, memory_arena);
+    // }else if(extention[0] == 'b' || extention[0] == 'B'){
+    //     //ModelLoader::load_model(render_pipeline.device, render_pipeline.command_pool, file_name, LoadMode::BIN, memory_arena);
+    // }else if(extention[0] == 'p' || extention[0] == 'P' || extention[0] == 'j'){
+    //     uint32_t texture_index = load_texture(&render_pipeline.device, (char*)file_name, render_pipeline.command_pool).index;
+    //     create_fragment_set2(render_pipeline.device.virtual_device, render_pipeline.descriptor_pool, render_pipeline.fragment_layout, &render_pipeline.texture_descriptor, &render_pipeline.lights, texture_index);
+    // }
 }
 
 /// Size, Type, Value
-struct Message
+typedef struct Message
 {
     uint8_t size;
-    MessageType type = MessageType::None;
+    MessageType type;
     char value[255];
-};
+} Message;
 
-struct MessageSystem{
+typedef struct MessageSystem{
     HeapStack memory_arena;
-    std::vector<Message> messages;
-};
+    //std::vector<Message> messages;
+} MessageSystem;
 
-struct TempComp{
+typedef struct TempComp{
     uint16_t entity;
     uint16_t component;
-};
+} TempComp;
 
-static std::vector<Message> messages;
-static std::vector<Entity> entities_to_create;
+static Message messages[255] = {};
+static uint32_t message_amount = 0;
 
 
 static inline void add_message(Message message){
     //void* test = malloc(message.size);
     //memcpy(message.value, message.value, message.size);
-    messages.emplace_back(message);
+
+    messages[message_amount] = message;
 }
 
 static inline Message create_message(MessageType type, uint8_t size, char value[255]){
@@ -114,49 +116,42 @@ static inline void add_message_f(MessageType type, uint8_t size, char value[255]
     message.type = type;
     message.size = size;
     memcpy(message.value, value, message.size);
-    messages.emplace_back(message);
-}
-
-
-static void handle_message(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
-    if(messages.size() <= 0) return;
-    Message message = messages.front();
-    char* action = reinterpret_cast<char*>(message.value);
-    //Entity ent = *(Entity*)message.value;
-
-    switch (message.type)
-    {
-    case MessageType::LoadModel :
-        load_asset(action, *render_pipeline, heap_stack);
-    break;
-
-    case MessageType::CreateEntity :
-        create_entity(action);
-    break;
-    case MessageType::LoadTexture :
-        load_asset(action, *render_pipeline, heap_stack);
-    break;
-    case MessageType::SerializeOBJ :
-        ModelLoader::serialize(action, heap_stack);
-    break;
-    case MessageType::CreateRenderable:
-        create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);
-    break;
-    case MessageType::TestEntity:
-
-    break;
-    default:
-        break;
-    }
-    messages.erase(messages.begin());
+    messages[message_amount] = message;
+    message_amount++;
 }
 
 static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
-    while (!messages.empty()) {
-        handle_message(render_pipeline, heap_stack);
+    for(uint32_t i = 0; i < message_amount; i++){
+        Message message = messages[i];
+        char* action = (char*)message.value;
+        //Entity ent = *(Entity*)message.value;
+
+        switch (message.type)
+        {
+        case LoadModel :
+            load_asset(action, render_pipeline, heap_stack);
+        break;
+
+        case CreateEntity :
+            create_entity(action);
+        break;
+        case LoadTexture :
+            load_asset(action, render_pipeline, heap_stack);
+        break;
+        case SerializeOBJ :
+            //ModelLoader::serialize(action, heap_stack);
+        break;
+        case CreateRenderable:
+            create_renderable(render_pipeline, (InstanceData*)message.value, heap_stack);
+        break;
+        case TestEntity:
+
+        break;
+        default:
+            break;
+        }
+
     }
-    for(Entity e : entities_to_create){
-        add_entity(e, "Game Object");
-    }
-    entities_to_create.clear();
+    memset(messages, 0, sizeof(messages));
+    message_amount = 0;
 }

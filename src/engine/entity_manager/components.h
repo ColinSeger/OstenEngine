@@ -5,107 +5,106 @@
 #include "../transform.h"
 #include "../../additional_things/arena.h"
 
-constexpr uint8_t CAMERA = 0;
-constexpr uint8_t TRANSFORM = 1;
-constexpr uint8_t RENDER = 2;
-constexpr uint8_t COLLIDER = 3;
-constexpr uint8_t HEALTH = 4;
-constexpr uint8_t MELEE = 5;
+#define CAMERA 0
+#define TRANSFORM 1
+#define RENDER 2
+#define COLLIDER 3
+#define HEALTH 4
+#define MELEE 5
 
 /**
     Base version of a Component that is used as the cast when checking what the component it is.
 */
-struct Component{
+typedef struct Component{
     const uint16_t id;
-    uint16_t entity_id = 0;
-};
+    uint16_t entity_id;
+} Component;
 
 /**
     Bad representation of the transform component as it could be formated in a better way
 */
-struct TransformComponent{
-    const uint16_t id = 1;
-    uint16_t entity_id = 0;
-    Transform transform {};
-};
+typedef struct TransformComponent{
+    const uint16_t id;
+    uint16_t entity_id;
+    Transform transform;
+} TransformComponent;
 
 /**
     This is the component representation of the renderable and it contains the index of the render instance and transform index
 */
-struct RenderComponent{
-    const uint16_t id = 2;
-    uint16_t entity_id = 0;
-    uint16_t transform_id = UINT16_MAX;
-    uint32_t instance_id = 0;
-};
+typedef struct RenderComponent{
+    const uint16_t id;
+    uint16_t entity_id;
+    uint16_t transform_id;
+    uint32_t instance_id;
+} RenderComponent;
 
 /**
     This is the component representation of the Camera
 */
-struct CameraComponent{
-    const uint16_t id = 3;
-    uint16_t entity_id = 0;
-    uint16_t transform_id = UINT16_MAX;
-    float field_of_view = 45.f;
-};
+typedef struct CameraComponent{
+    const uint16_t id;
+    uint16_t entity_id;
+    uint16_t transform_id;
+    float field_of_view;
+} CameraComponent;
 
 /**
     This is the component representation of the collider and all it does is have a range and a statically allocated array with a max capacity of 42
 */
-struct SimpleColliderComp{
-    const uint16_t id = 4;
-    uint16_t entity_id = 0;
-    uint16_t transform_id = UINT16_MAX;
-    uint16_t collision_amount = 0;
-    float collision_range = 0;
+typedef struct SimpleColliderComp{
+    const uint16_t id;
+    uint16_t entity_id;
+    uint16_t transform_id;
+    uint16_t collision_amount;
+    float collision_range;
     uint16_t nearby_colliders[42];//Bad and can cause issues but to little time to fix
-};
+} SimpleColliderComp;
 
 /**
     This is the component representation of the health of a entity(it is bad)
 */
-struct HealthComponent{
-    const uint16_t id = 5;
-    uint16_t entity_id = 0;
+typedef struct HealthComponent{
+    const uint16_t id;
+    uint16_t entity_id;
     int16_t health;
     uint16_t damage_taken;
     uint16_t team_id;
-};
+} HealthComponent;
 
 /**
     This is the component representation of the Melee attack
 */
-struct MeleeComponent{
-    const uint16_t id = 6;
-    uint16_t entity_id = 0;
+typedef struct MeleeComponent{
+    const uint16_t id;
+    uint16_t entity_id;
     uint16_t damage;
     uint16_t nearby_enemy_health_id;
     float attack_cooldown;
-};
+} MeleeComponent;
 
 /**
     This is System that basically works as a array that is used by the systems that need to access systems
 */
-struct ComponentSystem{
+typedef struct ComponentSystem{
     HeapStack* memory_arena;
     size_t components;
-    uint16_t amount = 0;
-    uint16_t capacity = 10;
-    uint8_t type = 0;
-};
+    uint16_t amount;
+    uint16_t capacity;
+    uint8_t type;
+} ComponentSystem;
 
-namespace{
-    ComponentSystem cameras{};
-    ComponentSystem transforms{};
-    ComponentSystem render_components{};
-    ComponentSystem simple_colliders{};
-    ComponentSystem health_system{};
-    ComponentSystem melee_system{};
-}
+static ComponentSystem cameras = {};
+static ComponentSystem transforms = {};
+static ComponentSystem render_components = {};
+static ComponentSystem simple_colliders = {};
+static ComponentSystem health_system = {};
+static ComponentSystem melee_system = {};
+
 
 //I don't like
 static inline uint16_t get_component_size_by_type(uint16_t type){
-    switch ((uint8_t)type){
+    switch (type){
     case TRANSFORM:
         return sizeof(TransformComponent);
     case RENDER:
@@ -124,7 +123,7 @@ static inline uint16_t get_component_size_by_type(uint16_t type){
 }
 
 static inline void* get_component_by_id(ComponentSystem* component_system, uint16_t id){
-    if(id > component_system->amount) return nullptr;
+    if(id > component_system->amount) return 0;
     uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
     uint16_t size = get_component_size_by_type(component_system->type);
     uint32_t size_offset = size * id;
@@ -134,22 +133,23 @@ static inline void* get_component_by_id(ComponentSystem* component_system, uint1
 
 static inline void* remove_component_by_id(ComponentSystem* component_system, uint16_t id){
     assert(id <= component_system->amount);
-    uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
-    uint8_t* replace = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
-    uint16_t size = get_component_size_by_type(component_system->type);
-    uint32_t size_offset = size * id;
-    comp += size_offset;
+    // uint8_t* comp = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    // uint8_t* replace = (uint8_t*)get_at_index(component_system->memory_arena, component_system->components);
+    // uint16_t size = get_component_size_by_type(component_system->type);
+    // uint32_t size_offset = size * id;
+    // comp += size_offset;
 
-    replace += ((component_system->amount-1) * size);
+    // replace += ((component_system->amount-1) * size);
 
-    //memcpy(comp, replace, size);
+    // //memcpy(comp, replace, size);
 
-    component_system->amount--;
-    return comp;
+    // component_system->amount--;
+    // return comp;
+    return 0;
 }
 
 
-static constexpr ComponentSystem* get_component_system(uint8_t system_id){
+static inline ComponentSystem* get_component_system(uint8_t system_id){
     switch (system_id){
     case CAMERA:
         return &cameras;
@@ -189,8 +189,8 @@ static inline void create_transform_system(uint16_t transform_amount, HeapStack*
     TransformComponent* comp = (TransformComponent*)get_at_index(component_system->memory_arena, component_system->components);
 
     for (size_t i = 0; i < transform_amount; i++){
-        comp->transform = Transform{};
-        comp->transform.scale = {1, 1, 1};
+        comp->transform = (Transform){};
+        comp->transform.scale = (vec3_t){1, 1, 1};
         comp++;
     }
 }
@@ -275,8 +275,8 @@ static inline uint16_t add_camera(uint16_t transform_index){
 
 static inline uint16_t add_transform(){
     ComponentSystem* component_sys = get_component_system(TRANSFORM);
-    TransformComponent* comp = (TransformComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
-    comp += component_sys->amount;
+    // TransformComponent* comp = (TransformComponent*)get_at_index(component_sys->memory_arena, component_sys->components);
+    // comp += component_sys->amount;
     component_sys->amount++;
     return component_sys->amount-1;
 }
@@ -317,12 +317,12 @@ static inline void calculate_colliders(){
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
     SimpleColliderComp* colliders = (SimpleColliderComp*)get_at_index(collider_system->memory_arena, collider_system->components);
     TransformComponent* transforms = (TransformComponent*)get_at_index(transform_system->memory_arena, transform_system->components);
-    constexpr uint32_t collider_capacity = sizeof(colliders[0].nearby_colliders) / sizeof(colliders[0].nearby_colliders[0]);
+    const uint32_t collider_capacity = sizeof(colliders[0].nearby_colliders) / sizeof(colliders[0].nearby_colliders[0]);
 
     for(int x = 0; x < collider_system->amount; x++){
-        SimpleColliderComp& my_collider = colliders[x];
-        my_collider.collision_amount = 0;
-        Transform self = transforms[my_collider.transform_id].transform;
+        SimpleColliderComp* my_collider = &colliders[x];
+        my_collider->collision_amount = 0;
+        Transform self = transforms[my_collider->transform_id].transform;
 
         for(int y = 0; y < collider_system->amount; y++){
             uint16_t other_transform_id = colliders[y].transform_id;
@@ -330,11 +330,11 @@ static inline void calculate_colliders(){
             vec3_t diff = v3_sub(self.position, other.position);
             float dist_sq = v3_dot(diff, diff);
 
-            float range = my_collider.collision_range;
+            float range = my_collider->collision_range;
             if (dist_sq < range * range && dist_sq > 0.1f){
             //if(length < colliders[x].collision_range && length > 0.1f){
 
-                if(my_collider.collision_amount >= collider_capacity){
+                if(my_collider->collision_amount >= collider_capacity){
                     //Debug::log("You had to many collisions");
                     continue;
                     assert(false && "You had to many collisions");
@@ -345,8 +345,8 @@ static inline void calculate_colliders(){
                     assert(false && "You somehow tried to collide with the camera?");
                     //break;
                 }
-                my_collider.nearby_colliders[my_collider.collision_amount] = other_transform_id;
-                my_collider.collision_amount++;
+                my_collider->nearby_colliders[my_collider->collision_amount] = other_transform_id;
+                my_collider->collision_amount++;
             }
         }
     }

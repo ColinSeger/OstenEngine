@@ -1,14 +1,15 @@
 #pragma once
+#include <math.h>
 #include "../../external/math_3d.h"
 
 /**
     Self explanatory (It is the transforms of all entities that have transforms)
 */
-struct Transform{
-    vec3_t position = {0.0f, 0.0f, 0.0f};
-    vec3_t rotation = {0.0f, 0.0f, 0.0f};
-    vec3_t scale = {1.0f, 1.0f, 1.0f};
-};
+typedef struct Transform{
+    vec3_t position;
+    vec3_t rotation;
+    vec3_t scale;
+} Transform;
 
 static inline mat4_t get_model_matrix(Transform transform){//This should be a for loop inside renderer probably
     mat4_t model = mat4(
@@ -20,7 +21,7 @@ static inline mat4_t get_model_matrix(Transform transform){//This should be a fo
     model = m4_mul(model, m4_rotation_x(transform.rotation.x));
     model = m4_mul(model, m4_rotation_y(transform.rotation.y));
     model = m4_mul(model, m4_rotation_z(transform.rotation.z));
-    model = m4_mul(model, m4_scaling({transform.scale.x, transform.scale.y, transform.scale.z}));
+    model = m4_mul(model, m4_scaling((vec3_t){transform.scale.x, transform.scale.y, transform.scale.z}));
     return model;
 }
 

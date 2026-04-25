@@ -6,11 +6,11 @@
 /**
     This is a memory arena but i for some reason named it heap-stack which is a weird name
 */
-struct HeapStack{
+typedef struct HeapStack{
     unsigned long long capacity;
     unsigned long long index;
     unsigned char* data;
-};
+} HeapStack;
 
 static inline void* get_at_index(struct HeapStack* heap_stack, const unsigned long long index){
     if(index > heap_stack->capacity || heap_stack->index < index) return 0;

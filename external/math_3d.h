@@ -74,7 +74,6 @@ v1.0  2016-02-15  Initial release
 #ifndef MATH_3D_HEADER
 #define MATH_3D_HEADER
 
-#include <cmath>
 #include <stdint.h>
 #include <math.h>
 #include <stdio.h>
@@ -104,16 +103,19 @@ typedef struct {
 } vec3_t;
 
 
-static inline vec3_t vec3(float x, float y, float z)        { return { x, y, z }; }
+static inline vec3_t vec3(float x, float y, float z)        {
+    vec3_t result = { x, y, z };
+    return result;
+}
 
-static inline vec3_t v3_add   (vec3_t a, vec3_t b)          { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
-static inline vec3_t v3_adds  (vec3_t a, float s)           { return { a.x + s,   a.y + s,   a.z + s   }; }
-static inline vec3_t v3_sub   (vec3_t a, vec3_t b)          { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
-static inline vec3_t v3_subs  (vec3_t a, float s)           { return { a.x - s,   a.y - s,   a.z - s   }; }
-static inline vec3_t v3_mul   (vec3_t a, vec3_t b)          { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
-static inline vec3_t v3_muls  (vec3_t a, float s)           { return { a.x * s,   a.y * s,   a.z * s   }; }
-static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
-static inline vec3_t v3_divs  (vec3_t a, float s)           { return { a.x / s,   a.y / s,   a.z / s   }; }
+static inline vec3_t v3_add   (vec3_t a, vec3_t b)          { vec3_t result  = { a.x + b.x, a.y + b.y, a.z + b.z }; return result; }
+static inline vec3_t v3_adds  (vec3_t a, float s)           { vec3_t result  = { a.x + s,   a.y + s,   a.z + s   }; return result; }
+static inline vec3_t v3_sub   (vec3_t a, vec3_t b)          { vec3_t result  = { a.x - b.x, a.y - b.y, a.z - b.z }; return result; }
+static inline vec3_t v3_subs  (vec3_t a, float s)           { vec3_t result  = { a.x - s,   a.y - s,   a.z - s   }; return result; }
+static inline vec3_t v3_mul   (vec3_t a, vec3_t b)          { vec3_t result = { a.x * b.x, a.y * b.y, a.z * b.z  }; return result; }
+static inline vec3_t v3_muls  (vec3_t a, float s)           { vec3_t result = { a.x * s,   a.y * s,   a.z * s    }; return result; }
+static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { vec3_t result = { a.x / b.x, a.y / b.y, a.z / b.z  }; return result; }
+static inline vec3_t v3_divs  (vec3_t a, float s)           { vec3_t result = { a.x / s,   a.y / s,   a.z / s    }; return result; }
 static inline float  v3_length(vec3_t v)                    { return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);  }
 static inline vec3_t v3_norm  (vec3_t v);
 static inline float  v3_dot   (vec3_t a, vec3_t b)          { return a.x*b.x + a.y*b.y + a.z*b.z;                 }
@@ -125,9 +127,9 @@ static inline vec3_t v3_move_towards (vec3_t a, vec3_t b, float delta);
 //OstenCode
 typedef struct { float x, y; } vec2_t;
 
-static inline vec2_t v2_sub   (vec2_t a, vec2_t b)          { return { a.x - b.x, a.y - b.y}; }
+static inline vec2_t v2_sub   (vec2_t a, vec2_t b)          { vec2_t result = {a.x - b.x, a.y - b.y}; return result; }
 static inline float  v2_length(vec2_t v)                    { return sqrtf(v.x*v.x + v.y*v.y); }
-static inline vec2_t v2_muls  (vec2_t a, float s)           { return { a.x * s,   a.y * s, };  }
+static inline vec2_t v2_muls  (vec2_t a, float s)           { vec2_t result = { a.x * s,   a.y * s, }; return result;  }
 static inline float v2_dist(vec2_t a, vec2_t b) { return sqrt(((a.y - a.x) * (a.y - a.x)) + ((b.y - b.x) * (b.y - b.x)));}
 
 struct vec2_uint_t{
@@ -139,12 +141,12 @@ typedef struct {
     float x, y, z, w;
 } vec4_t;
 
-static inline float parse_float(const char* string_char, size_t& index_jump) {
+static inline float parse_float(const char* string_char, size_t* index_jump) {
     uint32_t int_part = 0;
     uint32_t frac_part = 0;
     uint32_t frac_div = 1;
     int sign = 1;
-    uint8_t jump = 1;
+    size_t jump = 1;
 
     if (*string_char == '-') {
         sign = -1;
@@ -169,7 +171,7 @@ static inline float parse_float(const char* string_char, size_t& index_jump) {
             jump++;
         }
     }
-    index_jump += jump;
+    *index_jump += jump;
     return (sign * ((float)int_part + (float)frac_part / frac_div));
 }
 
@@ -296,18 +298,22 @@ static inline mat4_t m4_mul          (mat4_t a, mat4_t b);
 
 static inline vec3_t v3_norm(vec3_t v) {
 	float len = v3_length(v);
-	if (len > 0)
-		return { v.x / len, v.y / len, v.z / len };
-	else
-		return { 0, 0, 0};
+	if (len > 0){
+        vec3_t result = { v.x / len, v.y / len, v.z / len };
+        return result;
+	}
+	vec3_t result = {};
+	return result;
 }
 
 static inline vec2_t v2_norm(vec2_t v) {
 	float len = v2_length(v);
-	if (len > 0)
-		return { v.x / len, v.y / len };
-	else
-		return { 0, 0 };
+	if (len > 0){
+	    vec2_t result = { v.x / len, v.y / len };
+		return result;
+	}
+	vec2_t result = {};
+	return result;
 }
 
 static inline vec3_t v3_proj(vec3_t v, vec3_t onto) {
@@ -315,11 +321,12 @@ static inline vec3_t v3_proj(vec3_t v, vec3_t onto) {
 }
 
 static inline vec3_t v3_cross(vec3_t a, vec3_t b) {
-	return {
+    vec3_t result = {
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x
 	};
+	return result;
 }
 
 static inline float v3_angle_between(vec3_t a, vec3_t b) {
@@ -353,12 +360,13 @@ static inline mat4_t mat4(
 	float m02, float m12, float m22, float m32,
 	float m03, float m13, float m23, float m33
 ) {
-	return mat4_t{
+    mat4_t result = {
 		m00, m10, m20, m30,
 		m01, m11, m21, m31,
 		m02, m12, m22, m32,
 		m03, m13, m23, m33
 	};
+	return result;
 }
 
 static inline mat4_t m4_identity() {

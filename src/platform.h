@@ -1,15 +1,15 @@
 #pragma once
 
-struct Timer{
+typedef struct Timer{
     double sec;
     double ns;
-};
+} Timer;
 
-struct FileData{
+typedef struct FileData{
     const char* filename;
     void* file_data;
     long long file_size;
-};
+} FileData;
 
 float platform_memory_mb();
 

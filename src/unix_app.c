@@ -6,9 +6,9 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <fcntl.h>
-#include "osten_engine.cpp"
+#include "osten_engine.h"
 #include "engine/game_load.h"
-#include "game/total_cheese.hpp"
+// #include "game/total_cheese.hpp"
 
 float platform_memory_mb()
 {//https://libstatgrab.org/ Look Into
@@ -82,37 +82,37 @@ void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 
-OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    return OstenEngine(width, height, name);
+void start(uint32_t width, uint32_t height, const char* name, OstenEngine* engine){
+    create_osten_engine(width, height, name, engine);
 }
 
-uint8_t run(OstenEngine& engine){
+uint8_t run(OstenEngine* engine){
     load_game_data((char*)"src/game/game_data.txt");
-    GameData game_data = {};
+    // GameData game_data = {};
 
-    game_data.game_code = load_game_resources;
+    // game_data.game_code = load_game_resources;
 
     last_tick = platform_get_time_handle();
 
-    UIData ui_data = {};
-    ui_data.inspecting = &engine.inspecting;
-    ui_data.paused_state = &engine.paused_update;
-    ui_data.render_pipe = &engine.render_pipeline;
-    ui_data.target_point = &engine.target_point;
-    ui_data.file_explorer = &engine.file_explorer;
-    ui_data.target_index = &target_index;
+    // UIData ui_data = {};
+    // ui_data.inspecting = &engine.inspecting;
+    // ui_data.paused_state = &engine.paused_update;
+    // ui_data.render_pipe = &engine.render_pipeline;
+    // ui_data.target_point = &engine.target_point;
+    // ui_data.file_explorer = &engine.file_explorer;
+    // ui_data.target_index = &target_index;
 
-    game_data.paused_state = &engine.paused_update;
+    // game_data.paused_state = &engine.paused_update;
 
-    while(!engine.should_close){
-        procces_all_commands(&engine.render_pipeline, &engine.heap_stack);
-        begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
-        if(!engine.paused_update){
+    while(!engine->should_close){
+        procces_all_commands(&engine->render_pipeline, &engine->heap_stack);
+        //begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
+        if(!engine->paused_update){
             calculate_colliders();
 
-            game_data.game_code(&engine, &game_data);
+            // game_data.game_code(&engine, &game_data);
         }
-        engine.draw_frame();
+        draw_frame(engine);
     }
     return 0;
 }

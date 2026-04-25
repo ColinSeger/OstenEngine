@@ -1,6 +1,5 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include "../../../external/math_3d.h"
 #include "../../engine/entity_manager/components.h"
 
 

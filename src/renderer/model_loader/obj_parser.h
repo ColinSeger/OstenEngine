@@ -6,7 +6,7 @@
 #include <string>
 #include "../../../external/math_3d.h"
 #include "../device/vulkan/device.h"
-#include "../../debugger/debugger.h"
+//#include "../../debugger/debugger.h"
 
 static inline vec3_t parse_vertex(const std::string& line, const uint16_t start_index){
     vec3_t result {};
@@ -87,7 +87,7 @@ static inline size_t parse_indicie(const std::string& line, const uint16_t start
 }
 
 static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_vertices, Uint32Array& model_indicies, HeapStack* heap_stack){
-    Debug::profile_time_start();
+    //Debug::profile_time_start();
     std::ifstream file_stream(path_of_obj, std::ios_base::in);
 
     if(!file_stream.is_open()){
@@ -95,7 +95,7 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
         model_vertices.amount = 0;
         model_indicies.values = nullptr;
         model_indicies.amount = 0;
-        Debug::log((char*)"Failed to load model");
+        //Debug::log((char*)"Failed to load model");
         return heap_stack->index;
     }
     size_t mem_index = heap_stack->index;
@@ -178,6 +178,6 @@ static inline size_t load_obj_v2(const char* path_of_obj, VertexArray& model_ver
 
     memcpy(model_indicies.values, get_at_index(heap_stack, index), (index_end - index) + sizeof(uint32_t));
 
-    Debug::profile_time_end();
+    //Debug::profile_time_end();
     return mem_index;
 }

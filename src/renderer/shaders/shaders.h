@@ -11,7 +11,7 @@ static inline bool create_shader(const FileData code, const VkShaderStageFlagBit
     create_info.codeSize = code.file_size;
     create_info.pCode = (uint32_t*)code.file_data;
 
-    if (vkCreateShaderModule(virtual_device, &create_info, nullptr, &shader_result) != VK_SUCCESS) {
+    if (vkCreateShaderModule(virtual_device, &create_info, 0, &shader_result) != VK_SUCCESS) {
         return 0;
     }
     result->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

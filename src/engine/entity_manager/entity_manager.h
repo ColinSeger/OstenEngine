@@ -1,11 +1,11 @@
 // #include "entity_manager.h"
 #pragma once
-#include "components.h"
-#include <string.h>
+//#include "components.h"
+//#include <string.h>
 #include <stdint.h>
-#include <vector>
-#include <string>
-#include <unordered_map>
+//#include <vector>
+//#include <string>
+//#include <unordered_map>
 // #include "entity_system.cpp"
 
 struct ComponentID{
@@ -18,7 +18,8 @@ struct Entity{
     uint16_t id;
     uint16_t component_amount;
 };
-
+/*
+ *
 static inline void add_component(Entity& entity, ComponentID component){
     for(ComponentID com : entity.components){
         if(com.type == component.type) return;
@@ -149,3 +150,5 @@ static inline void run_health_system(){
         }
     }
 }
+
+ */

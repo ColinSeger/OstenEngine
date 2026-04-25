@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../device/vulkan/device.h"
-#include "../../debugger/debugger.h"
+//#include "../../debugger/debugger.h"
 #include "obj_parser.h"
 
 /**
@@ -27,8 +27,8 @@ enum class LoadMode{
     BIN
 };
 
-std::unordered_map<std::string, uint32_t> loaded_model_index;
-std::vector<Model> loaded_models;
+// std::unordered_map<std::string, uint32_t> loaded_model_index;
+// std::vector<Model> loaded_models;
 
 namespace ModelLoader
 {
@@ -81,11 +81,11 @@ namespace ModelLoader
 
     //This Returns a size_t from the memory arena index
     static size_t de_serialize(const char* filename, VertexArray& vertices, Uint32Array& indices, HeapStack* heap_stack){
-        Debug::profile_time_start();
+        //Debug::profile_time_start();
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
         if(!file.is_open()){
-            Debug::log((char*)"There was a issue parsing this model");
+            //Debug::log((char*)"There was a issue parsing this model");
             return heap_stack->index;
         }
 
@@ -110,7 +110,7 @@ namespace ModelLoader
         vertices.amount = index_start / sizeof(Vertex);
         indices.amount = (file_size - index_start) / sizeof(uint32_t);
 
-        Debug::profile_time_end();
+        //Debug::profile_time_end();
         return mem_index;
     }
 

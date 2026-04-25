@@ -4,17 +4,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct Line{
+typedef struct Line{
     char string[255];
     unsigned short length;
-};
+} Line;
 
-enum LoadType : uint8_t{
+typedef enum LoadType{
     Version,
     Models,
     Textures,
     Render
-};
+} LoadType;
 
 static inline bool get_line(struct Line* line,struct FileData data, long long* offset){
     if(*offset > data.file_size) return false;
@@ -45,13 +45,13 @@ static inline void load_game_data(char* file_path){
 
     FileData file_data = platform_load_entire_file(file_path);
     if(file_data.file_size <= 0){
-        Debug::log((char*)"Failed to load game_data");
+        //Debug::log((char*)"Failed to load game_data");
         return;
     }
 
     Line text_line = {};
     long long offset = 0;
-    LoadType load_type = LoadType::Version;
+    LoadType load_type = Version;
 
     while (get_line(&text_line, file_data, &offset)) {
         if(text_line.string[0] == '!' || text_line.string[0] == ' ' || text_line.string[0] == '\n') continue;
@@ -59,19 +59,19 @@ static inline void load_game_data(char* file_path){
             load_type = (LoadType)(load_type + 1);
             continue;
         }
-        if(load_type ==  LoadType::Models){
-            add_message_f(MessageType::LoadModel, text_line.length, text_line.string);
+        if(load_type ==  Models){
+            add_message_f(LoadModel, text_line.length, text_line.string);
         }
-        else if(load_type ==  LoadType::Textures){
-            add_message_f(MessageType::LoadTexture, text_line.length, text_line.string);
+        else if(load_type ==  Textures){
+            add_message_f(LoadTexture, text_line.length, text_line.string);
         }
-        else if(load_type == LoadType::Render){
+        else if(load_type == Render){
             size_t index = 0;
             render_ids.model_index = parse_to_uint32_length(text_line.string, &index);
             render_ids.texture_index = parse_to_uint32_length(&text_line.string[index++ +1], &index);
             render_ids.capacity = parse_to_uint32_length(&text_line.string[index++ +1], &index);
 
-            add_message_f(MessageType::CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
+            add_message_f(CreateRenderable, sizeof(InstanceData), (char*)&render_ids);
         }
     }
 

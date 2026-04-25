@@ -8,15 +8,15 @@
 /**
     Data needed for the shadow-pass
 */
-struct ShadowPass{
+typedef struct ShadowPass{
     VkImage depth_image;
     VkDeviceMemory depth_image_memory;
     VkImageView image_view;
     VkFramebuffer framebuffer;
-};
+} ShadowPass;
 
 static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat swap_chain_format, const Device* device){
-    VkSubpassDependency dependency{};
+    VkSubpassDependency dependency = {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
@@ -24,7 +24,7 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    VkAttachmentDescription color_attachment{};
+    VkAttachmentDescription color_attachment = {};
     color_attachment.format = swap_chain_format;
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -35,8 +35,8 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     //color_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = Texture::find_depth_formats(device->physical_device);
+    VkAttachmentDescription depth_attachment = {};
+    depth_attachment.format = find_depth_formats(device->physical_device);
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -48,21 +48,21 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     VkAttachmentDescription description_attachments[2] = {color_attachment, depth_attachment};
     uint32_t description_amount = sizeof(description_attachments) / sizeof(description_attachments[0]);
 
-    VkAttachmentReference color_attachment_ref{};
+    VkAttachmentReference color_attachment_ref = {};
     color_attachment_ref.attachment = 0;
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference depth_attachment_ref{};
+    VkAttachmentReference depth_attachment_ref = {};
     depth_attachment_ref.attachment = 1;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription sub_pass{};
+    VkSubpassDescription sub_pass = {};
     sub_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     sub_pass.colorAttachmentCount = 1;
     sub_pass.pColorAttachments = &color_attachment_ref;
     sub_pass.pDepthStencilAttachment = &depth_attachment_ref;
 
-    VkRenderPassCreateInfo render_pass_info{};
+    VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = description_amount;
     render_pass_info.pAttachments = description_attachments;
@@ -71,11 +71,11 @@ static inline VkResult create_render_pass(VkRenderPass* render_pass, VkFormat sw
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, render_pass);
+    return vkCreateRenderPass(device->virtual_device, &render_pass_info, 0, render_pass);
 }
 
 static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, const Device* device){
-    VkSubpassDependency dependencies[2]{};
+    VkSubpassDependency dependencies[2] = {};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -92,7 +92,7 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    VkAttachmentDescription depth_attachment{};
+    VkAttachmentDescription depth_attachment = {};
     depth_attachment.format = VK_FORMAT_D32_SFLOAT;
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -102,16 +102,16 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depth_attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkAttachmentReference depth_attachment_ref{};
+    VkAttachmentReference depth_attachment_ref = {};
     depth_attachment_ref.attachment = 0;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription sub_pass{};
+    VkSubpassDescription sub_pass = {};
     sub_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     sub_pass.colorAttachmentCount = 0;
     sub_pass.pDepthStencilAttachment = &depth_attachment_ref;
 
-    VkRenderPassCreateInfo render_pass_info{};
+    VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = 1;
     render_pass_info.pAttachments = &depth_attachment;
@@ -120,12 +120,13 @@ static inline VkResult create_offscreen_render_pass(VkRenderPass* render_pass, c
     render_pass_info.dependencyCount = 2;
     render_pass_info.pDependencies = dependencies;
 
-    return vkCreateRenderPass(device->virtual_device, &render_pass_info, nullptr, render_pass);
+    return vkCreateRenderPass(device->virtual_device, &render_pass_info, 0, render_pass);
 }
 
 static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D size, ShadowPass* shadow_pass, VkRenderPass* render_pass){
 
-    Texture::create_image(
+
+    create_image(
         device,
         size,
         VK_FORMAT_D32_SFLOAT,
@@ -136,7 +137,7 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
         &shadow_pass->depth_image_memory
     );
 
-    VkImageViewCreateInfo image_view_create_info{};
+    VkImageViewCreateInfo image_view_create_info = {};
     image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     image_view_create_info.image = shadow_pass->depth_image;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -147,10 +148,10 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
     image_view_create_info.subresourceRange.baseArrayLayer = 0;
     image_view_create_info.subresourceRange.layerCount = 1;
 
-    VkResult creation_status = vkCreateImageView(device->virtual_device, &image_view_create_info, nullptr, &shadow_pass->image_view);
+    VkResult creation_status = vkCreateImageView(device->virtual_device, &image_view_create_info, 0, &shadow_pass->image_view);
     if(creation_status != VK_SUCCESS) return creation_status;
 
-    VkFramebufferCreateInfo frame_buffer_create_info{};
+    VkFramebufferCreateInfo frame_buffer_create_info = {};
     frame_buffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     frame_buffer_create_info.renderPass = *render_pass;
     frame_buffer_create_info.attachmentCount = 1;
@@ -160,12 +161,12 @@ static inline VkResult create_offscreen_framebuffer(Device* device, VkExtent2D s
     frame_buffer_create_info.layers = 1;
     frame_buffer_create_info.flags = 0;
 
-    vkCreateFramebuffer(device->virtual_device, &frame_buffer_create_info, nullptr, &shadow_pass->framebuffer);
+    vkCreateFramebuffer(device->virtual_device, &frame_buffer_create_info, 0, &shadow_pass->framebuffer);
     return VK_SUCCESS;
 }
 
 static inline VkResult create_shadow_samplers(VkDevice virtual_device, VkSampler* shadow_sampler, VkSampler* debug_shadow_sampler){
-    VkSamplerCreateInfo sampler_create_info{};
+    VkSamplerCreateInfo sampler_create_info = {};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     sampler_create_info.compareEnable = VK_FALSE;
     sampler_create_info.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
@@ -181,7 +182,7 @@ static inline VkResult create_shadow_samplers(VkDevice virtual_device, VkSampler
     sampler_create_info.maxLod = 1.f;
     sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-    VkSamplerCreateInfo debug_sampler{};
+    VkSamplerCreateInfo debug_sampler = {};
     debug_sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     debug_sampler.compareEnable = VK_FALSE;
     debug_sampler.minFilter = VK_FILTER_LINEAR;
@@ -195,7 +196,7 @@ static inline VkResult create_shadow_samplers(VkDevice virtual_device, VkSampler
     debug_sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 
-    VkResult creation_status = vkCreateSampler(virtual_device, &sampler_create_info, nullptr, shadow_sampler);
+    VkResult creation_status = vkCreateSampler(virtual_device, &sampler_create_info, 0, shadow_sampler);
     if(creation_status != VK_SUCCESS) return creation_status;
-    return creation_status = vkCreateSampler(virtual_device, &debug_sampler, nullptr, debug_shadow_sampler);
+    return creation_status = vkCreateSampler(virtual_device, &debug_sampler, 0, debug_shadow_sampler);
 }

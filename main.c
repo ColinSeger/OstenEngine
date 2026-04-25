@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #include "src/win32_app.cpp"
 #else
-#include "src/unix_app.cpp"
+#include "src/unix_app.c"
 #endif
 
 #define MATH_3D_IMPLEMENTATION
@@ -15,19 +15,20 @@
 
 int main()
 {
-    #ifdef _DEBUG
-        _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-        _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
-    #endif
+    // #ifdef _DEBUG
+    //     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //     _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
+    // #endif
 
     const char* name = "Osten Engine";
 
-    OstenEngine engine = start(1920, 1080, name);
+    struct OstenEngine engine = {};
+    start(1920, 1080, name, &engine);
 
     if(!engine.render_pipeline.device.virtual_device){
         return 1;
     }
-    run(engine);
+    run(&engine);
 
     return 0;
 }
