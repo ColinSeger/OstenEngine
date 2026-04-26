@@ -4,16 +4,16 @@
 #include <string.h>
 #include <vulkan/vulkan_core.h>
 #include "../../external/math_3d.h"
-#include "device/vulkan/device.h"
-#include "descriptors/descriptors.h"
-#include "texture/vulkan/texture.h"
-#include "swap_chain/vulkan/swap_chain.h"
+#include "vulkan/device.h"
+#include "vulkan/descriptors.h"
+#include "vulkan/texture.h"
+#include "vulkan/swap_chain.h"
 //#include "model_loader/model_loader.cpp"
 #include "../engine/entity_manager/components.h"
 // #include "../../external/imgui_test/imgui_impl_vulkan.h"
-#include "shaders/shaders.h"
+#include "vulkan/shaders.h"
 #include "../additional_things/arena.h"
-#include "render_passes/render_passes.h"
+#include "vulkan/render_passes.h"
 
 //K_LOADER_DEBUG=all LD_PRELOAD=/usr/lib/librenderdoc.so ./build/OstenEngine
 
@@ -32,6 +32,11 @@ typedef struct Model{
     VkBuffer index_buffer;//TODO Look into how to merge into vertex buffer
     VkDeviceMemory index_buffer_memory;
 } Model;
+
+typedef struct WindowExtensions{
+    const char** window_extensions;
+    uint32_t extensions_amount;
+} WindowExtensions;
 
 /**
     This is the render-pipeline which is thing that manages all rendering of this engine there is a lot of issues with it that I want to fix but have not found the time for yet.
@@ -90,7 +95,72 @@ struct RenderPipeline{
     //int32_t draw_frame(CameraComponent& camera, HeapStack* heap_stack);
 };
 
-void render_cleanup(struct RenderPipeline* pipeline, HeapStack* memory_stack)
+
+static inline bool check_validation_layer_support(uint32_t layer_count){
+    assert(layer_count < 255);
+    VkLayerProperties layers_buffer[255];
+    vkEnumerateInstanceLayerProperties(&layer_count, layers_buffer);
+    bool layer_found = false;
+
+    for(uint8_t i = 0; i < validation_amount; i++){
+        for(uint32_t layer_index = 0; layer_index < layer_count; layer_index++){
+            if(strcmp(validation_layers[i], layers_buffer[layer_index].layerName) == 0){
+                layer_found = true;
+                break;
+            }
+        }
+    }
+
+    if(!layer_found){
+        return false;
+    }
+    return true;
+}
+
+static inline VkResult create_instance(VkInstance* instance, const char* name, WindowExtensions window_extensions){
+    if(window_extensions.window_extensions == 0) return VK_ERROR_EXTENSION_NOT_PRESENT;
+    if(validation_amount > 0){
+        uint32_t layer_count;
+        vkEnumerateInstanceLayerProperties(&layer_count, 0);
+        if(!check_validation_layer_support(layer_count)){
+            return VK_ERROR_VALIDATION_FAILED;//Validation layers requested but could not be found
+        }
+    }
+
+    VkApplicationInfo app_info = {};
+
+    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+
+    //Optional setup like name and version number
+    app_info.pApplicationName = name;
+    app_info.pEngineName = "No Engine";
+    app_info.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
+    app_info.engineVersion = VK_MAKE_VERSION(0, 0, 1);
+    app_info.apiVersion = VK_API_VERSION_1_4;
+    app_info.pNext = 0;
+
+    VkInstanceCreateFlags flags = {};
+
+
+    VkInstanceCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    create_info.pApplicationInfo = &app_info;
+    create_info.flags = flags;
+
+    create_info.enabledExtensionCount = window_extensions.extensions_amount;
+    create_info.ppEnabledExtensionNames = window_extensions.window_extensions;
+
+    if(validation_amount > 0){
+        create_info.enabledLayerCount = (uint32_t)validation_amount;
+        create_info.ppEnabledLayerNames = validation_layers;
+    }else{
+        create_info.enabledLayerCount = 0;
+    }
+
+    return vkCreateInstance(&create_info, 0, instance);
+}
+
+static inline void render_cleanup(struct RenderPipeline* pipeline, HeapStack* memory_stack)
 {
     vkDeviceWaitIdle(pipeline->device.virtual_device);
 
@@ -123,7 +193,7 @@ void render_cleanup(struct RenderPipeline* pipeline, HeapStack* memory_stack)
     vkDestroyCommandPool(pipeline->device.virtual_device, pipeline->command_pool, 0);
 }
 
-static VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline){
+static inline VkResult setup_render_pipeline(VkDevice virtual_device, VkRenderPass render_pass, VkPipelineLayout pipeline_layout, VkPipeline* graphics_pipeline){
 
     FileData vertex_code = platform_load_entire_file("src/renderer/shaders/vert.spv");
     FileData fragment_code = platform_load_entire_file("src/renderer/shaders/frag.spv");
@@ -570,7 +640,7 @@ static vec3_t shader_test = {0.05f, 0.5f, 64.f};
 
 static void swap_draw_frame(VkCommandBuffer* command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos, float lights_amount){
     Model loaded_models[] = {};
-    if(sizeof(loaded_models) <= 0 || model_data.renderable_amount <= 0) return;
+    //if(sizeof(loaded_models) <= 0 || model_data.renderable_amount <= 0) return;
     return;
 
     for(uint16_t render_index = 0; render_index < model_data.renderable_amount; render_index++){
@@ -627,7 +697,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D 
     Model loaded_models[0] = {};
 
     //if(sizeof(loaded_models) <= 0 || model_data.renderable_amount <= 0){
-        vkCmdEndRenderPass(*command_buffer);
+        //vkCmdEndRenderPass(*command_buffer);
         return;
         //}
     const VkDeviceSize offsets[] = {0};
@@ -669,7 +739,7 @@ static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D 
 
 static Transform tasd[MAX_LIGHTS] = {};
 
-int32_t render_frame(struct RenderPipeline* render_pipeline,CameraComponent* camera, HeapStack* heap_stack)
+static inline int32_t render_frame(struct RenderPipeline* render_pipeline,CameraComponent* camera, HeapStack* heap_stack)
 {
     vkDeviceWaitIdle(render_pipeline->device.virtual_device);//Fix Later. Sinks about 300fps
     static uint8_t current_frame = 0;//TODO Make better

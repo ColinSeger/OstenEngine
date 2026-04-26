@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "device/vulkan/device.h"
+#include "vulkan/device.h"
 #include "render_pipeline.h"
 //#include "model_loader/model_loader.cpp"
 

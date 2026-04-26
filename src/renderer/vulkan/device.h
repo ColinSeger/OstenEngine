@@ -3,11 +3,26 @@
 #include <stdint.h>
 #include <string.h>
 #include <vulkan/vulkan.h>
-#include "../../../../external/math_3d.h"
+#include "../../../external/math_3d.h"
 //#include "../../../debugger/debugger.h"
 #include "vulkan/vulkan_core.h"
-#include "../../validation.h"
-#include "../../../additional_things/arena.h"
+#include "../../additional_things/arena.h"
+
+
+#ifdef NDEBUG
+    static const char* validation_layers[] = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    const int validation_amount = 0;
+#else
+    static const char* validation_layers[] = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    const int validation_amount = sizeof(validation_layers) / sizeof(validation_layers[0]);
+#endif
+
 
 /**
     This is the representation of the vertexes that is passed to the gpu.

@@ -244,12 +244,7 @@ static inline uint32_t parse_to_uint32_length(const char* string, size_t* length
 //
 
 typedef union {
-	// The first index is the column index, the second the row index. The memory
-	// layout of nested arrays in C matches the memory layout expected by OpenGL.
 	float m[4][4];
-	// OpenGL expects the first 4 floats to be the first column of the matrix.
-	// So we need to define the named members column by column for the names to
-	// match the memory locations of the array elements.
 	struct {
 		float m00, m01, m02, m03;
 		float m10, m11, m12, m13;
@@ -361,11 +356,13 @@ static inline mat4_t mat4(
 	float m03, float m13, float m23, float m33
 ) {
     mat4_t result = {
-		m00, m10, m20, m30,
-		m01, m11, m21, m31,
-		m02, m12, m22, m32,
-		m03, m13, m23, m33
-	};
+        .m ={
+            { m00, m10, m20, m30 },
+            { m01, m11, m21, m31 },
+            { m02, m12, m22, m32 },
+            { m03, m13, m23, m33 }
+        }
+    };
 	return result;
 }
 

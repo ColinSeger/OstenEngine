@@ -6,12 +6,12 @@
 #include "../external/math_3d.h"
 #include "platform.h"
 #include "additional_things/arena.h"
-#include "renderer/instance/vulkan/instance.h"
 #include "renderer/render_pipeline.h"
 // #include "editor/UI/editor_gui.hpp"
 //#include "editor/file_explorer/file_explorer.hpp"
 #include "engine/entity_manager/components.h"
 #include "renderer/camera/camera.h"
+#include "renderer/renderer.h"
 
 #define KB 1024
 #define MB  (KB * 1024)

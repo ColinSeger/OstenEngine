@@ -4,9 +4,9 @@
 #include <vulkan/vulkan_core.h>
 #include <stdint.h>
 #include <math.h>
-#include "../device/vulkan/device.h"
-#include "../texture/vulkan/texture.h"
-#include "../render_passes/render_passes.h"
+#include "device.h"
+#include "texture.h"
+#include "render_passes.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 #define MAX_LIGHTS 8

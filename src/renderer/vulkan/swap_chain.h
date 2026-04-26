@@ -2,9 +2,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "../../../additional_things/arena.h"
-#include "../../device/vulkan/device.h"
-#include "../../texture/vulkan/texture.h"
+#include "../../additional_things/arena.h"
+#include "device.h"
+#include "texture.h"
 
 /**
     The swap-chain is what is used to display images to the screen.

@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include <vulkan/vulkan.h>
-#include "../device/vulkan/device.h"
-#include "../texture/vulkan/texture.h"
+#include "device.h"
+#include "texture.h"
 #include "vulkan/vulkan_core.h"
 
 /**
