@@ -1,6 +1,5 @@
-#define STB_IMAGE_IMPLEMENTATION
-#define GLFW_INCLUDE_NONE
-#define _CRTDBG_MAP_ALLOC
+//#define GLFW_INCLUDE_NONE
+//#define _CRTDBG_MAP_ALLOC
 //#include <stdlib.h>
 
 #ifdef _WIN32
@@ -9,8 +8,13 @@
 #include "src/unix_app.c"
 #endif
 
+#define STB_IMAGE_IMPLEMENTATION
+
 #define MATH_3D_IMPLEMENTATION
 #include "external/math_3d.h"
+
+#define RGFW_IMPLEMENTATION
+#include "external/RGFW.h"
 
 
 int main()
@@ -25,9 +29,9 @@ int main()
     struct OstenEngine engine = {};
     start(1920, 1080, name, &engine);
 
-    if(!engine.render_pipeline.device.virtual_device){
-        return 1;
-    }
+    // if(!engine.render_pipeline.device.virtual_device){
+    //     return 1;
+    // }
     run(&engine);
 
     return 0;

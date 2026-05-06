@@ -1,8 +1,8 @@
 #pragma once
-#include <GLFW/glfw3.h>
 #include "../../engine/entity_manager/components.h"
 
-
+/*
+ *
 static inline void camera_movement(double delta_time, uint16_t camera_id, GLFWwindow* main_window){
     ComponentSystem* camera_system = get_component_system(CAMERA);
     ComponentSystem* transform_system = get_component_system(TRANSFORM);
@@ -71,3 +71,5 @@ static inline void camera_mouse_callback(GLFWwindow* main_window, double positio
     if(camera_transform->transform.rotation.x < -limit)
         camera_transform->transform.rotation.x = -limit;
 }
+
+ */

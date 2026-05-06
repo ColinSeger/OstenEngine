@@ -1,7 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
+#include "../external/RGFW.h"
+//#include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 #include "../external/math_3d.h"
 #include "platform.h"
@@ -10,7 +11,7 @@
 // #include "editor/UI/editor_gui.hpp"
 //#include "editor/file_explorer/file_explorer.hpp"
 #include "engine/entity_manager/components.h"
-#include "renderer/camera/camera.h"
+//#include "renderer/camera/camera.h"
 #include "renderer/renderer.h"
 
 #define KB 1024
@@ -24,8 +25,11 @@
 typedef struct OstenEngine{
     struct RenderPipeline render_pipeline;
 
-    GLFWwindow* main_window;
+    RGFW_window* main_window;
     vec3_t target_point;
+
+    uint8_t* buffer;
+    RGFW_surface* surface;
 
     //VkDescriptorSet imgui_texture[MAX_LIGHTS];
 
@@ -70,24 +74,24 @@ static Timer last_tick;
 static inline void create_osten_engine(const uint32_t width, const uint32_t height, const char* application_name, OstenEngine* engine){
     init_mem_arena(&engine->heap_stack, 256 * MB);
 
-    #ifdef _WIN32
-    #else
-    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);//For debug
-    #endif
-
-    if(!glfwInit()){
-        puts("glfwInit failed");
-        return;
-        //("GLFW Failed to open");
-    }
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // if(!glfwInit()){
+    //     puts("glfwInit failed");
+    //     return;
+    //     //("GLFW Failed to open");
+    // }
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 
-    engine->main_window = glfwCreateWindow(width, height, application_name, 0, 0);
-    glfwSetWindowUserPointer(engine->main_window, engine);
+    engine->main_window = RGFW_createWindow(application_name, 0, 0, width, height, RGFW_windowCenter | RGFW_windowNoResize);
+    unsigned long long arena_index = arena_alloc_memory(&engine->heap_stack, (uint32_t)(width * height * 4));
+    engine->buffer = (uint8_t*)get_at_index(&engine->heap_stack, arena_index);
+
+    engine->surface = RGFW_createSurface(engine->buffer, width, height, RGFW_formatRGBA8);
+    //glfwSetWindowUserPointer(engine->main_window, engine);
     //glfwSetFramebufferSizeCallback(engine->main_window, engine->resize_callback);
-    glfwSetCursorPosCallback(engine->main_window, camera_mouse_callback);
-
+    //glfwSetCursorPosCallback(engine->main_window, camera_mouse_callback);
+    /*
+     *
     VkExtent2D window_size = {(uint32_t)width, (uint32_t)height};
 
     uint32_t glfw_extension_count = 0;
@@ -120,6 +124,7 @@ static inline void create_osten_engine(const uint32_t width, const uint32_t heig
         return;
         //throw "Failed to create render pipeline";
     }
+     */
 
     // init_imgui(main_window, &render_pipeline, instance, &heap_stack);
     // for(uint8_t i = 0; i < MAX_LIGHTS; i++){
@@ -149,9 +154,9 @@ static inline void create_osten_engine(const uint32_t width, const uint32_t heig
 // }
 
 static inline void draw_frame(OstenEngine* engine){
-    engine->should_close = glfwWindowShouldClose(engine->main_window);
+    engine->should_close = RGFW_window_shouldClose(engine->main_window);
 
-    glfwPollEvents();
+    //glfwPollEvents();
 
 
     engine->delta_time = platform_calc_elapsed_time_seconds(last_tick);
@@ -166,6 +171,11 @@ static inline void draw_frame(OstenEngine* engine){
         start_time2 = platform_get_time_handle();
         engine->frames = 0;
     }
+
+    render_frame2(engine->buffer, 1920, 1080);
+
+    RGFW_window_blitSurface(engine->main_window, engine->surface);
+
     // ImGui::Begin("ShadowMap");
     // for(uint8_t i = 0; i < MAX_LIGHTS; i++){
     //     if(imgui_texture[i] != VK_NULL_HANDLE){
@@ -176,8 +186,9 @@ static inline void draw_frame(OstenEngine* engine){
     //     }
     // }
     // ImGui::End();
-    camera_movement(engine->delta_time, 0, engine->main_window);
-
+    //camera_movement(engine->delta_time, 0, engine->main_window);
+/*
+ *
     ComponentSystem* camera_sys = get_component_system(0);
 
     int32_t result = 0;
@@ -200,6 +211,7 @@ static inline void draw_frame(OstenEngine* engine){
             result = render_frame(&engine->render_pipeline, camera, &engine->heap_stack);
         }
     }
+ */
 
     // end_imgui_editor_poll();
 

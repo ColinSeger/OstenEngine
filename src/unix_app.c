@@ -105,7 +105,7 @@ uint8_t run(OstenEngine* engine){
     // game_data.paused_state = &engine.paused_update;
 
     while(!engine->should_close){
-        procces_all_commands(&engine->render_pipeline, &engine->heap_stack);
+        //procces_all_commands(&engine->render_pipeline, &engine->heap_stack);
         //begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
         if(!engine->paused_update){
             calculate_colliders();
