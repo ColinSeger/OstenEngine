@@ -1,9 +1,0 @@
-<map id="LightSources" name="LightSources">
-<area shape="rect" id="Node000001" title=" " alt="" coords="146,106,250,134"/>
-<area shape="rect" id="Node000002" href="$structShadowPass.html" title=" " alt="" coords="5,5,108,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="63,46,73,65,84,80,113,98,148,111,143,112,111,103,81,84,68,68,62,51"/>
-<area shape="rect" id="Node000003" href="$structViewDescriptor.html" title=" " alt="" coords="138,5,258,33"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="200,47,200,107,195,104,196,50"/>
-<area shape="rect" id="Node000004" href="$structFrameDescriptor.html" title=" " alt="" coords="282,5,412,33"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="340,46,330,67,316,84,285,102,251,113,250,108,282,98,312,80,326,64,336,49"/>
-</map>
