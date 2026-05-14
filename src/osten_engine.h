@@ -153,6 +153,7 @@ static inline void create_osten_engine(const uint32_t width, const uint32_t heig
 //     cleanup();
 // }
 
+
 static inline void draw_frame(OstenEngine* engine){
     engine->should_close = RGFW_window_shouldClose(engine->main_window);
 
