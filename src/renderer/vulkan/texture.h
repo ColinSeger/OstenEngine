@@ -5,7 +5,7 @@
 #include <math.h>
 #include <vulkan/vulkan_core.h>
 #include "device.h"
-#include "../../../external/image_loader/stb_image.h"
+#include "../../../external/stb_image.h"
 
 /**
     This is the representation of the textures used by the engine.

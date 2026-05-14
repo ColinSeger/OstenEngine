@@ -38,7 +38,7 @@ static void create_entity(const char* name){
     //add_entity(entity, name);
 }
 
-static void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
+static inline void create_renderable(struct RenderPipeline* render_pipeline, InstanceData* asset_index, HeapStack* heap_stack){
 
     vkDeviceWaitIdle(render_pipeline->device.virtual_device);
     //uint16_t transform_id = add_transform();
@@ -79,9 +79,9 @@ static void load_asset(const char* file_name, struct RenderPipeline* render_pipe
 /// Size, Type, Value
 typedef struct Message
 {
-    uint8_t size;
     MessageType type;
-    char value[255];
+    uint32_t size;
+    void* value;
 } Message;
 
 typedef struct MessageSystem{
@@ -112,6 +112,7 @@ static inline Message create_message(MessageType type, uint8_t size, char value[
 }
 
 static inline void add_message_f(MessageType type, uint8_t size, char value[255]){
+    return;
     Message message = {};
     message.type = type;
     message.size = size;
@@ -120,7 +121,7 @@ static inline void add_message_f(MessageType type, uint8_t size, char value[255]
     message_amount++;
 }
 
-static void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
+static inline void procces_all_commands(struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     for(uint32_t i = 0; i < message_amount; i++){
         Message message = messages[i];
         char* action = (char*)message.value;

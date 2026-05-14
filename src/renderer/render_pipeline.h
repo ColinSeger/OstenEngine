@@ -529,7 +529,7 @@ static inline void update_uniform_buffer(const uint8_t current_frame, ModelData*
     }
 }
 
-static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
+static inline VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance instance, VkSurfaceKHR surface, struct RenderPipeline* render_pipeline, HeapStack* heap_stack){
     VkResult result = VK_SUCCESS;
     render_pipeline->my_surface = surface;
     result = create_device(&render_pipeline->device, instance, surface, heap_stack);
@@ -638,7 +638,7 @@ static VkResult create_render_pipeline(const VkExtent2D screen_size, VkInstance 
 
 static vec3_t shader_test = {0.05f, 0.5f, 64.f};
 
-static void swap_draw_frame(VkCommandBuffer* command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos, float lights_amount){
+static inline void swap_draw_frame(VkCommandBuffer* command_buffer, FrameDescriptor* descriptors, FrameDescriptor* textures, ModelData model_data, VkPipelineLayout pipeline_layout, uint8_t frame, HeapStack* heap_stack, vec3_t cam_pos, float lights_amount){
     Model loaded_models[] = {};
     //if(sizeof(loaded_models) <= 0 || model_data.renderable_amount <= 0) return;
     return;
@@ -673,7 +673,7 @@ static void swap_draw_frame(VkCommandBuffer* command_buffer, FrameDescriptor* de
 }
 
 
-static void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D viewport_extent, struct LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
+static inline void start_shadow_pass(VkCommandBuffer* command_buffer, const VkExtent2D viewport_extent, struct LightSources* lights, ModelData model_data, const uint8_t frame, HeapStack* heap_stack){
     //Begining of shadow pass
     VkClearValue clear_values[1] = {};
     clear_values[0].depthStencil = (VkClearDepthStencilValue){1.0f, 0};
