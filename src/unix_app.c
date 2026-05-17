@@ -1,5 +1,4 @@
 #include "platform.h"
-#include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -35,15 +34,20 @@ float platform_memory_mb()
     return rss_kb / 1024.0f;
 }
 
-void* platform_alloc_memory(unsigned long long size){
-    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+void* platform_alloc_memory(uint64_t size){
+    return mmap((void*)300000000, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 }
 
-void platform_free_memory(void *pointer, unsigned long long size){
+void platform_free_memory(void *pointer, uint64_t size){
     munmap(pointer, size);
 }
 
-struct Timer platform_get_time_handle(){
+uint32_t platform_set_memory(void *destination, uint8_t value, uint64_t length){
+    //memset()
+    return 0;
+}
+
+Timer platform_get_time_handle(){
     Timer result = {};
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -53,7 +57,7 @@ struct Timer platform_get_time_handle(){
     return result;
 }
 
-double platform_calc_elapsed_time_seconds(struct Timer timer){
+double platform_calc_elapsed_time_seconds(Timer timer){
     struct timespec end;
 
     clock_gettime(CLOCK_MONOTONIC, &end);
@@ -67,7 +71,7 @@ long long platform_get_file_size(const char* filename) {
     return file_stats.st_size;
 }
 
-struct FileData platform_load_entire_file(const char* filepath){//Add error handling
+FileData platform_load_entire_file(const char* filepath){//Add error handling
     FileData result = {};
     result.filename = filepath;
     long long file_size = platform_get_file_size(result.filename);

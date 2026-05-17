@@ -26,7 +26,6 @@ typedef struct OstenEngine{
     //struct RenderPipeline render_pipeline;
 
     RGFW_window* main_window;
-    vec3_t target_point;
 
     uint8_t* buffer;
     RGFW_surface* surface;
@@ -34,17 +33,13 @@ typedef struct OstenEngine{
     uint32_t window_width;
     uint32_t window_height;
 
-    //VkDescriptorSet imgui_texture[MAX_LIGHTS];
+    MemArena mem_arena;
 
-    //VkInstance instance;
+    float frames;
 
-    //FileExplorer file_explorer;
+    float fps;
 
-    HeapStack heap_stack;
-
-    double frames;
-
-    double fps;
+    float delta_time;
 
     bool resized;
 
@@ -54,24 +49,20 @@ typedef struct OstenEngine{
 
     bool paused_update;
 
-    uint32_t inspecting;
-
-    double delta_time;
-
 } OstenEngine;
 
 static Timer start_time2;
 static Timer last_tick;
 
 static inline void create_osten_engine(const uint32_t width, const uint32_t height, const char* application_name, OstenEngine* engine){
-    init_mem_arena(&engine->heap_stack, 256 * MB);
+    init_mem_arena(&engine->mem_arena, 256 * MB);
+
 
     engine->window_height = height;
     engine->window_width = width;
 
     engine->main_window = RGFW_createWindow(application_name, 0, 0, width, height, RGFW_windowCenter);
-    unsigned long long arena_index = arena_alloc_memory(&engine->heap_stack, (uint32_t)(width * height * 4));
-    engine->buffer = (uint8_t*)get_at_index(&engine->heap_stack, arena_index);
+    engine->buffer = arena_alloc_memory(&engine->mem_arena, (uint64_t)(width * height * 4));
 
     engine->surface = RGFW_createSurface(engine->buffer, width, height, RGFW_formatRGBA8);
 
@@ -122,5 +113,5 @@ static inline void draw_frame(OstenEngine* engine){
 static inline void cleanup(OstenEngine* engine){
 
     RGFW_surface_free(engine->surface);
-    destroy_arena(&engine->heap_stack);
+    destroy_arena(&engine->mem_arena);
 }

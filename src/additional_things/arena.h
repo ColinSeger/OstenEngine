@@ -1,62 +1,68 @@
 #pragma once
-#include <string.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include "../platform.h"
 
 /**
-    This is a memory arena but i for some reason named it heap-stack which is a weird name
+    This is a memory arena
 */
-typedef struct HeapStack{
-    unsigned long long capacity;
-    unsigned long long index;
-    unsigned char* data;
-} HeapStack;
+typedef struct{
+    uint64_t capacity;
+    uint64_t index;
+    uint8_t* data;
+} MemArena;
 
-static inline void* get_at_index(struct HeapStack* heap_stack, const unsigned long long index){
-    if(index > heap_stack->capacity || heap_stack->index < index) return 0;
-    return &heap_stack->data[index];
+// static inline void* get_at_index(MemArena* heap_stack, uint64_t index){
+//     if(index > heap_stack->capacity || heap_stack->index < index) return 0;
+//     return &heap_stack->data[index];
+// }
+
+static inline uint32_t init_mem_arena(MemArena* mem_arena, uint64_t capacity){
+    *mem_arena = (MemArena){
+        .capacity = capacity,
+        .index = 0,
+        .data = (uint8_t*)platform_alloc_memory(capacity)
+    };
+    return 1;
 }
 
-static inline bool init_mem_arena(struct HeapStack* heap_stack, unsigned long long capacity){
-    heap_stack->capacity = capacity;
-    heap_stack->index = 0;
-    heap_stack->data = (unsigned char*) platform_alloc_memory(capacity* sizeof(unsigned char));
-
-    return true;
-}
-
-static inline bool arena_expand(struct HeapStack* heap_stack, unsigned long long passed_in){
+static inline uint32_t arena_expand(MemArena* mem_arena, uint64_t passed_in){
     //Debug::log((char*)"Arena Expanded, Consider increasing base size");
-    unsigned long long new_size = heap_stack->capacity * 2;
-    while (heap_stack->index + passed_in > new_size) {
+    uint64_t new_size = mem_arena->capacity * 2;
+    while (mem_arena->index + passed_in > new_size) {
         new_size*=2;
     }
 
-    unsigned char* new_data = (unsigned char*)platform_alloc_memory(new_size);
-    unsigned char* old_data = heap_stack->data;
-    memcpy(new_data, old_data, heap_stack->capacity);
-    platform_free_memory(old_data, heap_stack->capacity);
-    heap_stack->capacity = new_size;
-    heap_stack->data = new_data;
-    return true;
+    uint8_t* new_data = (uint8_t*)platform_alloc_memory(new_size);
+    uint8_t* old_data = mem_arena->data;
+    for(uint64_t i = 0; i < mem_arena->capacity; i++){
+        new_data[i] = old_data[i];
+    }
+    //memcpy(new_data, old_data, mem_arena->capacity);
+    platform_free_memory(old_data, mem_arena->capacity);
+    mem_arena->capacity = new_size;
+    mem_arena->data = new_data;
+    return 1;
 }
 
 //Reserves the requested size and return it's index to you
-static inline unsigned long long arena_alloc_memory(struct HeapStack* arena, unsigned long long size){
-    while(arena->capacity < size + arena->index) arena_expand(arena, size);
+static inline uint8_t* arena_alloc_memory(MemArena* arena, uint64_t size){
     arena->index += size;
-    return arena->index - size;
+    return &arena->data[arena->index - size];
 }
 
 //This will free all values after index
-static inline void free_arena(struct HeapStack* arena, unsigned long long index){
-    if(index > arena->capacity) return;
-    if(index > arena->index) return;
-    arena->index = index;
+static inline uint32_t pop_arena(MemArena* arena, uint8_t* index){
+
+    arena->index = index - arena->data;
+    // if(index > arena->capacity) return 0;
+    // if(index > arena->index) return 0;
+    // arena->index = index;
+    return 1;
 }
 
-static inline void destroy_arena(struct HeapStack* arena){
+static inline uint32_t destroy_arena(MemArena* arena){
     arena->capacity = 0;
     arena->index = 0;
     platform_free_memory(arena->data, arena->capacity);
+    return 1;
 }

@@ -19,14 +19,18 @@ static inline uint32_t setup_renderer(uint32_t width, uint32_t height){
 
 static inline void* get_pixel(uint32_t x, uint32_t y, uint8_t* surface, uint32_t surface_width){
     const uint32_t pixel_size = 4;
-    const uint32_t screen_width = 1920;
     return &surface[y * (pixel_size * surface_width) + (x) * pixel_size];
 }
 
 static inline void render_rectangle(uint8_t* surface, Clay_BoundingBox bounds, Clay_Color color, uint32_t surface_width){
     for (uint32_t y = bounds.y; y < bounds.height; y++) {
         for(uint32_t x = bounds.x; x < bounds.width; x++){
-            *(Clay_Color*)get_pixel(x, y, surface, surface_width) = color;
+            uint8_t* pixel = (uint8_t*)get_pixel(x, y, surface, surface_width);
+            pixel[0] = color.r;
+            pixel[1] = color.g;
+            pixel[2] = color.b;
+            pixel[3] = color.a;
+
         }
     }
 }
@@ -44,10 +48,10 @@ static inline uint32_t render_frame(uint8_t* surface, uint32_t width, uint32_t h
     // }
     Clay_BeginLayout();
 
-    CLAY(CLAY_ID("MainContainer"), { .layout = { .sizing = {CLAY_SIZING_PERCENT(1.f), CLAY_SIZING_PERCENT(1.f)}, .padding = CLAY_PADDING_ALL(5), .childGap = child_gap }, .backgroundColor = {250,250,255,255} }) {
+    CLAY(CLAY_ID("MainContainer"), { .layout = { .sizing = {CLAY_SIZING_PERCENT(1.f), CLAY_SIZING_PERCENT(1.f)}, .padding = CLAY_PADDING_ALL(5), .childGap = child_gap }, .backgroundColor = {155,155,155,255} }) {
         CLAY(CLAY_ID("SideBar"), {
             .layout = { .sizing = { .width = CLAY_SIZING_PERCENT(0.2f), .height = CLAY_SIZING_GROW() }, .padding = CLAY_PADDING_ALL(5), .childGap = child_gap },
-            .backgroundColor = (Clay_Color) { 224, 215, 210, 255}
+            .backgroundColor = (Clay_Color) { 100, 100, 100, 255}
         }) {
 
             //CLAY(CLAY_ID("MainContent"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) } }, .backgroundColor = (Clay_Color) {224, 215, 210, 255} }) {}

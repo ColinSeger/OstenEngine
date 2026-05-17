@@ -3,5 +3,6 @@ CompileFlags:
     [
       -IC:/VulkanSDK/1.4.328.1/Include,
       -IC:\Users\colin\Documents\Project\OstenEngine\GameEngine\external\glfw\include,
+      -Wno-undefined-inline
       # -IC:\Tasks\Engine\Engine\external\glfw\include,
     ]
