@@ -7,7 +7,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include "osten_engine.h"
-#include "engine/game_load.h"
+//#include "engine/game_load.h"
 // #include "game/total_cheese.hpp"
 
 float platform_memory_mb()
@@ -87,7 +87,7 @@ void start(uint32_t width, uint32_t height, const char* name, OstenEngine* engin
 }
 
 uint8_t run(OstenEngine* engine){
-    load_game_data((char*)"src/game/game_data.txt");
+    //load_game_data((char*)"src/game/game_data.txt");
     // GameData game_data = {};
 
     // game_data.game_code = load_game_resources;
@@ -108,7 +108,7 @@ uint8_t run(OstenEngine* engine){
         //procces_all_commands(&engine->render_pipeline, &engine->heap_stack);
         //begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
         if(!engine->paused_update){
-            calculate_colliders();
+            //calculate_colliders();
 
             // game_data.game_code(&engine, &game_data);
         }

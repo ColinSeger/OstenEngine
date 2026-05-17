@@ -3,14 +3,14 @@
 #include <vulkan/vulkan.h>
 #include "../external/RGFW.h"
 //#include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
+//#include <vulkan/vulkan_core.h>
 #include "../external/math_3d.h"
 #include "platform.h"
 #include "additional_things/arena.h"
-#include "renderer/render_pipeline.h"
+//#include "renderer/render_pipeline.h"
 // #include "editor/UI/editor_gui.hpp"
 //#include "editor/file_explorer/file_explorer.hpp"
-#include "engine/entity_manager/components.h"
+//#include "engine/entity_manager/components.h"
 //#include "renderer/camera/camera.h"
 #include "renderer/renderer.h"
 
@@ -23,7 +23,7 @@
     It contains the render-pipeline and some other data that is there only due to time constraints
 */
 typedef struct OstenEngine{
-    struct RenderPipeline render_pipeline;
+    //struct RenderPipeline render_pipeline;
 
     RGFW_window* main_window;
     vec3_t target_point;
@@ -31,9 +31,12 @@ typedef struct OstenEngine{
     uint8_t* buffer;
     RGFW_surface* surface;
 
+    uint32_t window_width;
+    uint32_t window_height;
+
     //VkDescriptorSet imgui_texture[MAX_LIGHTS];
 
-    VkInstance instance;
+    //VkInstance instance;
 
     //FileExplorer file_explorer;
 
@@ -63,30 +66,37 @@ static Timer last_tick;
 static inline void create_osten_engine(const uint32_t width, const uint32_t height, const char* application_name, OstenEngine* engine){
     init_mem_arena(&engine->heap_stack, 256 * MB);
 
-    engine->main_window = RGFW_createWindow(application_name, 0, 0, width, height, RGFW_windowCenter | RGFW_windowNoResize);
+    engine->window_height = height;
+    engine->window_width = width;
+
+    engine->main_window = RGFW_createWindow(application_name, 0, 0, width, height, RGFW_windowCenter);
     unsigned long long arena_index = arena_alloc_memory(&engine->heap_stack, (uint32_t)(width * height * 4));
     engine->buffer = (uint8_t*)get_at_index(&engine->heap_stack, arena_index);
 
     engine->surface = RGFW_createSurface(engine->buffer, width, height, RGFW_formatRGBA8);
 
-    setup_renderer();
-
-
-    create_transform_system(20000, &engine->heap_stack);
-    create_camera_system(2, &engine->heap_stack);
-    add_camera(add_transform());
-    add_camera(add_transform());
-    create_render_component_system(9000, &engine->heap_stack);
-    create_collider_system(10000, &engine->heap_stack);
-    create_health_system(10000, &engine->heap_stack);
-    create_melee_system(10000, &engine->heap_stack);
+    setup_renderer(width, height);
 }
 
 static inline void draw_frame(OstenEngine* engine){
     engine->should_close = RGFW_window_shouldClose(engine->main_window);
     RGFW_pollEvents();
     //glfwPollEvents();
+    RGFW_event window_event = {};
+    while (RGFW_window_checkEvent(engine->main_window, &window_event)) {
+        switch (window_event.type) {
+            case RGFW_eventNone:{
 
+            }
+            case RGFW_windowResized:{
+                engine->window_width = window_event.update.w;
+                engine->window_height = window_event.update.h;
+                RGFW_surface_free(engine->surface);
+
+                RGFW_createSurface(engine->buffer, engine->window_width, engine->window_height, RGFW_formatRGBA8);
+            }
+        }
+    }
 
     engine->delta_time = platform_calc_elapsed_time_seconds(last_tick);
     double frame_time = platform_calc_elapsed_time_seconds(start_time2);
@@ -101,7 +111,7 @@ static inline void draw_frame(OstenEngine* engine){
         engine->frames = 0;
     }
 
-    render_frame2(engine->buffer, 1920, 1080);
+    render_frame(engine->buffer, engine->window_width, engine->window_height);
 
     RGFW_window_blitSurface(engine->main_window, engine->surface);
 
@@ -112,19 +122,5 @@ static inline void draw_frame(OstenEngine* engine){
 static inline void cleanup(OstenEngine* engine){
 
     RGFW_surface_free(engine->surface);
-
-    struct RenderPipeline* render_pipeline = &engine->render_pipeline;
-    if(!render_pipeline->device.virtual_device)return;
-    VkSurfaceKHR surf = render_pipeline->my_surface;
-
-    vkDeviceWaitIdle(render_pipeline->device.virtual_device);
-
-    // ImGui_ImplGlfw_Shutdown();
-    // ImGui_ImplVulkan_Shutdown();
-    render_cleanup(render_pipeline, &engine->heap_stack);
-    vkDestroySurfaceKHR(engine->instance, surf, 0);
-    vkDestroyInstance(engine->instance, 0);
-    // ImGui::DestroyContext();
-
     destroy_arena(&engine->heap_stack);
 }

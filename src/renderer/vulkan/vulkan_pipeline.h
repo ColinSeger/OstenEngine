@@ -3,17 +3,17 @@
 #include <stdint.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
-#include "../../external/math_3d.h"
-#include "vulkan/device.h"
-#include "vulkan/descriptors.h"
-#include "vulkan/texture.h"
-#include "vulkan/swap_chain.h"
+#include "../../../external/math_3d.h"
+#include "device.h"
+#include "descriptors.h"
+#include "texture.h"
+#include "swap_chain.h"
 //#include "model_loader/model_loader.cpp"
-#include "../engine/entity_manager/components.h"
+#include "../../engine/entity_manager/components.h"
 // #include "../../external/imgui_test/imgui_impl_vulkan.h"
-#include "vulkan/shaders.h"
-#include "../additional_things/arena.h"
-#include "vulkan/render_passes.h"
+#include "shaders.h"
+#include "../../additional_things/arena.h"
+#include "render_passes.h"
 
 //K_LOADER_DEBUG=all LD_PRELOAD=/usr/lib/librenderdoc.so ./build/OstenEngine
 

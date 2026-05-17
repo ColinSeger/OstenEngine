@@ -3,7 +3,7 @@
 //#include <vector>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
-#include "../../renderer/render_pipeline.h"
+#include "../../renderer/vulkan/vulkan_pipeline.h"
 //#include "../../renderer/model_loader/model_loader.cpp"
 //#include "../entity_manager/entity_manager.cpp"
 
