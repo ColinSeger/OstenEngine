@@ -46,6 +46,10 @@ static inline uint32_t arena_expand(MemArena* mem_arena, uint64_t passed_in){
 
 //Reserves the requested size and return it's index to you
 static inline uint8_t* arena_alloc_memory(MemArena* arena, uint64_t size){
+    if(arena->index + size > arena->capacity){
+        uint8_t* crash = 0;
+        *crash = 5;
+    }
     arena->index += size;
     return &arena->data[arena->index - size];
 }

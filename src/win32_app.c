@@ -127,10 +127,6 @@ double platform_calc_elapsed_time_seconds(struct Timer timer){
     return (double)(ticks.QuadPart - timer.sec) / frequency.QuadPart;
 }
 
-OstenEngine start(uint32_t width, uint32_t height, const char* name){
-    return OstenEngine(width, height, name);
-}
-
 uint8_t run(OstenEngine& engine){
     load_game_data((char*)"src/game/game_data.txt");
     GameData game_data = {};

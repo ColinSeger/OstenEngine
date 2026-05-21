@@ -17,22 +17,13 @@
 #include "external/RGFW.h"
 
 
-int main()
-{
-    // #ifdef _DEBUG
-    //     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //     _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
-    // #endif
+// int main(){
+//     const char* name = "Osten Engine";
 
-    const char* name = "Osten Engine";
+//     struct OstenEngine engine = {};
+//     create_osten_engine(1920, 1080, name, &engine);
 
-    struct OstenEngine engine = {};
-    start(1920, 1080, name, &engine);
+//     run(&engine);
 
-    // if(!engine.render_pipeline.device.virtual_device){
-    //     return 1;
-    // }
-    run(&engine);
-
-    return 0;
-}
+//     return 0;
+// }

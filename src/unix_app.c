@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <fcntl.h>
+#include "../external/RGFW.h"
 #include "osten_engine.h"
 //#include "engine/game_load.h"
 // #include "game/total_cheese.hpp"
@@ -86,37 +87,97 @@ void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 
-void start(uint32_t width, uint32_t height, const char* name, OstenEngine* engine){
-    create_osten_engine(width, height, name, engine);
-}
+int main(){
 
-uint8_t run(OstenEngine* engine){
-    //load_game_data((char*)"src/game/game_data.txt");
-    // GameData game_data = {};
+    OstenEngine osten_engine = {};
 
-    // game_data.game_code = load_game_resources;
+    OstenWindow engine_window = {
+        .window_width = 720,
+        .window_height = 525
+    };
 
-    last_tick = platform_get_time_handle();
+    init_mem_arena(&osten_engine.mem_arena, 256 * MB);
 
-    // UIData ui_data = {};
-    // ui_data.inspecting = &engine.inspecting;
-    // ui_data.paused_state = &engine.paused_update;
-    // ui_data.render_pipe = &engine.render_pipeline;
-    // ui_data.target_point = &engine.target_point;
-    // ui_data.file_explorer = &engine.file_explorer;
-    // ui_data.target_index = &target_index;
+    RGFW_window* main_window = RGFW_createWindow("OstenEngine", 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
 
-    // game_data.paused_state = &engine.paused_update;
+    engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
 
-    while(!engine->should_close){
-        //procces_all_commands(&engine->render_pipeline, &engine->heap_stack);
-        //begin_imgui_editor_poll(engine.main_window, &ui_data, engine.open_window, engine.fps, &engine.heap_stack);
-        if(!engine->paused_update){
-            //calculate_colliders();
+    engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
 
-            // game_data.game_code(&engine, &game_data);
+    float frame_count = 0;
+
+    float fps = 0;
+
+    float delta_time = 0;
+
+    RGFW_event window_event = {};
+
+    setup_renderer(&osten_engine.mem_arena, engine_window.window_width, engine_window.window_height);
+
+    Timer last_tick = platform_get_time_handle();
+
+    Timer frame_timer = {};
+
+    while(!RGFW_window_shouldClose(main_window)){
+
+        bool was_resized = 0;
+        while (RGFW_window_checkEvent(main_window, &window_event)) {
+            switch (window_event.type) {
+                case RGFW_eventNone:{
+                    break;
+                }
+                case RGFW_windowResized:{
+                    if(window_event.update.w <= 0 || window_event.update.h <= 0) {
+                        break;
+                    }
+                    engine_window.window_width = window_event.update.w;
+                    engine_window.window_height = window_event.update.h;
+
+                    was_resized = 1;
+
+                    break;
+                }
+                case RGFW_windowMinimized:{
+                    break;
+                }
+            }
         }
-        draw_frame(engine);
+
+
+        delta_time = platform_calc_elapsed_time_seconds(last_tick);
+        float frame_time = platform_calc_elapsed_time_seconds(frame_timer);
+
+        //If a frame takes longer that 500ms it will cap delta time since this should hopefully only happen when debugging
+        if (delta_time > 0.50) delta_time = 0.50;
+
+        if(frame_time > 1) {
+            fps = frame_count / frame_time;
+            printf("Fps: %f \n", fps);
+            frame_timer = platform_get_time_handle();
+            frame_count = 0;
+        }
+
+        int32_t x, y;
+
+        RGFW_window_getMouse(main_window, &x, &y);
+
+        update_render_game(&osten_engine, &engine_window, (vec2_t){x, y});
+
+        RGFW_window_blitSurface(main_window, (RGFW_surface*)engine_window.window_surface);
+
+        if(was_resized){
+            RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+            pop_arena(&osten_engine.mem_arena, engine_window.window_buffer);
+
+            engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+            engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+        }
+
+        frame_count +=1;
+        last_tick = platform_get_time_handle();
     }
+
+    RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+    cleanup(&osten_engine);
     return 0;
 }
