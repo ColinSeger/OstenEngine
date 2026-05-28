@@ -83,26 +83,23 @@ FileData platform_load_entire_file(const char* filepath){//Add error handling
     close(file);
     return result;
 }
+
 void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
+
+static void HandleClayErrors(Clay_ErrorData errorData) {}
 
 int main(){
 
     OstenEngine osten_engine = {};
 
     OstenWindow engine_window = {
-        .window_width = 720,
-        .window_height = 525
+        .window_width = 848,
+        .window_height = 480
     };
 
-    init_mem_arena(&osten_engine.mem_arena, 256 * MB);
-
-    RGFW_window* main_window = RGFW_createWindow("OstenEngine", 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
-
-    engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
-
-    engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+    Clay_Arena arena;
 
     float frame_count = 0;
 
@@ -112,11 +109,23 @@ int main(){
 
     RGFW_event window_event = {};
 
-    setup_renderer(&osten_engine.mem_arena, engine_window.window_width, engine_window.window_height);
-
     Timer last_tick = platform_get_time_handle();
 
     Timer frame_timer = {};
+
+    init_mem_arena(&osten_engine.mem_arena, 256 * MB);
+
+    uint64_t totalMemorySize = Clay_MinMemorySize();
+    arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, (void*)arena_alloc_memory(&osten_engine.mem_arena, totalMemorySize));
+    Clay_Initialize(arena, (Clay_Dimensions) { (float)engine_window.window_width, (float)engine_window.window_height },(Clay_ErrorHandler) { HandleClayErrors });
+
+    setup_renderer(&osten_engine.mem_arena, engine_window.window_width, engine_window.window_height);
+
+    RGFW_window* main_window = RGFW_createWindow("OstenEngine", 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
+
+    engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+
+    engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
 
     while(!RGFW_window_shouldClose(main_window)){
 
@@ -143,6 +152,14 @@ int main(){
             }
         }
 
+        if(was_resized){
+            RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+            pop_arena(&osten_engine.mem_arena, engine_window.window_buffer);
+
+            engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+            engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+        }
+
 
         delta_time = platform_calc_elapsed_time_seconds(last_tick);
         float frame_time = platform_calc_elapsed_time_seconds(frame_timer);
@@ -163,15 +180,11 @@ int main(){
 
         update_render_game(&osten_engine, &engine_window, (vec2_t){x, y});
 
-        RGFW_window_blitSurface(main_window, (RGFW_surface*)engine_window.window_surface);
-
         if(was_resized){
-            RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
-            pop_arena(&osten_engine.mem_arena, engine_window.window_buffer);
-
-            engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
-            engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+            memset(engine_window.window_buffer, 0, engine_window.window_width * engine_window.window_height * 4);
         }
+
+        RGFW_window_blitSurface(main_window, (RGFW_surface*)engine_window.window_surface);
 
         frame_count +=1;
         last_tick = platform_get_time_handle();

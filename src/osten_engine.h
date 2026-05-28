@@ -23,7 +23,6 @@ typedef struct OstenEngine{
 static inline void create_osten_engine(const uint32_t width, const uint32_t height, const char* application_name, OstenEngine* engine){
     init_mem_arena(&engine->mem_arena, 256 * MB);
 
-    setup_renderer(&engine->mem_arena, width, height);
 }
 
 static inline void update_render_game(OstenEngine* engine, OstenWindow* window, vec2_t mouse_cords){

@@ -5,55 +5,66 @@
 #include "../../external/clay.h"
 #include "../../external/math_3d.h"
 
-typedef struct OstenWindow{
+typedef struct OstenWindow {
     uint32_t window_width;
     uint32_t window_height;
     uint8_t* window_buffer;
     uint8_t* window_surface;
 } OstenWindow;
 
-typedef enum RenderModes{
+typedef enum RenderModes {
     None,
     Rectangle,
     Count
 } RenderModes;
 
-typedef struct RendererBoundingBox {
-    float x, y, width, height;
-} RendererBoundingBox;
+typedef struct BoundingBox {
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+} Boundingbox;
 
 typedef struct RenderCommand {
-    RendererBoundingBox boundingBox;
+    Boundingbox boundingBox;
     RenderModes commandType;
 } RenderCommand;
 
-
-static Clay_Arena arena;
+typedef struct OstColor {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+} OstColor;
 
 static uint16_t child_gap = 5;
 
-static void HandleClayErrors(Clay_ErrorData errorData) {}
+static inline OstColor clay_to_ost_color(Clay_Color color){
+    return (OstColor){(uint8_t)color.r, (uint8_t)color.g, (uint8_t)color.b, (uint8_t)color.a};
+}
+
+static inline Boundingbox clay_to_ost_bounding_box(Clay_BoundingBox bounding_box){
+    Boundingbox box = {(uint32_t)bounding_box.x, (uint32_t)bounding_box.y, (uint32_t)bounding_box.width, (uint32_t)bounding_box.height};
+    return box;
+}
 
 static inline uint32_t setup_renderer(MemArena* memArena, uint32_t width, uint32_t height){
-    uint64_t totalMemorySize = Clay_MinMemorySize();
-    arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, (void*)arena_alloc_memory(memArena, totalMemorySize));
-    Clay_Initialize(arena, (Clay_Dimensions) { (float)width, (float)height },(Clay_ErrorHandler) { HandleClayErrors });
+
     return 0;
 }
 
-static inline void* get_pixel(uint32_t x, uint32_t y, uint8_t* surface, uint32_t surface_width){
+static inline OstColor* get_pixel(uint32_t x, uint32_t y, OstenWindow* window){
     const uint32_t pixel_size = 4;
-    return &surface[y * (pixel_size * surface_width) + (x) * pixel_size];
+    return (OstColor*)&window->window_buffer[(y * (pixel_size * window->window_width)) + (x * pixel_size)];
 }
 
-static inline void render_rectangle(OstenWindow* window, Clay_BoundingBox bounds, Clay_Color color){
+static inline void render_rectangle(OstenWindow* window, Boundingbox bounds, OstColor color){
     for (uint32_t y = bounds.y; y < bounds.height; y++) {
-        for(uint32_t x = bounds.x; x < bounds.width; x++){
-            uint8_t* pixel = (uint8_t*)get_pixel(x, y, window->window_buffer, window->window_width);
-            pixel[0] = color.r;
-            pixel[1] = color.g;
-            pixel[2] = color.b;
-            pixel[3] = color.a;
+
+        OstColor* pixel = get_pixel(bounds.x, y, window);
+
+        for(uint32_t x = 0; x < bounds.width - bounds.x; x++){
+            pixel[x] = color;
         }
     }
 }
@@ -69,7 +80,6 @@ static inline uint32_t render_frame(OstenWindow* window, vec2_t mouse_cords){
             .backgroundColor = (Clay_Color) { 100, 100, 100, 255}
         }) {
 
-            //CLAY(CLAY_ID("MainContent"), { .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) } }, .backgroundColor = (Clay_Color) {224, 215, 210, 255} }) {}
         }
     }
 
@@ -80,7 +90,8 @@ static inline uint32_t render_frame(OstenWindow* window, vec2_t mouse_cords){
 
         switch (renderCommand->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
-                render_rectangle(window, renderCommand->boundingBox, renderCommand->renderData.rectangle.backgroundColor);
+
+                render_rectangle(window, clay_to_ost_bounding_box(renderCommand->boundingBox), clay_to_ost_color(renderCommand->renderData.rectangle.backgroundColor));
                 break;
             }
             case CLAY_RENDER_COMMAND_TYPE_TEXT:{
@@ -107,8 +118,9 @@ static inline uint32_t render_frame(OstenWindow* window, vec2_t mouse_cords){
         }
     }
 
+    //render_rectangle(window, (Clay_BoundingBox){ 0, 0, (float)window->window_width, 10 }, (OstColor){0,0,0,255});
 
-    render_rectangle(window, (Clay_BoundingBox){ mouse_cords.x, mouse_cords.y, mouse_cords.x + 10, mouse_cords.y + 10 }, (Clay_Color){0,0,0,255});
+    render_rectangle(window, (Boundingbox){ (uint32_t)mouse_cords.x, (uint32_t)mouse_cords.y, (uint32_t)mouse_cords.x + 10, (uint32_t)mouse_cords.y + 10 }, (OstColor){0,0,0,255});
 
     return 0;
 }
