@@ -120,14 +120,14 @@ static inline void render_rectangle(OstenWindow* window, BoundingBox bounds, Ost
         }
     }
 }
-static Clay_Arena arena;
+static Clay_Arena clay_arena;
 static void HandleClayErrors(Clay_ErrorData errorData) {}
 
-void debug_init_clay(OstenWindow* engine_window, MemArena* mem_arena)
+static inline void debug_init_clay(OstenWindow* engine_window, MemArena* mem_arena)
 {
     uint64_t totalMemorySize = Clay_MinMemorySize();
-    arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, (void*)arena_alloc_memory(mem_arena, totalMemorySize));
-    Clay_Initialize(arena, (Clay_Dimensions) { (float)engine_window->window_width, (float)engine_window->window_height },(Clay_ErrorHandler) { HandleClayErrors });
+    clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, (void*)arena_alloc_memory(mem_arena, totalMemorySize));
+    Clay_Initialize(clay_arena, (Clay_Dimensions) { (float)engine_window->window_width, (float)engine_window->window_height },(Clay_ErrorHandler) { HandleClayErrors });
 }
 
 static inline uint32_t render_frame(OstenWindow* window, vec2 mouse_cords){

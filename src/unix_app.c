@@ -89,7 +89,33 @@ void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 
+typedef void (*render_game)(
+    OstenEngine *,
+    OstenWindow *,
+    vec2
+);
+
+typedef void (*init_engine_f)(
+    OstenWindow* engine_window,
+    OstenEngine* engine
+);
+
 int main(){
+
+    void* library = dlopen("./libosten.so", RTLD_NOW);
+
+    if (!library) {
+        printf("dlopen: %s\n", dlerror());
+        return 1;
+    }
+
+    render_game renderer = dlsym(library, "update_render_game");
+    init_engine_f init = dlsym(library, "init_engine");
+
+    if (!renderer) {
+        printf("dlopen: %s\n", dlerror());
+        return 1;
+    }
 
     OstenEngine osten_engine = {};
 
@@ -97,7 +123,6 @@ int main(){
         .window_width = 848,
         .window_height = 480
     };
-
 
     float frame_count = 0;
 
@@ -111,39 +136,13 @@ int main(){
 
     Timer frame_timer = {};
 
-    init_mem_arena(&osten_engine.mem_arena, 256 * MB);
+    init(&engine_window, &osten_engine);
 
     RGFW_window* main_window = RGFW_createWindow("OstenEngine", 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
 
     engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
 
     engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
-
-    void* library = dlopen("./libosten.so", RTLD_NOW);
-
-    typedef void (*render_game)(
-        OstenEngine *,
-        OstenWindow *,
-        vec2
-    );
-
-    typedef void (*debug)(
-        OstenWindow* engine_window,
-        MemArena* mem_arena
-    );
-
-    if (!library) {
-        printf("dlopen: %s\n", dlerror());
-    }
-
-    render_game test = dlsym(library, "update_render_game");
-
-    if (!test) {
-        printf("dlopen: %s\n", dlerror());
-    }
-    printf("render = %p\n", test);
-    debug d = dlsym(library, "debug_init_clay");
-    d( &engine_window, &osten_engine.mem_arena);
 
     while(!RGFW_window_shouldClose(main_window)){
 
@@ -198,7 +197,7 @@ int main(){
 
         //update_render_game(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
 
-        test(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
+        renderer(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
 
         if(was_resized){
             memset(engine_window.window_buffer, 0, engine_window.window_width * engine_window.window_height * 4);

@@ -1,18 +1,24 @@
 #pragma once
 //TODO Look into just doing a #Define
 
-enum ConstNumbers
-{
-  One,
-  Two,
-  Three,
-  Four,
-  Five,
-  Six,
-  Seven,
-  Eight,
-  Nine,
-  Ten
+enum ConstNumbers{
+    ZERO,
+    ONE,
+    TWO,
+    THREE,
+    FOUR,
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT,
+    NINE,
+    TEN
+};
+
+enum ConstByteSizes{
+    KILOBYTES = 1024,
+    MEGABYTES = KILOBYTES * 1024,
+    GIGABYTES = MEGABYTES * 1024
 };
 
 typedef union vec2 {
