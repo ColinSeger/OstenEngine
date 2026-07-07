@@ -12,6 +12,12 @@ typedef struct FileData{
     long long file_size;
 } FileData;
 
+typedef struct Thread{//TODO
+    unsigned long long int thread_id;
+} Thread;
+
+typedef void* (*ThreadFunction)(void *data_ptr);
+
 float platform_memory_mb();
 
 void* platform_alloc_memory(uint64_t amount);
@@ -29,3 +35,7 @@ void platform_free_file(FileData file);
 Timer platform_get_time_handle();
 
 double platform_calc_elapsed_time_seconds(Timer timer);
+
+Thread spawn_thread(ThreadFunction function);//TODO
+
+void join_thread(Thread thread);//TODO

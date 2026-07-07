@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "../external/osten_math.h"
-#include "additional_things/arena.h"
+#include "arena.h"
 #include "renderer/renderer.h"
 
 
@@ -16,7 +16,13 @@ void init_engine(OstenWindow *engine_window, OstenEngine* engine){
     debug_init_clay(engine_window, &osten_engine.mem_arena);
     *engine = osten_engine;
 }
+typedef struct Test {
+    OstenEngine* engine;
+    OstenWindow* window;
+    vec2 mouse_cords;
+} Test;
 
-void update_render_game(OstenEngine* engine, OstenWindow* window, vec2 mouse_cords){
-    render_frame(window, mouse_cords);
+void* update_render_game(void* test){
+    Test t = *(Test*)test;
+    render_frame(t.window, t.mouse_cords);
 }

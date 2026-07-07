@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include "../external/RGFW.h"
 #include "osten_engine.h"
 //#include "engine/game_load.h"
@@ -89,6 +90,21 @@ void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 
+Thread spawn_thread(ThreadFunction function){//TODO
+    Thread result = {};
+    pthread_t thread;
+
+    pthread_create(& thread, 0, function, 0);
+
+    result.thread_id = thread;
+
+    return result;
+}
+
+void join_thread(Thread thread){//TODO
+
+}
+
 typedef void (*render_game)(
     OstenEngine *,
     OstenWindow *,
@@ -99,6 +115,25 @@ typedef void (*init_engine_f)(
     OstenWindow* engine_window,
     OstenEngine* engine
 );
+
+static bool test = true;
+
+static inline void* thread_test(void *ptr){
+    Timer last_tick = platform_get_time_handle();
+    unsigned long long ticks = 0;
+    while(test){
+        float elapsed_time = platform_calc_elapsed_time_seconds(last_tick);
+        ticks++;
+        if(elapsed_time > 1){
+            pthread_t id = pthread_self();
+            printf("HelloFromThread %llu \n", ticks);
+            last_tick = platform_get_time_handle();
+            ticks = 0;
+        }
+
+    }
+    return 0;
+}
 
 int main(){
 
@@ -208,6 +243,7 @@ int main(){
         frame_count +=1;
         last_tick = platform_get_time_handle();
     }
+    //pthread_join(thread, 0);
 
     RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
     return 0;

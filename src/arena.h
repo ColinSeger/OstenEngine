@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "../platform.h"
+#include "platform.h"
 
 /**
     This is a memory arena

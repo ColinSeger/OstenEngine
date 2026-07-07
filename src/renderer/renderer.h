@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "../additional_things/arena.h"
+#include "../arena.h"
 #define CLAY_IMPLEMENTATION
 #include "../../external/clay.h"
 #include "../../external/osten_math.h"
