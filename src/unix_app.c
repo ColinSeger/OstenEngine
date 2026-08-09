@@ -9,8 +9,6 @@
 #include <pthread.h>
 #include "../external/RGFW.h"
 #include "osten_engine.h"
-//#include "engine/game_load.h"
-// #include "game/total_cheese.hpp"
 
 float platform_memory_mb()
 {//https://libstatgrab.org/ Look Into
@@ -90,11 +88,17 @@ void platform_free_file(struct FileData file){
     munmap(file.file_data, file.file_size);
 }
 
-Thread spawn_thread(ThreadFunction function){//TODO
+Thread spawn_thread(ThreadFunction function, u32 index){//TODO
     Thread result = {};
     pthread_t thread;
 
-    pthread_create(& thread, 0, function, 0);
+    ThreadInitData data = {};
+    data.thread_index = index;
+    data.function = function;
+
+    i32 thread_result = pthread_create(&thread, 0, thread_init, &data);
+
+    printf("Thread result %i \n", thread_result);
 
     result.thread_id = thread;
 
@@ -102,7 +106,7 @@ Thread spawn_thread(ThreadFunction function){//TODO
 }
 
 void join_thread(Thread thread){//TODO
-
+    thread_amount--;
 }
 
 typedef void (*render_game)(
@@ -116,48 +120,26 @@ typedef void (*init_engine_f)(
     OstenEngine* engine
 );
 
-static bool test = true;
-
-static inline void* thread_test(void *ptr){
-    Timer last_tick = platform_get_time_handle();
-    unsigned long long ticks = 0;
-    while(test){
-        float elapsed_time = platform_calc_elapsed_time_seconds(last_tick);
-        ticks++;
-        if(elapsed_time > 1){
-            pthread_t id = pthread_self();
-            printf("HelloFromThread %llu \n", ticks);
-            last_tick = platform_get_time_handle();
-            ticks = 0;
-        }
-
+void barrier_sync(void* barrier)
+{
+    if(total_thread_amount > 0){
+        pthread_barrier_wait(barrier);
     }
-    return 0;
 }
 
-int main(){
+//TEMP DATA TODO MOVE TO SENSIBLE LOCATION
+static RGFW_window* main_window = {};
+static OstenEngine osten_engine = {};
+static OstenWindow engine_window = {
+    .window_width = 848,
+    .window_height = 480
+};
 
-    void* library = dlopen("./libosten.so", RTLD_NOW);
+static pthread_barrier_t barrier;
 
-    if (!library) {
-        printf("dlopen: %s\n", dlerror());
-        return 1;
-    }
+static void* multithread_entry(void* data)
+{
 
-    render_game renderer = dlsym(library, "update_render_game");
-    init_engine_f init = dlsym(library, "init_engine");
-
-    if (!renderer) {
-        printf("dlopen: %s\n", dlerror());
-        return 1;
-    }
-
-    OstenEngine osten_engine = {};
-
-    OstenWindow engine_window = {
-        .window_width = 848,
-        .window_height = 480
-    };
 
     float frame_count = 0;
 
@@ -171,47 +153,55 @@ int main(){
 
     Timer frame_timer = {};
 
-    init(&engine_window, &osten_engine);
+    //init(&engine_window, &osten_engine);
 
-    RGFW_window* main_window = RGFW_createWindow("OstenEngine", 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
+    if(thread_context.thread_index == 0){
+        init_engine(&engine_window, &osten_engine);
 
-    engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+        main_window = RGFW_createWindow(data, 0, 0, engine_window.window_width, engine_window.window_height, RGFW_windowCenter);
 
-    engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+        engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+
+        engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+
+        ready = 1;
+    }
 
     while(!RGFW_window_shouldClose(main_window)){
 
-        bool was_resized = 0;
-        while (RGFW_window_checkEvent(main_window, &window_event)) {
-            switch (window_event.type) {
-                case RGFW_eventNone:{
-                    break;
-                }
-                case RGFW_windowResized:{
-                    if(window_event.update.w <= 0 || window_event.update.h <= 0) {
+        i32 was_resized = 0;
+        if(thread_context.thread_index == 0){
+            while (RGFW_window_checkEvent(main_window, &window_event)) {
+                switch (window_event.type) {
+                    case RGFW_eventNone:{
                         break;
                     }
-                    engine_window.window_width = window_event.update.w;
-                    engine_window.window_height = window_event.update.h;
+                    case RGFW_windowResized:{
+                        if(window_event.update.w <= 0 || window_event.update.h <= 0) {
+                            break;
+                        }
+                        engine_window.window_width = window_event.update.w;
+                        engine_window.window_height = window_event.update.h;
 
-                    was_resized = 1;
+                        was_resized = 1;
 
-                    break;
-                }
-                case RGFW_windowMinimized:{
-                    break;
+                        break;
+                    }
+                    case RGFW_windowMinimized:{
+                        break;
+                    }
                 }
             }
+
+            if(was_resized){
+                RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+                pop_arena(&osten_engine.mem_arena, engine_window.window_buffer);
+
+                engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
+                engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
+            }
         }
-
-        if(was_resized){
-            RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
-            pop_arena(&osten_engine.mem_arena, engine_window.window_buffer);
-
-            engine_window.window_buffer = arena_alloc_memory(&osten_engine.mem_arena, (uint64_t)(engine_window.window_width * engine_window.window_height * 4));
-            engine_window.window_surface = (uint8_t*)RGFW_createSurface(engine_window.window_buffer, engine_window.window_width, engine_window.window_height, RGFW_formatRGBA8);
-        }
-
+        barrier_sync(&barrier);
 
         delta_time = platform_calc_elapsed_time_seconds(last_tick);
         float frame_time = platform_calc_elapsed_time_seconds(frame_timer);
@@ -226,25 +216,78 @@ int main(){
             frame_count = 0;
         }
 
-        int32_t x, y;
+        i32 x, y;
 
         RGFW_window_getMouse(main_window, &x, &y);
 
-        //update_render_game(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
+        EngineData render_data = {
+            .engine = &osten_engine,
+            .window = &engine_window,
+            .mouse_cords = (vec2){.x = x, .y = y}
+        };
 
-        renderer(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
+        update_render_game(&render_data);
 
-        if(was_resized){
-            memset(engine_window.window_buffer, 0, engine_window.window_width * engine_window.window_height * 4);
+        //renderer(&osten_engine, &engine_window, (vec2){.x = x,.y = y});
+
+
+        barrier_sync(&barrier);
+
+        if(thread_context.thread_index == 0){
+            if(was_resized){
+                memset(engine_window.window_buffer, 0, engine_window.window_width * engine_window.window_height * 4);
+            }
+            RGFW_window_blitSurface(main_window, (RGFW_surface*)engine_window.window_surface);
         }
-
-        RGFW_window_blitSurface(main_window, (RGFW_surface*)engine_window.window_surface);
 
         frame_count +=1;
         last_tick = platform_get_time_handle();
     }
     //pthread_join(thread, 0);
+    if(thread_context.thread_index == 0){
+        RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+    }
 
-    RGFW_surface_free((RGFW_surface*)engine_window.window_surface);
+    return 0;
+}
+
+
+int main(){
+/*
+ *
+    void* library = dlopen("./libosten.so", RTLD_NOW);
+
+    if (!library) {
+        printf("dlopen: %s\n", dlerror());
+        return 1;
+    }
+
+    render_game renderer = dlsym(library, "update_render_game");
+    init_engine_f init = dlsym(library, "init_engine");
+
+    if (!renderer) {
+        printf("dlopen: %s\n", dlerror());
+        return 1;
+    }
+ */
+    i32 thread_amount = total_thread_amount;
+
+    static ThreadFunction function = multithread_entry;
+
+    for (i32 i = 1; i < thread_amount; i++) {
+
+        spawn_thread(function, i);
+    }
+
+    i32 res = pthread_barrier_init(&barrier, 0, thread_amount);
+
+    if(res != 0) {
+        //Handle failed barrier
+    }
+
+    ThreadInitData data = {};
+
+    multithread_entry(&data);
+
     return 0;
 }

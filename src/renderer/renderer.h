@@ -1,38 +1,48 @@
 #pragma once
 #include <stdint.h>
 #include "../arena.h"
-#define CLAY_IMPLEMENTATION
-#include "../../external/clay.h"
 #include "../../external/osten_math.h"
 
 typedef struct OstenWindow {
-    uint32_t window_width;
-    uint32_t window_height;
-    uint8_t* window_buffer;
-    uint8_t* window_surface;
+    u8* window_buffer;
+    u8* window_surface;
+    u32 window_width;
+    u32 window_height;
 } OstenWindow;
 
 typedef enum RenderModes {
-    RenderNone,
-    RenderRectangle,
-    RenderText,
-    RenderCount
+    RENDER_RECTANGLE,
+    RENDER_TEXT,
+    RENDER_CIRCLE,
+    RENDER_COUNT
 } RenderType;
 
 typedef struct BoundingBox {
-    uint32_t x;
-    uint32_t y;
-    uint32_t width;
-    uint32_t height;
+    u32 x;
+    u32 y;
+    u32 width;
+    u32 height;
 } BoundingBox;
 
-
 typedef struct OstColor {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 a;
 } OstColor;
+
+typedef struct Vertex {
+    vec3 position;
+    vec2 uv;
+    OstColor color;
+} Vertex;
+
+typedef struct VertexBuffer {
+    vec3* position;
+    OstColor* color;
+    vec2* uv;
+    u32 count;
+} VertexBuffer;
 
 typedef struct RenderCommand {
     BoundingBox bounding_box;
@@ -40,63 +50,21 @@ typedef struct RenderCommand {
     OstColor color;
 } RenderCommand;
 
-static uint16_t child_gap = 5;
 
-static inline OstColor clay_to_ost_color(Clay_Color color){
-    return (OstColor){(uint8_t)color.r, (uint8_t)color.g, (uint8_t)color.b, (uint8_t)color.a};
-}
-
-static inline BoundingBox clay_to_ost_bounding_box(Clay_BoundingBox bounding_box){
-    BoundingBox box = {(uint32_t)bounding_box.x, (uint32_t)bounding_box.y, (uint32_t)bounding_box.width, (uint32_t)bounding_box.height};
-    return box;
-}
-
-static inline RenderCommand clay_to_ost_command(Clay_RenderCommand command){
-    RenderCommand result = {};
-
-    switch (command.commandType) {
-        case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
-
-            result.command_type = RenderRectangle;
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_TEXT:{
-            result.command_type = RenderText;
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_IMAGE:{
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_BORDER:{
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_CUSTOM:{
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:{
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:{
-            break;
-        }
-        case CLAY_RENDER_COMMAND_TYPE_NONE:{
-            break;
-        }
-    }
-
-    result.bounding_box = clay_to_ost_bounding_box(command.boundingBox);
-    result.color = clay_to_ost_color(command.renderData.rectangle.backgroundColor);
+static inline u32 get_pixel_index(u32 x, u32 y, OstenWindow* window){
+    const u32 pixel_size = 4;
+    u32 result = (y * (pixel_size * window->window_width)) + (x * pixel_size);
     return result;
 }
 
-static inline OstColor* get_pixel(uint32_t x, uint32_t y, OstenWindow* window){
-    const uint32_t pixel_size = 4;
-    return (OstColor*)&window->window_buffer[(y * (pixel_size * window->window_width)) + (x * pixel_size)];
+static inline OstColor* get_pixel(u32 x, u32 y, OstenWindow* window){
+    u32 index = get_pixel_index(x, y, window);
+    return (OstColor*)&window->window_buffer[index];
 }
 
 static inline void render_rectangle(OstenWindow* window, BoundingBox bounds, OstColor color){
 
-    uint32_t width = 0;
+    u32 width = 0;
     width = bounds.width - bounds.x;
     if(bounds.width > window->window_width && bounds.x < window->window_width){
         width = window->window_width - bounds.x;
@@ -110,59 +78,136 @@ static inline void render_rectangle(OstenWindow* window, BoundingBox bounds, Ost
         }
     }
 
-
-    for (uint32_t y = bounds.y; y < bounds.height; y++) {
+    for (u32 y = bounds.y; y < bounds.height; y++) {
 
         OstColor* pixel = get_pixel(bounds.x, y, window);
 
-        for(uint32_t x = 0; x < width; x++){
+        for(u32 x = 0; x < width; x++){
             pixel[x] = color;
         }
     }
 }
-static Clay_Arena clay_arena;
-static void HandleClayErrors(Clay_ErrorData errorData) {}
 
-static inline void debug_init_clay(OstenWindow* engine_window, MemArena* mem_arena)
+static inline float triangle_thing(vec3 point, vec3 p2, vec3 p3)
 {
-    uint64_t totalMemorySize = Clay_MinMemorySize();
-    clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, (void*)arena_alloc_memory(mem_arena, totalMemorySize));
-    Clay_Initialize(clay_arena, (Clay_Dimensions) { (float)engine_window->window_width, (float)engine_window->window_height },(Clay_ErrorHandler) { HandleClayErrors });
+    return (point.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (point.y - p3.y);
 }
 
-static inline uint32_t render_frame(OstenWindow* window, vec2 mouse_cords){
-    Clay_SetLayoutDimensions((Clay_Dimensions) { (float)window->window_width, (float)window->window_height });
+static inline void render_circle(OstenWindow* window, vec2 position){
+    float radius = 50;
 
-    Clay_BeginLayout();
+    i32 center_x = position.x;
+    i32 center_y = position.y;
 
-    CLAY(CLAY_ID("MainContainer"), { .layout = { .sizing = {CLAY_SIZING_PERCENT(1.f), CLAY_SIZING_PERCENT(1.f)}, .padding = CLAY_PADDING_ALL(5), .childGap = child_gap }, .backgroundColor = {155,155,155,255} }) {
-        CLAY(CLAY_ID("SideBar"), {
-            .layout = { .sizing = { .width = CLAY_SIZING_PERCENT(0.2f), .height = CLAY_SIZING_GROW() }, .padding = CLAY_PADDING_ALL(5), .childGap = child_gap },
-            .backgroundColor = (Clay_Color) { 100, 100, 100, 255}
-        }) {
+    for(i32 x_cord = center_x - radius; x_cord < center_x + radius; x_cord++){
+        vec2 cord = {};
+        for(i32 y_cord = center_y - radius; y_cord < center_y + radius*2; y_cord++){
+            cord.x = x_cord;
+            cord.y = y_cord;
+            float squared_distance = power_to_f(center_x - cord.x, 2) + power_to_f(center_y - cord.y, 2);
 
+            if(squared_distance < power_to_f(radius, 2)){
+                if(cord.x > window->window_width) continue;
+                if(cord.y > window->window_height) continue;
+                if(cord.x < 0) continue;
+                if(cord.y < 0) continue;
+                OstColor* pixel = get_pixel(cord.x, cord.y, window);
+
+                *pixel = (OstColor){0, 255, 0, 255};
+            }
         }
     }
+}
 
-    Clay_RenderCommandArray render_commands = Clay_EndLayout();
+static inline RenderCommand create_box(u32 x, u32 y, u32 width, u32 height, OstColor color){
+    RenderCommand result = {};
+    result.command_type = RENDER_RECTANGLE;
+    result.bounding_box = (BoundingBox) {
+        .x = x,
+        .y = y,
+        .width = width,
+        .height = height
+    };
 
-    for (int i = 0; i < render_commands.length; i++) {
-        RenderCommand renderCommand = clay_to_ost_command(render_commands.internalArray[i]);
+    result.color = color;
 
-        switch (renderCommand.command_type) {
-            case RenderRectangle: {
-                render_rectangle(window, renderCommand.bounding_box, renderCommand.color);
+    return result;
+}
 
-            }break;
-            default:
-            break;
-        }
+static inline u32 render_frame(OstenWindow* main_window, vec2 mouse_cords, MemArena* frame_arena){
 
+    //TODO make a thing that sections up the rendering to rows or colums and then let's the threads do their section
+    u32 thread_index = get_thread_index();
+    u32 width = main_window->window_width;
+    u32 height = main_window->window_height;
+    u8 thread_color = thread_index * 40;
+
+    u32 work_size = height / total_thread_amount;
+    u32 work_residue = height % total_thread_amount;
+
+
+    u32 start_x = work_size * thread_index;
+    u32 end_x = work_size * (thread_index +1);
+
+    end_x += work_residue;
+    if(thread_index != 0){
+        start_x += work_residue;
     }
 
-    //render_rectangle(window, (Clay_BoundingBox){ 0, 0, (float)window->window_width, 10 }, (OstColor){0,0,0,255});
+    Vertex vertex1 = {};
+    Vertex vertex2 = {};
+    Vertex vertex3 = {};
+    Vertex vertex4 = {};
+    Vertex vertex5 = {};
+    Vertex vertex6 = {};
 
-    render_rectangle(window, (BoundingBox){ (uint32_t)mouse_cords.x, (uint32_t)mouse_cords.y, (uint32_t)mouse_cords.x + 10, (uint32_t)mouse_cords.y + 10 }, (OstColor){0,0,0,255});
+    vertex1.position = vec3_f(0, 0, 0);
+    vertex1.color = (OstColor){255, thread_color, 0, 255};
+
+    vertex2.position = vec3_f((float)main_window->window_width, 0, 0);
+    vertex2.color = (OstColor){0, thread_color, 100, 255};
+
+    vertex3.position = vec3_f(0, (float)main_window->window_height, 0);
+    vertex3.color = (OstColor){0, thread_color, 100, 255};
+
+    vertex4.position = vec3_f((float)main_window->window_width, (float)main_window->window_height, 0);
+    vertex4.color = (OstColor){0, thread_color, 255, 255};
+
+    vertex5.position = vec3_f((float)main_window->window_width, 0, 0);
+
+    vertex6.position = vec3_f(0, (float)main_window->window_height, 0);
+
+    Vertex vertexes_buffer[] = {vertex1, vertex2, vertex3, vertex4, vertex5, vertex6};
+
+    const u32 pixel_size = 4;
+
+    for(u32 y = start_x; y < end_x; y++){
+        for(u32 x = 0; x < width; x++){
+            u32 result = (y * (pixel_size * width)) + (x * pixel_size);
+            for(u32 i = 0; i < 6; i+=3){
+                i32 has_neg, has_pos;
+
+                vec3 v1 = vertexes_buffer[i].position;
+                vec3 v2 = vertexes_buffer[i+1].position;
+                vec3 v3 = vertexes_buffer[i+2].position;
+
+                vec3 point = vec3_f((float)x, (float)y, 0);
+                float t1 = triangle_thing(point, v1, v2);
+                float t2 = triangle_thing(point, v2, v3);
+                float t3 = triangle_thing(point, v3, v1);
+
+                has_neg = (t1 < 0) || (t2 < 0) || (t3 < 0);
+                has_pos = (t1 > 0) || (t2 > 0) || (t3 > 0);
+
+                if(!(has_neg && has_pos)){
+                    OstColor* pixel = (OstColor*)&main_window->window_buffer[result];
+                    *pixel = vertexes_buffer[i].color;
+                }else{
+                    //pixel[x] = (OstColor){0, 255, 0, 255};
+                }
+            }
+        }
+    }
 
     return 0;
 }

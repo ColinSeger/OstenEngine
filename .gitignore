@@ -79,3 +79,6 @@ assets/debug_assets/napoleon.OBJ
 external/built_glfw/*
 
 external/*.o
+
+
+compile_commands.json
